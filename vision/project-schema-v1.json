@@ -1,0 +1,1052 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lp-sketch.local/schemas/project-schema-v1.json",
+  "title": "LP Sketch Project Schema (v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "projectMeta",
+    "pdf",
+    "scale",
+    "settings",
+    "view",
+    "layers",
+    "elements",
+    "construction",
+    "legend",
+    "generalNotes"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+\\.[0-9]+$",
+      "description": "Schema major version 1."
+    },
+    "projectMeta": {
+      "$ref": "#/$defs/projectMeta"
+    },
+    "pdf": {
+      "$ref": "#/$defs/pdf"
+    },
+    "scale": {
+      "$ref": "#/$defs/scale"
+    },
+    "settings": {
+      "$ref": "#/$defs/settings"
+    },
+    "view": {
+      "$ref": "#/$defs/view"
+    },
+    "layers": {
+      "$ref": "#/$defs/layers"
+    },
+    "elements": {
+      "$ref": "#/$defs/elements"
+    },
+    "construction": {
+      "$ref": "#/$defs/construction"
+    },
+    "legend": {
+      "$ref": "#/$defs/legend"
+    },
+    "generalNotes": {
+      "$ref": "#/$defs/generalNotes"
+    }
+  },
+  "$defs": {
+    "materialColor": {
+      "type": "string",
+      "enum": [
+        "green",
+        "blue",
+        "red",
+        "cyan",
+        "purple"
+      ]
+    },
+    "wireClass": {
+      "type": "string",
+      "enum": [
+        "class1",
+        "class2"
+      ]
+    },
+    "symbolClass": {
+      "type": "string",
+      "enum": [
+        "class1",
+        "class2",
+        "none"
+      ]
+    },
+    "symbolType": {
+      "type": "string",
+      "enum": [
+        "air_terminal",
+        "bonded_air_terminal",
+        "bond",
+        "cadweld_connection",
+        "continued",
+        "connect_existing",
+        "conduit_downlead_ground",
+        "conduit_downlead_roof",
+        "surface_downlead_ground",
+        "surface_downlead_roof",
+        "through_roof_to_steel",
+        "through_wall_connector",
+        "ground_rod",
+        "steel_bond",
+        "cable_to_cable_connection"
+      ]
+    },
+    "point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "projectMeta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "pdf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceType",
+        "name",
+        "sha256",
+        "page",
+        "widthPt",
+        "heightPt",
+        "dataBase64",
+        "path"
+      ],
+      "properties": {
+        "sourceType": {
+          "type": "string",
+          "enum": [
+            "embedded",
+            "referenced"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$"
+        },
+        "page": {
+          "type": "integer",
+          "const": 1
+        },
+        "widthPt": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "heightPt": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "dataBase64": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "embedded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "dataBase64": {
+                "type": "string",
+                "minLength": 1
+              },
+              "path": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "referenced"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "dataBase64": {
+                "type": "null"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "isSet",
+        "method",
+        "realUnitsPerPoint",
+        "displayUnits"
+      ],
+      "properties": {
+        "isSet": {
+          "type": "boolean"
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "manual",
+            "calibrated",
+            null
+          ]
+        },
+        "realUnitsPerPoint": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "displayUnits": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "ft-in",
+            "decimal-ft",
+            "m",
+            null
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "isSet": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": [
+                  "manual",
+                  "calibrated"
+                ]
+              },
+              "realUnitsPerPoint": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "displayUnits": {
+                "type": "string",
+                "enum": [
+                  "ft-in",
+                  "decimal-ft",
+                  "m"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "isSet": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "method": {
+                "type": "null"
+              },
+              "realUnitsPerPoint": {
+                "type": "null"
+              },
+              "displayUnits": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activeColor",
+        "activeClass",
+        "designScale",
+        "pdfBrightness",
+        "snapEnabled",
+        "autoConnectorsEnabled",
+        "autoConnectorType",
+        "angleSnapEnabled",
+        "angleIncrementDeg"
+      ],
+      "properties": {
+        "activeColor": {
+          "$ref": "#/$defs/materialColor"
+        },
+        "activeClass": {
+          "$ref": "#/$defs/wireClass"
+        },
+        "designScale": {
+          "type": "string",
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ]
+        },
+        "pdfBrightness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "snapEnabled": {
+          "type": "boolean"
+        },
+        "autoConnectorsEnabled": {
+          "type": "boolean"
+        },
+        "autoConnectorType": {
+          "type": "string",
+          "enum": [
+            "mechanical",
+            "cadweld"
+          ]
+        },
+        "angleSnapEnabled": {
+          "type": "boolean"
+        },
+        "angleIncrementDeg": {
+          "type": "integer",
+          "const": 15
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "zoom",
+        "pan"
+      ],
+      "properties": {
+        "zoom": {
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 8
+        },
+        "pan": {
+          "$ref": "#/$defs/point"
+        }
+      }
+    },
+    "layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rooftop",
+        "downleads",
+        "grounding",
+        "annotation"
+      ],
+      "properties": {
+        "rooftop": {
+          "type": "boolean"
+        },
+        "downleads": {
+          "type": "boolean"
+        },
+        "grounding": {
+          "type": "boolean"
+        },
+        "annotation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "lineElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "start",
+        "end",
+        "color",
+        "class"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "$ref": "#/$defs/point"
+        },
+        "end": {
+          "$ref": "#/$defs/point"
+        },
+        "color": {
+          "$ref": "#/$defs/materialColor"
+        },
+        "class": {
+          "$ref": "#/$defs/wireClass"
+        }
+      }
+    },
+    "arcElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "start",
+        "end",
+        "through",
+        "color",
+        "class"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "$ref": "#/$defs/point"
+        },
+        "end": {
+          "$ref": "#/$defs/point"
+        },
+        "through": {
+          "$ref": "#/$defs/point"
+        },
+        "color": {
+          "$ref": "#/$defs/materialColor"
+        },
+        "class": {
+          "$ref": "#/$defs/wireClass"
+        }
+      }
+    },
+    "symbolElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "symbolType",
+        "position",
+        "color",
+        "class"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbolType": {
+          "$ref": "#/$defs/symbolType"
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        },
+        "directionDeg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "verticalFootageFt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "letter": {
+          "type": "string",
+          "pattern": "^[A-Z]$"
+        },
+        "autoConnector": {
+          "type": "boolean"
+        },
+        "color": {
+          "$ref": "#/$defs/materialColor"
+        },
+        "class": {
+          "$ref": "#/$defs/symbolClass"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "enum": [
+                  "conduit_downlead_ground",
+                  "conduit_downlead_roof",
+                  "surface_downlead_ground",
+                  "surface_downlead_roof"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "verticalFootageFt"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "enum": [
+                  "continued",
+                  "connect_existing",
+                  "conduit_downlead_roof",
+                  "surface_downlead_roof",
+                  "ground_rod"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "directionDeg"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "enum": [
+                  "bond",
+                  "continued",
+                  "connect_existing",
+                  "through_wall_connector",
+                  "ground_rod",
+                  "steel_bond",
+                  "cable_to_cable_connection"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "class": {
+                "const": "none"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "enum": [
+                  "air_terminal",
+                  "bonded_air_terminal",
+                  "cadweld_connection",
+                  "conduit_downlead_ground",
+                  "conduit_downlead_roof",
+                  "surface_downlead_ground",
+                  "surface_downlead_roof",
+                  "through_roof_to_steel"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "class": {
+                "enum": [
+                  "class1",
+                  "class2"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "enum": [
+                  "air_terminal",
+                  "bonded_air_terminal"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "letter": {
+                "type": "string",
+                "pattern": "^[A-Z]$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "not": {
+                  "enum": [
+                    "air_terminal",
+                    "bonded_air_terminal"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "letter"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "const": "cable_to_cable_connection"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "autoConnector": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "symbolType": {
+                "not": {
+                  "const": "cable_to_cable_connection"
+                }
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "autoConnector"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "textElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "position",
+        "text",
+        "color",
+        "layer"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        },
+        "text": {
+          "type": "string"
+        },
+        "color": {
+          "$ref": "#/$defs/materialColor"
+        },
+        "layer": {
+          "type": "string",
+          "enum": [
+            "rooftop",
+            "downleads",
+            "grounding",
+            "annotation"
+          ]
+        }
+      }
+    },
+    "arrowElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tail",
+        "head",
+        "color",
+        "layer"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tail": {
+          "$ref": "#/$defs/point"
+        },
+        "head": {
+          "$ref": "#/$defs/point"
+        },
+        "color": {
+          "$ref": "#/$defs/materialColor"
+        },
+        "layer": {
+          "type": "string",
+          "enum": [
+            "rooftop",
+            "downleads",
+            "grounding",
+            "annotation"
+          ]
+        }
+      }
+    },
+    "dimensionTextElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "start",
+        "end",
+        "position",
+        "layer"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "$ref": "#/$defs/point"
+        },
+        "end": {
+          "$ref": "#/$defs/point"
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        },
+        "overrideText": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "showLinework": {
+          "type": "boolean"
+        },
+        "layer": {
+          "type": "string",
+          "enum": [
+            "rooftop",
+            "downleads",
+            "grounding",
+            "annotation"
+          ]
+        }
+      }
+    },
+    "elements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lines",
+        "arcs",
+        "curves",
+        "symbols",
+        "texts",
+        "arrows",
+        "dimensionTexts"
+      ],
+      "properties": {
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lineElement"
+          }
+        },
+        "arcs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/arcElement"
+          }
+        },
+        "curves": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/arcElement"
+          }
+        },
+        "symbols": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/symbolElement"
+          }
+        },
+        "texts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/textElement"
+          },
+          "description": "Reserved in P0 builds; keep as an empty array until P1 text tool ships."
+        },
+        "arrows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/arrowElement"
+          },
+          "description": "Reserved in P0 builds; keep as an empty array until P1 arrow tool ships."
+        },
+        "dimensionTexts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dimensionTextElement"
+          }
+        }
+      }
+    },
+    "mark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "position"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        }
+      }
+    },
+    "construction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "marks"
+      ],
+      "properties": {
+        "marks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mark"
+          }
+        }
+      }
+    },
+    "legendItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbolType",
+        "color",
+        "class",
+        "label",
+        "count"
+      ],
+      "properties": {
+        "symbolType": {
+          "$ref": "#/$defs/symbolType"
+        },
+        "letter": {
+          "type": "string",
+          "pattern": "^[A-Z]$"
+        },
+        "color": {
+          "$ref": "#/$defs/materialColor"
+        },
+        "class": {
+          "$ref": "#/$defs/symbolClass"
+        },
+        "label": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "legendPlacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "position",
+        "editedLabels"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        },
+        "editedLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "legend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "placements",
+        "customSuffixes"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/legendItem"
+          }
+        },
+        "placements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/legendPlacement"
+          }
+        },
+        "customSuffixes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24
+          }
+        }
+      }
+    },
+    "generalNotePlacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "position"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        }
+      }
+    },
+    "generalNotes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "notes",
+        "placements"
+      ],
+      "properties": {
+        "notes": {
+          "type": "array",
+          "maxItems": 15,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "placements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/generalNotePlacement"
+          }
+        }
+      }
+    }
+  }
+}

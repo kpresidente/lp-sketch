@@ -1,0 +1,594 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`export regression fixtures > matches golden canvas operations for conductor/symbol composition 1`] = `
+[
+  {
+    "args": [
+      1,
+      1,
+    ],
+    "op": "scale",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      36,
+      42,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      310,
+      44,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#2e8b57",
+      3,
+      "round",
+      "miter",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [
+      [
+        8,
+        6,
+      ],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      135.512,
+      146.158,
+      75.763,
+      3.223,
+      0.184,
+    ],
+    "op": "arc",
+  },
+  {
+    "args": [
+      "#2563eb",
+      2,
+      "round",
+      "miter",
+      [
+        8,
+        6,
+      ],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [],
+    "op": "save",
+  },
+  {
+    "args": [
+      96,
+      44,
+    ],
+    "op": "translate",
+  },
+  {
+    "args": [
+      "#2e8b57",
+    ],
+    "op": "fill",
+  },
+  {
+    "args": [
+      "#2e8b57",
+      1.9,
+      "round",
+      "miter",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [
+      "A",
+      0,
+      0,
+      "#ffffff",
+      "700 8.2px Segoe UI, Arial, sans-serif",
+      "center",
+      "middle",
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [],
+    "op": "restore",
+  },
+  {
+    "args": [],
+    "op": "save",
+  },
+  {
+    "args": [
+      340,
+      118,
+    ],
+    "op": "translate",
+  },
+  {
+    "args": [
+      1.571,
+    ],
+    "op": "rotate",
+  },
+  {
+    "args": [
+      "#ffffff",
+    ],
+    "op": "fill",
+  },
+  {
+    "args": [
+      "#DC143C",
+      1.45,
+      "round",
+      "miter",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      -2,
+      -2,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      0,
+      0,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      2,
+      -2,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#DC143C",
+      1.6,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      -2,
+      0.667,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      0,
+      2.667,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      2,
+      0.667,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#DC143C",
+      1.6,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "restore",
+  },
+  {
+    "args": [
+      "50",
+      348,
+      104,
+      "#111827",
+      "14px Segoe UI, Arial, sans-serif",
+      "left",
+      "top",
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      "RIDGE",
+      80,
+      220,
+      "#7c3aed",
+      "14px Segoe UI, Arial, sans-serif",
+      "left",
+      "top",
+    ],
+    "op": "fillText",
+  },
+]
+`;
+
+exports[`export regression fixtures > matches golden canvas operations for dimension and downlead footage labels 1`] = `
+[
+  {
+    "args": [
+      1,
+      1,
+    ],
+    "op": "scale",
+  },
+  {
+    "args": [
+      [
+        12,
+        9,
+      ],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      110,
+      180,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      300,
+      180,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#2563eb",
+      3,
+      "round",
+      "miter",
+      [
+        12,
+        9,
+      ],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [],
+    "op": "save",
+  },
+  {
+    "args": [
+      410,
+      160,
+    ],
+    "op": "translate",
+  },
+  {
+    "args": [
+      3.142,
+    ],
+    "op": "rotate",
+  },
+  {
+    "args": [
+      "#DC143C",
+    ],
+    "op": "fill",
+  },
+  {
+    "args": [
+      "#DC143C",
+      2.85,
+      "round",
+      "miter",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      -3,
+      -3,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      0,
+      0,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      3,
+      -3,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#ffffff",
+      2.4,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      -3,
+      1.001,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      0,
+      4,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      3,
+      1.001,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#ffffff",
+      2.4,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "restore",
+  },
+  {
+    "args": [
+      "18",
+      422,
+      139,
+      "#111827",
+      "21px Segoe UI, Arial, sans-serif",
+      "left",
+      "top",
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      110,
+      180,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      110,
+      216.5,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#111827",
+      1.875,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      300,
+      180,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      300,
+      216.5,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#111827",
+      1.875,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      110,
+      212,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      199,
+      212,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#111827",
+      2.25,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      266.5,
+      212,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      300,
+      212,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#111827",
+      2.25,
+      "round",
+      "round",
+      [],
+    ],
+    "op": "stroke",
+  },
+  {
+    "args": [
+      "2' 8"",
+      205,
+      212,
+      "#111827",
+      "21px Segoe UI, Arial, sans-serif",
+      "left",
+      "top",
+    ],
+    "op": "fillText",
+  },
+]
+`;

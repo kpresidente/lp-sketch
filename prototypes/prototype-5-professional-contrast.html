@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LP Sketch — Professional (High Contrast)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base: #eef0f4;
+      --bg-sidebar: #f6f7f9;
+      --bg-card: #ffffff;
+      --bg-input: #f0f2f5;
+      --bg-hover: #e8eaef;
+      --bg-active: #dde0e8;
+      --bg-canvas: #fafbfc;
+      --bg-panel-header: #f0f1f4;
+      --border: #d0d4dc;
+      --border-btn: #bcc1cc;
+      --border-strong: #a0a8b8;
+      --border-focus: #6878a0;
+      --text-primary: #111827;
+      --text-secondary: #374151;
+      --text-tertiary: #6b7280;
+      --text-muted: #9ca3af;
+      --text-label: #4b5563;
+      --accent: #2c4f8a;
+      --accent-hover: #1e3d72;
+      --accent-light: #dce5f4;
+      --accent-lighter: #edf1f9;
+      --accent-text: #1e3a6e;
+      --accent-marker: #3b6bc4;
+      --success: #15803d;
+      --success-bg: #dcfce7;
+      --error: #b91c1c;
+      --error-bg: #fee2e2;
+      --material-copper: #16a34a;
+      --material-aluminum: #2563eb;
+      --material-grounding: #dc2626;
+      --material-bimetallic: #7c3aed;
+      --material-tinned: #0891b2;
+      --sidebar-width: 304px;
+      --toolbar-height: 44px;
+      --radius: 6px;
+      --radius-sm: 5px;
+      --radius-lg: 8px;
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.06);
+      --transition: 150ms ease;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.4;
+    }
+
+    /* ──── APP SHELL ──── */
+    .app-shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      height: 100vh;
+    }
+
+    /* ──── SIDEBAR ──── */
+    .sidebar {
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    /* ──── SIDEBAR HEADER ──── */
+    .sidebar-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .logo-mark {
+      width: 34px;
+      height: 34px;
+      background: var(--accent);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .logo-mark i {
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .logo-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-info .app-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .logo-info .app-desc {
+      font-size: 10.5px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      margin-top: 1px;
+    }
+
+    /* ──── SIDEBAR SCROLL ──── */
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .sidebar-scroll::-webkit-scrollbar { width: 5px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ──── PANELS ──── */
+    .panel {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 20px;
+      cursor: pointer;
+      transition: background var(--transition);
+      user-select: none;
+      background: var(--bg-panel-header);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .panel-header .panel-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .panel-header .panel-chevron {
+      color: var(--text-muted);
+      font-size: 9px;
+      transition: transform var(--transition);
+    }
+
+    .panel.collapsed .panel-chevron { transform: rotate(-90deg); }
+    .panel.collapsed .panel-body { display: none; }
+    .panel.collapsed .panel-header { border-bottom: none; }
+
+    .panel-body {
+      padding: 12px 20px 14px;
+      background: var(--bg-card);
+    }
+
+    /* ──── INPUT ──── */
+    .input-field {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 8px 11px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(44, 79, 138, 0.12);
+    }
+
+    .input-field::placeholder { color: var(--text-muted); font-weight: 400; }
+
+    select.select-field {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 8px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--transition);
+    }
+
+    select.select-field:focus {
+      border-color: var(--accent);
+    }
+
+    /* ──── BUTTONS ──── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-btn);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      box-shadow: var(--shadow-btn);
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .btn:active {
+      background: var(--bg-active);
+      box-shadow: none;
+    }
+
+    .btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent-hover);
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn.primary:hover {
+      background: var(--accent-hover);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 12px;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 11px;
+    }
+
+    .btn i {
+      font-size: 13px;
+    }
+
+    /* ──── BUTTON GRID ──── */
+    .btn-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .btn-grid-3 .btn {
+      flex-direction: column;
+      padding: 9px 4px 7px;
+      font-size: 10px;
+      gap: 4px;
+      font-weight: 600;
+    }
+
+    .btn-grid-3 .btn i {
+      font-size: 17px;
+      color: var(--text-tertiary);
+    }
+
+    .btn-grid-3 .btn:hover i {
+      color: var(--accent);
+    }
+
+    .btn-grid-3 .btn.active i {
+      color: #fff;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 5px;
+    }
+
+    .btn-row .btn { flex: 1; }
+
+    /* ──── FILE ACTIONS ──── */
+    .file-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .file-actions .btn.wide { grid-column: span 2; }
+
+    .file-status {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      padding: 4px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 500;
+    }
+
+    .file-status .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+    }
+
+    /* ──── TOGGLE ──── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+    }
+
+    .toggle-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .toggle-switch {
+      width: 38px;
+      height: 20px;
+      background: var(--bg-active);
+      border: 1px solid var(--border-btn);
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: all var(--transition);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .toggle-switch.on {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .toggle-switch.on::after {
+      left: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ──── MATERIALS ──── */
+    .material-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .material-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .material-item:hover {
+      background: var(--bg-hover);
+      border-color: var(--border);
+    }
+
+    .material-item.active {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .material-item .mat-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    .material-item .mat-name {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .material-item.active .mat-name {
+      color: var(--accent-text);
+      font-weight: 700;
+    }
+
+    .material-item .mat-abbr {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .material-item.active .mat-abbr {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ──── CLASS SELECTOR ──── */
+    .class-selector {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .class-selector .btn { flex: 1; }
+
+    /* ──── SCALE ──── */
+    .scale-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .scale-row .input-field { flex: 1; }
+
+    .scale-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      background: var(--accent-light);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-text);
+      margin-top: 2px;
+    }
+
+    .scale-badge i {
+      font-size: 10px;
+      color: var(--accent);
+    }
+
+    /* ──── HISTORY ──── */
+    .history-bar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .history-counter {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    /* ──── SECTION LABEL ──── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: var(--accent-marker);
+      margin-bottom: 6px;
+      margin-top: 12px;
+    }
+
+    .section-label:first-child { margin-top: 0; }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 10px 0;
+    }
+
+    /* ──── STATUS BAR ──── */
+    .status-bar {
+      flex-shrink: 0;
+      padding: 9px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+
+    .status-msg {
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .status-msg.success {
+      color: var(--success);
+    }
+
+    .status-msg.error {
+      color: var(--error);
+    }
+
+    .status-msg .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-msg.success .status-dot {
+      background: var(--success);
+    }
+
+    .status-msg.error .status-dot {
+      background: var(--error);
+    }
+
+    /* ──── WORKSPACE ──── */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-base);
+    }
+
+    /* ──── TOOLBAR ──── */
+    .workspace-toolbar {
+      height: var(--toolbar-height);
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .toolbar-active-tool {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .toolbar-active-tool i {
+      font-size: 10px;
+    }
+
+    .toolbar-separator {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+    }
+
+    .toolbar-zoom {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .toolbar-breadcrumb {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-left: auto;
+      font-weight: 500;
+    }
+
+    .toolbar-breadcrumb strong {
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+
+    /* ──── CANVAS STAGE ──── */
+    .canvas-stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      margin: 10px 10px 10px 0;
+      border-radius: var(--radius-lg);
+      background: var(--bg-canvas);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Clean dot grid */
+    .canvas-stage::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, var(--border) 0.7px, transparent 0.7px);
+      background-size: 24px 24px;
+      background-position: 12px 12px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .canvas-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .canvas-watermark .wm-drop-zone {
+      width: 80px;
+      height: 80px;
+      border: 2px dashed var(--border-strong);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+    }
+
+    .canvas-watermark .wm-drop-zone i {
+      font-size: 34px;
+      color: var(--text-muted);
+    }
+
+    .canvas-watermark .wm-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .canvas-watermark .wm-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .canvas-watermark .wm-or {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 14px 0;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .canvas-watermark .wm-or::before,
+    .canvas-watermark .wm-or::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .canvas-watermark .wm-browse-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--accent);
+      background: var(--accent-light);
+      color: var(--accent-text);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .canvas-watermark .wm-browse-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .canvas-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      pointer-events: none;
+    }
+
+    .canvas-footer .coords {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      gap: 12px;
+    }
+
+    .canvas-footer .build-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ──── SIDEBAR ──── -->
+  <aside class="sidebar">
+
+    <div class="sidebar-header">
+      <div class="logo-mark"><i class="ti ti-bolt"></i></div>
+      <div class="logo-info">
+        <div class="app-name">LP Sketch</div>
+        <div class="app-desc">Lightning Protection Design</div>
+      </div>
+    </div>
+
+    <div class="sidebar-scroll">
+
+      <!-- PROJECT -->
+      <div class="panel">
+        <div class="panel-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="panel-label">Project</span>
+          <i class="ti ti-chevron-down panel-chevron"></i>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Name</div>
+          <input type="text" class="input-field" placeholder="Project name..." value="Building A — Roof Plan">
+          <div class="file-status" style="margin-bottom: 4px;">
+            <span class="dot"></span>
+            roof-plan-A.pdf loaded
+          </div>
+          <div class="section-label">File</div>
+          <div class="btn-grid-3" style="margin-bottom: 10px;">
+            <button class="btn"><i class="ti ti-file-import"></i> Import</button>
+            <button class="btn"><i class="ti ti-device-floppy"></i> Save</button>
+            <button class="btn"><i class="ti ti-folder-open"></i> Load</button>
+          </div>
+          <div class="section-label">Export</div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-photo"></i> PNG</button>
+            <button class="btn"><i class="ti ti-photo"></i> JPG</button>
+            <button class="btn"><i class="ti ti-file-type-pdf"></i> PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div class="panel">
+        <div class="panel-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="panel-label">Tools</span>
+          <i class="ti ti-chevron-down panel-chevron"></i>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Mode</div>
+          <div class="btn-row" style="margin-bottom: 10px;">
+            <button class="btn active"><i class="ti ti-pointer"></i> Select</button>
+            <button class="btn"><i class="ti ti-hand-stop"></i> Pan</button>
+          </div>
+
+          <div class="history-bar">
+            <button class="btn btn-icon"><i class="ti ti-arrow-back-up"></i></button>
+            <button class="btn btn-icon"><i class="ti ti-arrow-forward-up"></i></button>
+            <span class="history-counter">Past: 12 | Future: 0</span>
+          </div>
+
+          <div class="toggle-row">
+            <span class="toggle-label">Snap to Grid</span>
+            <div class="toggle-switch on"></div>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">Angle Snap (15°)</span>
+            <div class="toggle-switch"></div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="section-label">Annotation</div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-typography"></i> Text</button>
+            <button class="btn"><i class="ti ti-arrow-narrow-right"></i> Arrow</button>
+            <button class="btn"><i class="ti ti-list"></i> Legend</button>
+            <button class="btn"><i class="ti ti-ruler-measure"></i> Measure</button>
+            <button class="btn"><i class="ti ti-map-pin"></i> Mark</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPONENTS -->
+      <div class="panel">
+        <div class="panel-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="panel-label">Components</span>
+          <i class="ti ti-chevron-down panel-chevron"></i>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Conductors</div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-line"></i> Linear</button>
+            <button class="btn"><i class="ti ti-rotate-clockwise"></i> Arc</button>
+            <button class="btn"><i class="ti ti-vector-spline"></i> Curve</button>
+          </div>
+          <div class="section-label">Air Terminals</div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-antenna"></i> AT</button>
+            <button class="btn"><i class="ti ti-dots"></i> ATs Lin</button>
+            <button class="btn"><i class="ti ti-circle-dot"></i> ATs Arc</button>
+          </div>
+          <div class="section-label">Connections</div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-link"></i> Bond</button>
+            <button class="btn"><i class="ti ti-plug"></i> Cable</button>
+          </div>
+          <div class="section-label">Downleads</div>
+          <div class="btn-grid-3" style="margin-bottom: 5px;">
+            <button class="btn"><i class="ti ti-arrow-down"></i> Con &gt; Gnd</button>
+            <button class="btn"><i class="ti ti-arrow-down"></i> Con &gt; Roof</button>
+          </div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-arrow-down"></i> Sfc &gt; Gnd</button>
+            <button class="btn"><i class="ti ti-arrow-down"></i> Sfc &gt; Roof</button>
+          </div>
+          <div class="section-label">Penetrations</div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-arrow-bar-up"></i> Thru-Roof</button>
+            <button class="btn"><i class="ti ti-arrows-horizontal"></i> Thru-Wall</button>
+          </div>
+          <div class="section-label">Grounding</div>
+          <div class="btn-grid-3">
+            <button class="btn"><i class="ti ti-separator-vertical"></i> Ground Rod</button>
+            <button class="btn"><i class="ti ti-bolt"></i> Steel Bond</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATERIAL / STYLE -->
+      <div class="panel">
+        <div class="panel-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="panel-label">Material</span>
+          <i class="ti ti-chevron-down panel-chevron"></i>
+        </div>
+        <div class="panel-body">
+          <div class="section-label">Class</div>
+          <div class="class-selector">
+            <button class="btn active">Class I</button>
+            <button class="btn">Class II</button>
+          </div>
+          <div class="section-label">Material</div>
+          <div class="material-list">
+            <div class="material-item active">
+              <div class="mat-swatch" style="background: var(--material-copper);"></div>
+              <span class="mat-name">Copper</span>
+              <span class="mat-abbr">Cu</span>
+            </div>
+            <div class="material-item">
+              <div class="mat-swatch" style="background: var(--material-aluminum);"></div>
+              <span class="mat-name">Aluminum</span>
+              <span class="mat-abbr">Al</span>
+            </div>
+            <div class="material-item">
+              <div class="mat-swatch" style="background: var(--material-grounding);"></div>
+              <span class="mat-name">Grounding</span>
+              <span class="mat-abbr">Gnd</span>
+            </div>
+            <div class="material-item">
+              <div class="mat-swatch" style="background: var(--material-bimetallic);"></div>
+              <span class="mat-name">Bimetallic</span>
+              <span class="mat-abbr">Bi</span>
+            </div>
+            <div class="material-item">
+              <div class="mat-swatch" style="background: var(--material-tinned);"></div>
+              <span class="mat-name">Tinned</span>
+              <span class="mat-abbr">Sn</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCALE -->
+      <div class="panel">
+        <div class="panel-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="panel-label">Scale</span>
+          <i class="ti ti-chevron-down panel-chevron"></i>
+        </div>
+        <div class="panel-body">
+          <div class="scale-row">
+            <input type="text" class="input-field" placeholder="Scale" value="0.25">
+            <select class="select-field">
+              <option>ft-in</option>
+              <option>dec-ft</option>
+              <option>m</option>
+            </select>
+          </div>
+          <div class="btn-row" style="margin-bottom: 8px;">
+            <button class="btn btn-sm">Apply Scale</button>
+            <button class="btn btn-sm"><i class="ti ti-compass"></i> Calibrate</button>
+          </div>
+          <div class="scale-badge">
+            <i class="ti ti-ruler-2"></i>
+            1/4" = 1'-0"
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATUS -->
+    <div class="status-bar">
+      <div class="status-msg success">
+        <div class="status-dot"></div>
+        Project saved successfully
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ──── WORKSPACE ──── -->
+  <main class="workspace">
+
+    <div class="workspace-toolbar">
+      <div class="toolbar-active-tool">
+        <i class="ti ti-pointer"></i> Select
+      </div>
+      <div class="toolbar-separator"></div>
+      <span class="toolbar-zoom">100%</span>
+      <div class="toolbar-separator"></div>
+      <span class="toolbar-breadcrumb"><strong>Building A</strong> / Roof Plan</span>
+    </div>
+
+    <div class="canvas-stage">
+      <div class="canvas-watermark">
+        <div class="wm-drop-zone">
+          <i class="ti ti-file-type-pdf"></i>
+        </div>
+        <div class="wm-title">Import a PDF to get started</div>
+        <div class="wm-sub">Drag and drop a floor plan here</div>
+        <div class="wm-or">or</div>
+        <button class="wm-browse-btn"><i class="ti ti-folder-open"></i> Browse files</button>
+      </div>
+      <div class="canvas-footer">
+        <div class="coords">
+          <span>X: 0.00</span>
+          <span>Y: 0.00</span>
+        </div>
+        <div class="build-tag">LP Sketch v1.0</div>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  document.querySelectorAll('.toggle-switch').forEach(toggle => {
+    toggle.addEventListener('click', () => toggle.classList.toggle('on'));
+  });
+
+  document.querySelectorAll('.material-list .material-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.material-list .material-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.class-selector .btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.class-selector .btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

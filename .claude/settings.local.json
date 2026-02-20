@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:kobalte.dev)",
+      "WebFetch(domain:konvajs.org)",
+      "Bash(pkill:*)",
+      "Bash(npx vite:*)"
+    ]
+  }
+}

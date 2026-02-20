@@ -1,0 +1,28 @@
+{
+  "updated": "2026-02-19",
+  "allowedPackages": {
+    "high": [
+      "@tabler/icons-webfont",
+      "cacache",
+      "glob",
+      "make-fetch-happen",
+      "minimatch",
+      "node-gyp",
+      "svgtofont",
+      "tar",
+      "ttf2woff2"
+    ],
+    "critical": []
+  },
+  "notes": {
+    "@tabler/icons-webfont": "Direct dependency; current advisory chain is transitive through icon build tooling. Planned remediation is package replacement/upgrade path validation.",
+    "cacache": "Transitive via @tabler/icons-webfont chain.",
+    "glob": "Transitive via @tabler/icons-webfont chain.",
+    "make-fetch-happen": "Transitive via @tabler/icons-webfont chain.",
+    "minimatch": "Transitive via @tabler/icons-webfont chain.",
+    "node-gyp": "Transitive via @tabler/icons-webfont chain.",
+    "svgtofont": "Transitive via @tabler/icons-webfont chain.",
+    "tar": "Transitive via @tabler/icons-webfont chain.",
+    "ttf2woff2": "Transitive via @tabler/icons-webfont chain."
+  }
+}
