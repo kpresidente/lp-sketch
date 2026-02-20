@@ -4,7 +4,8 @@
       "WebFetch(domain:kobalte.dev)",
       "WebFetch(domain:konvajs.org)",
       "Bash(pkill:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(claude plugins install:*)"
     ]
   }
 }

@@ -1,8 +1,29 @@
 {
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true
+  },
   "mcpServers": {
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
     }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "node -e \"const i=JSON.parse(process.env.CLAUDE_TOOL_INPUT||'{}'); const blocked=['package-lock.json','dist/','node_modules/']; if(blocked.some(b=>(i.file_path||'').includes(b))){console.error('Blocked edit to: '+i.file_path);process.exit(2)}\""
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "npx tsc --noEmit --pretty 2>&1 | head -20"
+      }
+    ]
   }
 }
