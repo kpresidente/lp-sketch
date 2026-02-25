@@ -109,8 +109,14 @@ export function createProjectJsonPayload(options?: {
 }): FilePayload {
   const now = new Date().toISOString()
   const projectName = options?.name ?? 'Loaded E2E Project'
+  const defaultScale = {
+    isSet: false,
+    method: null,
+    realUnitsPerPoint: null,
+    displayUnits: null,
+  } as const
   const project = {
-    schemaVersion: '1.8.0',
+    schemaVersion: '1.9.0',
     projectMeta: {
       id: 'project-e2e',
       name: projectName,
@@ -122,22 +128,25 @@ export function createProjectJsonPayload(options?: {
       name: 'source.pdf',
       sha256: '0'.repeat(64),
       page: 1,
+      pageCount: 1,
+      pages: [{ page: 1, widthPt: 1200, heightPt: 900 }],
       widthPt: 1200,
       heightPt: 900,
       dataBase64: null,
       path: 'source.pdf',
     },
     scale: {
-      isSet: false,
-      method: null,
-      realUnitsPerPoint: null,
-      displayUnits: null,
+      ...defaultScale,
+      byPage: { 1: { ...defaultScale } },
     },
     settings: {
       activeColor: 'green',
       activeClass: 'class1',
       designScale: 'medium',
       pdfBrightness: 1,
+      pdfBrightnessByPage: { 1: 1 },
+      legendDataScope: 'global',
+      notesDataScope: 'global',
       snapEnabled: true,
       autoConnectorsEnabled: true,
       autoConnectorType: 'mechanical',
@@ -145,8 +154,15 @@ export function createProjectJsonPayload(options?: {
       angleIncrementDeg: 15,
     },
     view: {
+      currentPage: 1,
       zoom: 1,
       pan: { x: 24, y: 24 },
+      byPage: {
+        1: {
+          zoom: 1,
+          pan: { x: 24, y: 24 },
+        },
+      },
     },
     layers: {
       rooftop: true,
@@ -193,6 +209,7 @@ export function createProjectJsonPayload(options?: {
     },
     generalNotes: {
       notes: [],
+      notesByPage: { 1: [] },
       placements: [],
     },
   }
@@ -202,6 +219,148 @@ export function createProjectJsonPayload(options?: {
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(project, null, 2)),
   }
+}
+
+export function createMultiPageProjectJsonPayload(options?: {
+  fileName?: string
+  notesScope?: 'page' | 'global'
+}): FilePayload {
+  const now = new Date().toISOString()
+  const notesScope = options?.notesScope ?? 'page'
+  const defaultScale = {
+    isSet: false,
+    method: null,
+    realUnitsPerPoint: null,
+    displayUnits: null,
+  } as const
+
+  const project = {
+    schemaVersion: '1.9.0',
+    projectMeta: {
+      id: 'project-e2e-multipage',
+      name: 'Loaded E2E Multi-page Project',
+      createdAt: now,
+      updatedAt: now,
+    },
+    pdf: {
+      sourceType: 'referenced',
+      name: 'multi-source.pdf',
+      sha256: '0'.repeat(64),
+      page: 1,
+      pageCount: 2,
+      pages: [
+        { page: 1, widthPt: 1200, heightPt: 900 },
+        { page: 2, widthPt: 1200, heightPt: 900 },
+      ],
+      widthPt: 1200,
+      heightPt: 900,
+      dataBase64: null,
+      path: 'multi-source.pdf',
+    },
+    scale: {
+      ...defaultScale,
+      byPage: {
+        1: { ...defaultScale },
+        2: { ...defaultScale },
+      },
+    },
+    settings: {
+      activeColor: 'green',
+      activeClass: 'class1',
+      designScale: 'medium',
+      pdfBrightness: 1,
+      pdfBrightnessByPage: { 1: 1, 2: 1 },
+      legendDataScope: 'global',
+      notesDataScope: notesScope,
+      snapEnabled: true,
+      autoConnectorsEnabled: true,
+      autoConnectorType: 'mechanical',
+      angleSnapEnabled: true,
+      angleIncrementDeg: 15,
+    },
+    view: {
+      currentPage: 1,
+      zoom: 1,
+      pan: { x: 24, y: 24 },
+      byPage: {
+        1: { zoom: 1, pan: { x: 24, y: 24 } },
+        2: { zoom: 1, pan: { x: 24, y: 24 } },
+      },
+    },
+    layers: {
+      rooftop: true,
+      downleads: true,
+      grounding: true,
+      annotation: true,
+    },
+    elements: {
+      lines: [
+        {
+          id: 'line-page-1',
+          page: 1,
+          start: { x: 120, y: 160 },
+          end: { x: 320, y: 160 },
+          color: 'green',
+          class: 'class1',
+        },
+        {
+          id: 'line-page-2',
+          page: 2,
+          start: { x: 520, y: 160 },
+          end: { x: 760, y: 160 },
+          color: 'green',
+          class: 'class1',
+        },
+      ],
+      arcs: [],
+      curves: [],
+      symbols: [],
+      texts: [],
+      arrows: [],
+      dimensionTexts: [],
+    },
+    construction: {
+      marks: [],
+    },
+    legend: {
+      items: [],
+      placements: [],
+      customSuffixes: {},
+    },
+    generalNotes: {
+      notes: ['Global note'],
+      notesByPage: {
+        1: ['Page 1 note'],
+        2: ['Page 2 note'],
+      },
+      placements: [
+        {
+          id: 'notes-page-1',
+          page: 1,
+          position: { x: 140, y: 260 },
+        },
+        {
+          id: 'notes-page-2',
+          page: 2,
+          position: { x: 540, y: 260 },
+        },
+      ],
+    },
+  }
+
+  return {
+    name: options?.fileName ?? 'e2e-multipage.lpsketch.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(project, null, 2)),
+  }
+}
+
+export async function loadProjectFromProjectPanel(page: Page, payload: FilePayload) {
+  const chooserPromise = page.waitForEvent('filechooser')
+  await panelRegion(page, 'Project').locator('button[title="Load Project"]').click()
+  const chooser = await chooserPromise
+  await chooser.setFiles(payload)
+  await expectStatus(page, /Loaded .*\.lpsketch\.json/)
 }
 
 export async function applyManualScale(page: Page, inches: string, feet: string) {

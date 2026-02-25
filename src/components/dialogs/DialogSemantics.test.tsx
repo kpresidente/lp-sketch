@@ -55,10 +55,12 @@ describe('dialog accessibility semantics', () => {
       <LegendLabelDialog
         editor={editor}
         project={project}
+        scope="global"
         setDialogRef={() => undefined}
         onTitlePointerDown={() => undefined}
         onTitlePointerMove={() => undefined}
         onTitlePointerUp={() => undefined}
+        onSetScope={() => undefined}
         onSetInput={() => undefined}
         onApply={() => undefined}
         onCancel={() => undefined}
@@ -81,10 +83,12 @@ describe('dialog accessibility semantics', () => {
         editor={editor}
         title="General Notes"
         maxNotes={15}
+        scope="global"
         setDialogRef={() => undefined}
         onTitlePointerDown={() => undefined}
         onTitlePointerMove={() => undefined}
         onTitlePointerUp={() => undefined}
+        onSetScope={() => undefined}
         onSetInput={() => undefined}
         onMoveRow={() => undefined}
         onRemoveRow={() => undefined}

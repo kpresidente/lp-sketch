@@ -35,7 +35,7 @@ const legendUi: LegendUiMetrics = {
 describe('overlay branch rendering', () => {
   it('renders selected and unselected arrow overlays', () => {
     const project = createDefaultProject('Arrow Overlay')
-    project.view = { zoom: 1, pan: { x: 0, y: 0 } }
+    project.view = { currentPage: 1, zoom: 1, pan: { x: 0, y: 0 }, byPage: { 1: { zoom: 1, pan: { x: 0, y: 0 } } } }
     project.elements.arrows.push({
       id: 'arrow-1',
       tail: { x: 10, y: 20 },
@@ -70,7 +70,7 @@ describe('overlay branch rendering', () => {
 
   it('renders selection highlight when a line is multi-selected', () => {
     const project = createDefaultProject('Multi Select Line Overlay')
-    project.view = { zoom: 1, pan: { x: 0, y: 0 } }
+    project.view = { currentPage: 1, zoom: 1, pan: { x: 0, y: 0 }, byPage: { 1: { zoom: 1, pan: { x: 0, y: 0 } } } }
     project.elements.lines.push({
       id: 'line-1',
       start: { x: 20, y: 30 },
@@ -95,7 +95,7 @@ describe('overlay branch rendering', () => {
 
   it('renders dimension linework when enabled on a dimension text element', () => {
     const project = createDefaultProject('Dimension Linework Overlay')
-    project.view = { zoom: 1, pan: { x: 0, y: 0 } }
+    project.view = { currentPage: 1, zoom: 1, pan: { x: 0, y: 0 }, byPage: { 1: { zoom: 1, pan: { x: 0, y: 0 } } } }
     project.elements.dimensionTexts.push({
       id: 'dimension-text-1',
       start: { x: 80, y: 120 },
@@ -126,7 +126,7 @@ describe('overlay branch rendering', () => {
 
   it('renders mark selection highlight when a mark is selected', () => {
     const project = createDefaultProject('Mark Overlay')
-    project.view = { zoom: 1, pan: { x: 0, y: 0 } }
+    project.view = { currentPage: 1, zoom: 1, pan: { x: 0, y: 0 }, byPage: { 1: { zoom: 1, pan: { x: 0, y: 0 } } } }
     project.construction.marks.push({
       id: 'mark-1',
       position: { x: 42, y: 58 },
@@ -156,7 +156,7 @@ describe('overlay branch rendering', () => {
 
   it('renders downlead footage text as black annotation text near the symbol', () => {
     const project = createDefaultProject('Downlead Label Overlay')
-    project.view = { zoom: 1, pan: { x: 0, y: 0 } }
+    project.view = { currentPage: 1, zoom: 1, pan: { x: 0, y: 0 }, byPage: { 1: { zoom: 1, pan: { x: 0, y: 0 } } } }
     project.elements.symbols.push({
       id: 'downlead-1',
       symbolType: 'conduit_downlead_ground',
@@ -188,7 +188,7 @@ describe('overlay branch rendering', () => {
 
   it('keeps construction mark sizing stable when annotation scale changes', () => {
     const project = createDefaultProject('Mark Overlay Size')
-    project.view = { zoom: 1, pan: { x: 0, y: 0 } }
+    project.view = { currentPage: 1, zoom: 1, pan: { x: 0, y: 0 }, byPage: { 1: { zoom: 1, pan: { x: 0, y: 0 } } } }
     project.construction.marks.push({
       id: 'mark-1',
       position: { x: 42, y: 58 },
@@ -215,7 +215,7 @@ describe('overlay branch rendering', () => {
 
   it('renders legend fallback and symbol-specific per-class entries', () => {
     const project = createDefaultProject('Legend Overlay')
-    project.view = { zoom: 1, pan: { x: 0, y: 0 } }
+    project.view = { currentPage: 1, zoom: 1, pan: { x: 0, y: 0 }, byPage: { 1: { zoom: 1, pan: { x: 0, y: 0 } } } }
     project.legend.placements.push({
       id: 'legend-1',
       position: { x: 20, y: 24 },
@@ -665,7 +665,7 @@ describe('overlay branch rendering', () => {
 
   it('renders inside and outside auto-spacing corners in path previews', () => {
     const project = createDefaultProject('Path Overlay')
-    project.view = { zoom: 2, pan: { x: 10, y: 20 } }
+    project.view = { currentPage: 1, zoom: 2, pan: { x: 10, y: 20 }, byPage: { 1: { zoom: 2, pan: { x: 10, y: 20 } } } }
 
     const measurePathPreview: Point[] = [{ x: 10, y: 10 }, { x: 20, y: 20 }]
     const markPathPreview: Point[] = [{ x: 30, y: 30 }, { x: 40, y: 40 }]

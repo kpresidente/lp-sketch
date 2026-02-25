@@ -102,6 +102,7 @@ export function handlePlacementPointerDown(
         id: context.createElementId('line'),
         start,
         end: resolvedPoint,
+        page: draft.view.currentPage,
         color: draft.settings.activeColor,
         class: draft.settings.activeClass,
       })
@@ -158,6 +159,7 @@ export function handlePlacementPointerDown(
         start,
         end,
         position: resolvedPoint,
+        page: draft.view.currentPage,
         showLinework: context.dimensionShowLinework(),
         layer: 'annotation',
       })
@@ -211,6 +213,7 @@ export function handlePlacementPointerDown(
         start,
         end,
         through: resolvedPoint,
+        page: draft.view.currentPage,
         color: draft.settings.activeColor,
         class: draft.settings.activeClass,
       })
@@ -260,6 +263,7 @@ export function handlePlacementPointerDown(
         start,
         end: resolvedPoint,
         through: control,
+        page: draft.view.currentPage,
         color: draft.settings.activeColor,
         class: draft.settings.activeClass,
       })
@@ -311,6 +315,7 @@ export function handlePlacementPointerDown(
           id: context.createElementId('symbol'),
           symbolType,
           position: directionStart,
+          page: draft.view.currentPage,
           directionDeg: direction,
           verticalFootageFt,
           letter,
@@ -335,6 +340,7 @@ export function handlePlacementPointerDown(
         id: context.createElementId('symbol'),
         symbolType,
         position: resolvedPoint,
+        page: draft.view.currentPage,
         verticalFootageFt,
         letter,
         color: colorForSymbol(symbolType, draft.settings.activeColor),
@@ -355,6 +361,7 @@ export function handlePlacementPointerDown(
       draft.legend.placements.push({
         id: placementId,
         position: resolvedPoint,
+        page: draft.view.currentPage,
         editedLabels: {},
       })
     })
@@ -370,6 +377,7 @@ export function handlePlacementPointerDown(
       draft.generalNotes.placements.push({
         id: placementId,
         position: resolvedPoint,
+        page: draft.view.currentPage,
       })
     })
 
@@ -390,6 +398,7 @@ export function handlePlacementPointerDown(
         id: context.createElementId('text'),
         position: resolvedPoint,
         text: nextText,
+        page: draft.view.currentPage,
         color: draft.settings.activeColor,
         layer: 'annotation',
       })
@@ -418,6 +427,7 @@ export function handlePlacementPointerDown(
         id: context.createElementId('arrow'),
         tail: start,
         head: resolvedPoint,
+        page: draft.view.currentPage,
         color: draft.settings.activeColor,
         layer: 'annotation',
       })
@@ -463,11 +473,19 @@ export function handlePlacementPointerDown(
     }
 
     context.commitProjectChange((draft) => {
-      draft.scale = {
+      const currentPage = draft.view.currentPage
+      const nextScale = {
         isSet: true,
-        method: 'calibrated',
+        method: 'calibrated' as const,
         realUnitsPerPoint: realUnitsPerPointFromCalibrationSpan(pointDistance, realDistance),
-        displayUnits: 'ft-in',
+        displayUnits: 'ft-in' as const,
+      }
+      draft.scale = {
+        ...nextScale,
+        byPage: {
+          ...draft.scale.byPage,
+          [currentPage]: nextScale,
+        },
       }
     })
 

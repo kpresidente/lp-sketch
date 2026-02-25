@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createDefaultProject } from '../model/defaultProject'
-import { filterProjectByVisibleLayers, symbolLayer } from './layers'
+import { filterProjectByCurrentPage, filterProjectByVisibleLayers, symbolLayer } from './layers'
 
 describe('layers helpers', () => {
   it('maps symbol families to expected automatic layers', () => {
@@ -88,5 +88,64 @@ describe('layers helpers', () => {
     const project = createDefaultProject('Layer Fast Path')
     const filtered = filterProjectByVisibleLayers(project)
     expect(filtered).toBe(project)
+  })
+
+  it('filters annotation and component working sets to the current page', () => {
+    const project = createDefaultProject('Page Filtering')
+    project.elements.lines.push(
+      {
+        id: 'line-page-1',
+        start: { x: 0, y: 0 },
+        end: { x: 10, y: 0 },
+        page: 1,
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'line-page-2',
+        start: { x: 20, y: 0 },
+        end: { x: 30, y: 0 },
+        page: 2,
+        color: 'green',
+        class: 'class1',
+      },
+    )
+    project.elements.symbols.push(
+      {
+        id: 'symbol-page-1',
+        symbolType: 'air_terminal',
+        position: { x: 5, y: 5 },
+        page: 1,
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'symbol-page-2',
+        symbolType: 'air_terminal',
+        position: { x: 25, y: 5 },
+        page: 2,
+        color: 'green',
+        class: 'class1',
+      },
+    )
+    project.construction.marks.push(
+      { id: 'mark-page-1', position: { x: 3, y: 3 }, page: 1 },
+      { id: 'mark-page-2', position: { x: 23, y: 3 }, page: 2 },
+    )
+    project.legend.placements.push(
+      { id: 'legend-page-1', position: { x: 6, y: 6 }, page: 1, editedLabels: {} },
+      { id: 'legend-page-2', position: { x: 26, y: 6 }, page: 2, editedLabels: {} },
+    )
+    project.generalNotes.placements.push(
+      { id: 'notes-page-1', position: { x: 7, y: 7 }, page: 1 },
+      { id: 'notes-page-2', position: { x: 27, y: 7 }, page: 2 },
+    )
+
+    const filtered = filterProjectByCurrentPage(project, 2)
+    expect(filtered.elements.lines.map((entry) => entry.id)).toEqual(['line-page-2'])
+    expect(filtered.elements.symbols.map((entry) => entry.id)).toEqual(['symbol-page-2'])
+    expect(filtered.construction.marks.map((entry) => entry.id)).toEqual(['mark-page-2'])
+    expect(filtered.legend.placements.map((entry) => entry.id)).toEqual(['legend-page-2'])
+    expect(filtered.generalNotes.placements.map((entry) => entry.id)).toEqual(['notes-page-2'])
   })
 })

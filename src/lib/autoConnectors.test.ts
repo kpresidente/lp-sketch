@@ -94,6 +94,31 @@ describe('auto connector classifier', () => {
     expect(nodes.some((entry) => Math.abs(entry.position.x - 50) < 1 && Math.abs(entry.position.y - 20) < 1)).toBe(true)
   })
 
+  it('does not infer connectors across different pages', () => {
+    const project = createDefaultProject('Page-local connectors')
+    project.elements.lines.push(
+      {
+        id: 'line-page-1',
+        start: { x: 0, y: 50 },
+        end: { x: 100, y: 50 },
+        page: 1,
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'line-page-2',
+        start: { x: 50, y: 0 },
+        end: { x: 50, y: 100 },
+        page: 2,
+        color: 'green',
+        class: 'class1',
+      },
+    )
+
+    const nodes = computeAutoConnectorNodes(project)
+    expect(nodes).toEqual([])
+  })
+
   it('resolves bimetallic material and class-II precedence deterministically', () => {
     const project = createDefaultProject('Resolution rules')
     project.elements.lines.push(
@@ -148,6 +173,7 @@ describe('auto connector classifier', () => {
     const autoSymbols = buildAutoConnectorSymbols(project)
     expect(autoSymbols).toHaveLength(1)
     expect(autoSymbols[0].autoConnector).toBe(true)
+    expect(autoSymbols[0].page).toBe(1)
     expect(autoSymbols[0].class).toBe('class1')
     expect(autoSymbols[0].symbolType).toBe('cable_to_cable_connection')
 

@@ -46,6 +46,10 @@ export interface AppSidebarProps {
   colorOptions: MaterialColor[]
   colorHex: Record<MaterialColor, string>
   pdfBrightness: number
+  currentPage: number
+  pageCount: number
+  canGoToPreviousPage: boolean
+  canGoToNextPage: boolean
   manualScaleInchesInput: string
   manualScaleFeetInput: string
   measureTargetDistanceInput: string
@@ -94,6 +98,8 @@ export interface AppSidebarProps {
   onSetDesignScale: (value: DesignScale) => void
   onPreviewPdfBrightness: (value: number) => void
   onCommitPdfBrightness: (value: number) => void
+  onGoToPreviousPage: () => void
+  onGoToNextPage: () => void
   onSetSnapEnabled: (value: boolean) => void
   onSetAutoConnectorsEnabled: (value: boolean) => void
   onSetAutoConnectorType: (value: AutoConnectorType) => void

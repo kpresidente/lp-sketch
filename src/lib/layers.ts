@@ -36,6 +36,40 @@ export function isSymbolVisible(project: Pick<LpProject, 'layers'>, symbolType: 
   return isLayerVisible(project, symbolLayer(symbolType))
 }
 
+function isOnPage(entry: { page?: number }, page: number): boolean {
+  return (entry.page ?? 1) === page
+}
+
+export function filterProjectByCurrentPage(project: LpProject, currentPage: number): LpProject {
+  const safePage = Number.isFinite(currentPage) ? Math.max(1, Math.trunc(currentPage)) : 1
+
+  return {
+    ...project,
+    elements: {
+      ...project.elements,
+      lines: project.elements.lines.filter((entry) => isOnPage(entry, safePage)),
+      arcs: project.elements.arcs.filter((entry) => isOnPage(entry, safePage)),
+      curves: project.elements.curves.filter((entry) => isOnPage(entry, safePage)),
+      symbols: project.elements.symbols.filter((entry) => isOnPage(entry, safePage)),
+      texts: project.elements.texts.filter((entry) => isOnPage(entry, safePage)),
+      arrows: project.elements.arrows.filter((entry) => isOnPage(entry, safePage)),
+      dimensionTexts: project.elements.dimensionTexts.filter((entry) => isOnPage(entry, safePage)),
+    },
+    construction: {
+      ...project.construction,
+      marks: project.construction.marks.filter((entry) => isOnPage(entry, safePage)),
+    },
+    legend: {
+      ...project.legend,
+      placements: project.legend.placements.filter((entry) => isOnPage(entry, safePage)),
+    },
+    generalNotes: {
+      ...project.generalNotes,
+      placements: project.generalNotes.placements.filter((entry) => isOnPage(entry, safePage)),
+    },
+  }
+}
+
 export function filterProjectByVisibleLayers(project: LpProject): LpProject {
   const rooftopVisible = project.layers.rooftop
   const downleadsVisible = project.layers.downleads

@@ -10,6 +10,14 @@ describe('legend display entries', () => {
       method: 'manual',
       realUnitsPerPoint: 0.5,
       displayUnits: 'ft-in',
+      byPage: {
+        1: {
+          isSet: true,
+          method: 'manual',
+          realUnitsPerPoint: 0.5,
+          displayUnits: 'ft-in',
+        },
+      },
     }
 
     project.elements.lines.push({
@@ -72,6 +80,14 @@ describe('legend display entries', () => {
       method: null,
       realUnitsPerPoint: null,
       displayUnits: null,
+      byPage: {
+        1: {
+          isSet: false,
+          method: null,
+          realUnitsPerPoint: null,
+          displayUnits: null,
+        },
+      },
     }
     project.elements.lines.push({
       id: 'line-1',
@@ -114,5 +130,68 @@ describe('legend display entries', () => {
     const entries = buildLegendDisplayEntries(project, placement, project.legend.items)
     expect(entries).toHaveLength(1)
     expect(entries[0].label).toBe('Class II Copper Air terminal A Roof Edge')
+  })
+
+  it('switches legend counts between global and page scope', () => {
+    const project = createDefaultProject('Legend Scope')
+    project.scale = {
+      isSet: true,
+      method: 'manual',
+      realUnitsPerPoint: 1,
+      displayUnits: 'ft-in',
+      byPage: {
+        1: {
+          isSet: true,
+          method: 'manual',
+          realUnitsPerPoint: 1,
+          displayUnits: 'ft-in',
+        },
+        2: {
+          isSet: true,
+          method: 'manual',
+          realUnitsPerPoint: 1,
+          displayUnits: 'ft-in',
+        },
+      },
+    }
+    project.pdf.pageCount = 2
+    project.pdf.pages = [
+      { page: 1, widthPt: 1000, heightPt: 800 },
+      { page: 2, widthPt: 1000, heightPt: 800 },
+    ]
+
+    project.elements.lines.push(
+      {
+        id: 'line-page-1',
+        start: { x: 0, y: 0 },
+        end: { x: 50, y: 0 },
+        page: 1,
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'line-page-2',
+        start: { x: 0, y: 0 },
+        end: { x: 30, y: 0 },
+        page: 2,
+        color: 'green',
+        class: 'class1',
+      },
+    )
+
+    const placement = {
+      id: 'legend-1',
+      position: { x: 20, y: 20 },
+      page: 1,
+      editedLabels: {},
+    }
+
+    project.settings.legendDataScope = 'global'
+    const globalEntries = buildLegendDisplayEntries(project, placement, project.legend.items)
+    expect(globalEntries[0].countLabel).toBe('80 ft')
+
+    project.settings.legendDataScope = 'page'
+    const pageEntries = buildLegendDisplayEntries(project, placement, project.legend.items)
+    expect(pageEntries[0].countLabel).toBe('50 ft')
   })
 })

@@ -30,6 +30,7 @@ interface LineConductor {
   id: string
   start: Point
   end: Point
+  page: number
   bounds: Bounds
   color: MaterialColor
   class: WireClass
@@ -41,6 +42,7 @@ interface ArcConductor {
   start: Point
   through: Point
   end: Point
+  page: number
   polyline: Point[]
   bounds: Bounds
   color: MaterialColor
@@ -53,6 +55,7 @@ export interface AutoConnectorNode {
   position: Point
   color: MaterialColor
   connectorClass: WireClass
+  page: number
 }
 
 function clusterPoints(points: Point[], epsilon: number): Point[] {
@@ -160,6 +163,7 @@ function inScopeArcs(project: LpProject): ArcConductor[] {
       start: arc.start,
       through: arc.through,
       end: arc.end,
+      page: arc.page ?? 1,
       polyline,
       bounds: boundsForPolyline(polyline),
       color: arc.color,
@@ -290,47 +294,66 @@ export function computeAutoConnectorNodes(project: LpProject): AutoConnectorNode
     id: line.id,
     start: line.start,
     end: line.end,
+    page: line.page ?? 1,
     bounds: boundsForSegment(line.start, line.end),
     color: line.color,
     class: line.class,
   }))
-  const conductors: Conductor[] = [...lineConductors, ...arcs]
-  const candidates = [
-    ...endpointCandidates(conductors),
-    ...lineLineIntersections(lineConductors),
-    ...lineArcIntersections(lineConductors, arcs),
-  ]
-  const nodes = clusterPoints(candidates, NODE_CLUSTER_EPSILON_PT)
   const connectors: AutoConnectorNode[] = []
+  const conductorsByPage = new Map<number, Conductor[]>()
+  for (const conductor of [...lineConductors, ...arcs]) {
+    const page = conductor.page
+    const existing = conductorsByPage.get(page)
+    if (existing) {
+      existing.push(conductor)
+    } else {
+      conductorsByPage.set(page, [conductor])
+    }
+  }
 
-  for (const node of nodes) {
-    let branchCount = 0
-    const classes = new Set<WireClass>()
-    const colors = new Set<MaterialColor>()
+  for (const [page, conductors] of conductorsByPage.entries()) {
+    const pageLines = conductors.filter((conductor): conductor is LineConductor => conductor.kind === 'line')
+    const pageArcs = conductors.filter((conductor): conductor is ArcConductor => conductor.kind === 'arc')
+    const candidates = [
+      ...endpointCandidates(conductors),
+      ...lineLineIntersections(pageLines),
+      ...lineArcIntersections(pageLines, pageArcs),
+    ]
+    const nodes = clusterPoints(candidates, NODE_CLUSTER_EPSILON_PT)
 
-    for (const conductor of conductors) {
-      const contribution = conductorBranchContribution(conductor, node)
-      if (contribution <= 0) {
+    for (const node of nodes) {
+      let branchCount = 0
+      const classes = new Set<WireClass>()
+      const colors = new Set<MaterialColor>()
+
+      for (const conductor of conductors) {
+        const contribution = conductorBranchContribution(conductor, node)
+        if (contribution <= 0) {
+          continue
+        }
+
+        branchCount += contribution
+        classes.add(conductor.class)
+        colors.add(conductor.color)
+      }
+
+      if (branchCount < 3 || colors.size === 0 || classes.size === 0) {
         continue
       }
 
-      branchCount += contribution
-      classes.add(conductor.class)
-      colors.add(conductor.color)
+      connectors.push({
+        position: node,
+        color: resolveConnectorMaterial(colors),
+        connectorClass: resolveConnectorClass(classes),
+        page,
+      })
     }
-
-    if (branchCount < 3 || colors.size === 0 || classes.size === 0) {
-      continue
-    }
-
-    connectors.push({
-      position: node,
-      color: resolveConnectorMaterial(colors),
-      connectorClass: resolveConnectorClass(classes),
-    })
   }
 
   connectors.sort((a, b) => {
+    if (a.page !== b.page) {
+      return a.page - b.page
+    }
     if (Math.abs(a.position.y - b.position.y) > 1e-6) {
       return a.position.y - b.position.y
     }
@@ -349,10 +372,10 @@ function autoConnectorSymbolType(connectorType: AutoConnectorType): SymbolElemen
     : 'cable_to_cable_connection'
 }
 
-function autoConnectorId(position: Point, color: MaterialColor): string {
+function autoConnectorId(position: Point, color: MaterialColor, page: number): string {
   const x = Math.round(position.x * 10)
   const y = Math.round(position.y * 10)
-  return `auto-connector-${x}-${y}-${color}`
+  return `auto-connector-p${page}-${x}-${y}-${color}`
 }
 
 export function buildAutoConnectorSymbols(
@@ -362,9 +385,10 @@ export function buildAutoConnectorSymbols(
   const nodes = computeAutoConnectorNodes(project)
 
   return nodes.map((node) => ({
-    id: autoConnectorId(node.position, node.color),
+    id: autoConnectorId(node.position, node.color, node.page),
     symbolType: autoConnectorSymbolType(connectorType),
     position: node.position,
+    page: node.page,
     color: node.color,
     class: node.connectorClass,
     autoConnector: true,

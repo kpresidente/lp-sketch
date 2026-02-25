@@ -28,6 +28,7 @@ export type SymbolType =
   | 'cable_to_cable_connection'
 
 export type ScaleDisplayUnits = 'ft-in' | 'decimal-ft' | 'm'
+export type DataScope = 'page' | 'global'
 
 export interface Point {
   x: number
@@ -41,11 +42,19 @@ export interface ProjectMeta {
   updatedAt: string
 }
 
+export interface PdfPageInfo {
+  page: number
+  widthPt: number
+  heightPt: number
+}
+
 export interface PdfState {
   sourceType: 'embedded' | 'referenced'
   name: string
   sha256: string
-  page: 1
+  page: number
+  pageCount: number
+  pages: PdfPageInfo[]
   widthPt: number
   heightPt: number
   dataBase64: string | null
@@ -57,6 +66,12 @@ export interface ScaleState {
   method: 'manual' | 'calibrated' | null
   realUnitsPerPoint: number | null
   displayUnits: ScaleDisplayUnits | null
+  byPage: Record<number, {
+    isSet: boolean
+    method: 'manual' | 'calibrated' | null
+    realUnitsPerPoint: number | null
+    displayUnits: ScaleDisplayUnits | null
+  }>
 }
 
 export interface SettingsState {
@@ -64,6 +79,9 @@ export interface SettingsState {
   activeClass: WireClass
   designScale: DesignScale
   pdfBrightness: number
+  pdfBrightnessByPage: Record<number, number>
+  legendDataScope: DataScope
+  notesDataScope: DataScope
   snapEnabled: boolean
   autoConnectorsEnabled: boolean
   autoConnectorType: AutoConnectorType
@@ -72,14 +90,20 @@ export interface SettingsState {
 }
 
 export interface ViewState {
+  currentPage: number
   zoom: number
   pan: Point
+  byPage: Record<number, {
+    zoom: number
+    pan: Point
+  }>
 }
 
 export interface LineElement {
   id: string
   start: Point
   end: Point
+  page?: number
   color: MaterialColor
   class: WireClass
 }
@@ -89,6 +113,7 @@ export interface ArcElement {
   start: Point
   end: Point
   through: Point
+  page?: number
   color: MaterialColor
   class: WireClass
 }
@@ -98,6 +123,7 @@ export interface CurveElement {
   start: Point
   end: Point
   through: Point
+  page?: number
   color: MaterialColor
   class: WireClass
 }
@@ -106,6 +132,7 @@ export interface SymbolElement {
   id: string
   symbolType: SymbolType
   position: Point
+  page?: number
   directionDeg?: number
   verticalFootageFt?: number
   letter?: string
@@ -122,6 +149,7 @@ export interface TextElement {
   id: string
   position: Point
   text: string
+  page?: number
   color: MaterialColor
   layer: LayerId
 }
@@ -130,6 +158,7 @@ export interface ArrowElement {
   id: string
   tail: Point
   head: Point
+  page?: number
   color: MaterialColor
   layer: LayerId
 }
@@ -139,6 +168,7 @@ export interface DimensionTextElement {
   start: Point
   end: Point
   position: Point
+  page?: number
   overrideText?: string
   showLinework?: boolean
   layer: LayerId
@@ -147,6 +177,7 @@ export interface DimensionTextElement {
 export interface MarkElement {
   id: string
   position: Point
+  page?: number
 }
 
 export interface LegendItem {
@@ -161,12 +192,14 @@ export interface LegendItem {
 export interface LegendPlacement {
   id: string
   position: Point
+  page?: number
   editedLabels: Record<string, string>
 }
 
 export interface GeneralNotePlacement {
   id: string
   position: Point
+  page?: number
 }
 
 export interface LpProject {
@@ -197,6 +230,7 @@ export interface LpProject {
   }
   generalNotes: {
     notes: string[]
+    notesByPage: Record<number, string[]>
     placements: GeneralNotePlacement[]
   }
 }

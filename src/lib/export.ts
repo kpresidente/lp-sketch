@@ -28,7 +28,7 @@ import { buildLegendItemsFromSymbols } from './legend'
 import { legendSymbolScale } from './legendSymbolScale'
 import { buildLegendDisplayEntries, type LegendDisplayEntry } from './legendDisplay'
 import { GENERAL_NOTES_TITLE, generalNotesBoxSize, generalNotesDisplayLines, scaledGeneralNotesMetrics } from './generalNotes'
-import { filterProjectByVisibleLayers } from './layers'
+import { filterProjectByCurrentPage, filterProjectByVisibleLayers } from './layers'
 import { groundRodClassLabel, hasBothGroundRodClasses, resolvedSymbolClass } from './symbolClass'
 
 const LEGEND_TITLE = 'Legend'
@@ -42,6 +42,26 @@ interface RenderCanvasOptions {
   includeMarks?: boolean
   pixelRatio?: number
   backgroundCanvas?: HTMLCanvasElement | null
+}
+
+function normalizedCurrentPage(project: LpProject): number {
+  const candidate = Number.isFinite(project.view.currentPage)
+    ? project.view.currentPage
+    : project.pdf.page
+  if (!Number.isFinite(candidate)) {
+    return 1
+  }
+
+  return Math.max(1, Math.trunc(candidate))
+}
+
+function activePdfDimensions(project: LpProject): { widthPt: number; heightPt: number } {
+  const width = Number.isFinite(project.pdf.widthPt) ? project.pdf.widthPt : 1
+  const height = Number.isFinite(project.pdf.heightPt) ? project.pdf.heightPt : 1
+  return {
+    widthPt: Math.max(1, Math.round(width)),
+    heightPt: Math.max(1, Math.round(height)),
+  }
 }
 
 function normalizedPdfBrightness(project: LpProject): number {
@@ -877,10 +897,11 @@ export async function renderProjectCanvas(
   project: LpProject,
   options: RenderCanvasOptions,
 ): Promise<HTMLCanvasElement> {
-  const visibleProject = filterProjectByVisibleLayers(project)
+  const currentPage = normalizedCurrentPage(project)
+  const pageScopedProject = filterProjectByCurrentPage(project, currentPage)
+  const visibleProject = filterProjectByVisibleLayers(pageScopedProject)
   const pdfBrightness = normalizedPdfBrightness(visibleProject)
-  const widthPt = Math.max(1, Math.round(visibleProject.pdf.widthPt))
-  const heightPt = Math.max(1, Math.round(visibleProject.pdf.heightPt))
+  const { widthPt, heightPt } = activePdfDimensions(visibleProject)
   const pixelRatio = options.pixelRatio ?? 2
 
   const canvas = document.createElement('canvas')
@@ -938,6 +959,8 @@ export async function exportProjectPdf(
   const visibleProject = filterProjectByVisibleLayers(project)
   const pdfBrightness = normalizedPdfBrightness(visibleProject)
   const hasSourcePdf = Boolean(visibleProject.pdf.dataBase64)
+  const currentPage = normalizedCurrentPage(visibleProject)
+  const { widthPt: activeWidthPt, heightPt: activeHeightPt } = activePdfDimensions(visibleProject)
 
   let pdfDocument: PDFDocument
 
@@ -972,7 +995,10 @@ export async function exportProjectPdf(
   if (hasSourcePdf) {
     const sourcePdfDocument = await PDFDocument.load(base64ToUint8(visibleProject.pdf.dataBase64 ?? ''))
     const sourcePages = sourcePdfDocument.getPages()
-    const sourcePage = sourcePages.length > 0 ? sourcePdfDocument.getPage(0) : null
+    const sourcePageIndex = sourcePages.length > 0
+      ? Math.max(0, Math.min(sourcePages.length - 1, currentPage - 1))
+      : 0
+    const sourcePage = sourcePages.length > 0 ? sourcePdfDocument.getPage(sourcePageIndex) : null
     const canUseRasterFallback = !!backgroundCanvas && sourcePage && pageHasGeometryMismatch(sourcePage)
 
     if (canUseRasterFallback) {
@@ -986,7 +1012,7 @@ export async function exportProjectPdf(
       const compositedBytes = new Uint8Array(await compositedBlob.arrayBuffer())
 
       const flattenedPdf = await PDFDocument.create()
-      const flattenedPage = flattenedPdf.addPage([visibleProject.pdf.widthPt, visibleProject.pdf.heightPt])
+      const flattenedPage = flattenedPdf.addPage([activeWidthPt, activeHeightPt])
       const compositedImage = await flattenedPdf.embedPng(compositedBytes)
 
       flattenedPage.drawImage(compositedImage, {
@@ -1003,10 +1029,16 @@ export async function exportProjectPdf(
       return
     }
 
-    pdfDocument = sourcePdfDocument
+    pdfDocument = await PDFDocument.create()
+    if (sourcePage) {
+      const [copiedPage] = await pdfDocument.copyPages(sourcePdfDocument, [sourcePageIndex])
+      pdfDocument.addPage(copiedPage)
+    } else {
+      pdfDocument.addPage([activeWidthPt, activeHeightPt])
+    }
   } else {
     pdfDocument = await PDFDocument.create()
-    pdfDocument.addPage([visibleProject.pdf.widthPt, visibleProject.pdf.heightPt])
+    pdfDocument.addPage([activeWidthPt, activeHeightPt])
   }
 
   const overlayCanvas = await renderProjectCanvas(visibleProject, {

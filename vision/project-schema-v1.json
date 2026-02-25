@@ -80,6 +80,13 @@
         "none"
       ]
     },
+    "dataScope": {
+      "type": "string",
+      "enum": [
+        "page",
+        "global"
+      ]
+    },
     "symbolType": {
       "type": "string",
       "enum": [
@@ -113,6 +120,29 @@
         },
         "y": {
           "type": "number"
+        }
+      }
+    },
+    "pdfPageInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page",
+        "widthPt",
+        "heightPt"
+      ],
+      "properties": {
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "widthPt": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "heightPt": {
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       }
     },
@@ -152,6 +182,8 @@
         "name",
         "sha256",
         "page",
+        "pageCount",
+        "pages",
         "widthPt",
         "heightPt",
         "dataBase64",
@@ -175,7 +207,18 @@
         },
         "page": {
           "type": "integer",
-          "const": 1
+          "minimum": 1
+        },
+        "pageCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/pdfPageInfo"
+          }
         },
         "widthPt": {
           "type": "number",
@@ -248,7 +291,8 @@
         "isSet",
         "method",
         "realUnitsPerPoint",
-        "displayUnits"
+        "displayUnits",
+        "byPage"
       ],
       "properties": {
         "isSet": {
@@ -282,6 +326,56 @@
             "m",
             null
           ]
+        },
+        "byPage": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "isSet",
+              "method",
+              "realUnitsPerPoint",
+              "displayUnits"
+            ],
+            "properties": {
+              "isSet": {
+                "type": "boolean"
+              },
+              "method": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "manual",
+                  "calibrated",
+                  null
+                ]
+              },
+              "realUnitsPerPoint": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "displayUnits": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "ft-in",
+                  "decimal-ft",
+                  "m",
+                  null
+                ]
+              }
+            }
+          }
         }
       },
       "allOf": [
@@ -349,6 +443,9 @@
         "activeClass",
         "designScale",
         "pdfBrightness",
+        "pdfBrightnessByPage",
+        "legendDataScope",
+        "notesDataScope",
         "snapEnabled",
         "autoConnectorsEnabled",
         "autoConnectorType",
@@ -374,6 +471,23 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "pdfBrightnessByPage": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "legendDataScope": {
+          "$ref": "#/$defs/dataScope"
+        },
+        "notesDataScope": {
+          "$ref": "#/$defs/dataScope"
         },
         "snapEnabled": {
           "type": "boolean"
@@ -401,10 +515,16 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "currentPage",
         "zoom",
-        "pan"
+        "pan",
+        "byPage"
       ],
       "properties": {
+        "currentPage": {
+          "type": "integer",
+          "minimum": 1
+        },
         "zoom": {
           "type": "number",
           "minimum": 0.25,
@@ -412,6 +532,30 @@
         },
         "pan": {
           "$ref": "#/$defs/point"
+        },
+        "byPage": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "zoom",
+              "pan"
+            ],
+            "properties": {
+              "zoom": {
+                "type": "number",
+                "minimum": 0.25,
+                "maximum": 8
+              },
+              "pan": {
+                "$ref": "#/$defs/point"
+              }
+            }
+          }
         }
       }
     },
@@ -460,6 +604,10 @@
         "end": {
           "$ref": "#/$defs/point"
         },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
         "color": {
           "$ref": "#/$defs/materialColor"
         },
@@ -493,6 +641,10 @@
         "through": {
           "$ref": "#/$defs/point"
         },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
         "color": {
           "$ref": "#/$defs/materialColor"
         },
@@ -521,6 +673,10 @@
         },
         "position": {
           "$ref": "#/$defs/point"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
         },
         "directionDeg": {
           "type": "number",
@@ -733,6 +889,10 @@
         "position": {
           "$ref": "#/$defs/point"
         },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
         "text": {
           "type": "string"
         },
@@ -771,6 +931,10 @@
         "head": {
           "$ref": "#/$defs/point"
         },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
         "color": {
           "$ref": "#/$defs/materialColor"
         },
@@ -808,6 +972,10 @@
         },
         "position": {
           "$ref": "#/$defs/point"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
         },
         "overrideText": {
           "type": "string",
@@ -900,6 +1068,10 @@
         },
         "position": {
           "$ref": "#/$defs/point"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     },
@@ -967,6 +1139,10 @@
         "position": {
           "$ref": "#/$defs/point"
         },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
         "editedLabels": {
           "type": "object",
           "additionalProperties": {
@@ -1020,6 +1196,10 @@
         },
         "position": {
           "$ref": "#/$defs/point"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     },
@@ -1028,6 +1208,7 @@
       "additionalProperties": false,
       "required": [
         "notes",
+        "notesByPage",
         "placements"
       ],
       "properties": {
@@ -1038,6 +1219,21 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 120
+          }
+        },
+        "notesByPage": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "maxItems": 15,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
           }
         },
         "placements": {

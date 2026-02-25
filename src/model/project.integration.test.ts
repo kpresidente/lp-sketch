@@ -21,6 +21,8 @@ function createSchemaValidProject(name = 'Integration Test Project'): LpProject 
     name: 'plan.pdf',
     sha256: 'a'.repeat(64),
     page: 1,
+    pageCount: 1,
+    pages: [{ page: 1, widthPt: 1000, heightPt: 800 }],
     widthPt: 1000,
     heightPt: 800,
     dataBase64: 'QQ==',
@@ -32,6 +34,14 @@ function createSchemaValidProject(name = 'Integration Test Project'): LpProject 
     method: 'manual',
     realUnitsPerPoint: 0.25,
     displayUnits: 'ft-in',
+    byPage: {
+      1: {
+        isSet: true,
+        method: 'manual',
+        realUnitsPerPoint: 0.25,
+        displayUnits: 'ft-in',
+      },
+    },
   }
 
   return project

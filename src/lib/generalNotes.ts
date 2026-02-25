@@ -1,4 +1,5 @@
 import { approximateTextWidthForScale } from './annotationScale'
+import type { LpProject } from '../types/project'
 
 export const GENERAL_NOTES_TITLE = 'General Notes'
 export const MAX_GENERAL_NOTES_COUNT = 15
@@ -43,6 +44,15 @@ export function normalizeGeneralNotesList(notes: readonly string[]): string[] {
   }
 
   return normalized
+}
+
+export function resolvedGeneralNotesForPage(project: LpProject, page: number): string[] {
+  const safePage = Number.isFinite(page) ? Math.max(1, Math.trunc(page)) : 1
+  if (project.settings.notesDataScope === 'page') {
+    return normalizeGeneralNotesList(project.generalNotes.notesByPage[safePage] ?? [])
+  }
+
+  return normalizeGeneralNotesList(project.generalNotes.notes)
 }
 
 export function generalNoteLineText(note: string, index: number): string {

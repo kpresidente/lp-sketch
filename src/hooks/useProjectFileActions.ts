@@ -2,6 +2,7 @@ import { getDocument } from 'pdfjs-dist'
 import type { Accessor, Setter } from 'solid-js'
 import {
   MAX_PDF_IMPORT_BYTES,
+  MAX_PDF_IMPORT_PAGES,
   MAX_PDF_VIEWPORT_PT,
   MAX_PROJECT_ELEMENT_COUNT,
   MAX_PROJECT_LOAD_BYTES,
@@ -27,6 +28,59 @@ interface UseProjectFileActionsOptions {
 }
 
 export function useProjectFileActions(options: UseProjectFileActionsOptions) {
+  function clampPdfBrightness(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 1
+    }
+
+    return Math.max(0, Math.min(1, value))
+  }
+
+  function createDefaultViewByPage(pageCount: number): Record<number, { zoom: number; pan: { x: number; y: number } }> {
+    const byPage: Record<number, { zoom: number; pan: { x: number; y: number } }> = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = { zoom: 1, pan: { x: 24, y: 24 } }
+    }
+    return byPage
+  }
+
+  function createDefaultScaleByPage(pageCount: number): Record<
+    number,
+    {
+      isSet: boolean
+      method: 'manual' | 'calibrated' | null
+      realUnitsPerPoint: number | null
+      displayUnits: 'ft-in' | 'decimal-ft' | 'm' | null
+    }
+  > {
+    const byPage: Record<
+      number,
+      {
+        isSet: boolean
+        method: 'manual' | 'calibrated' | null
+        realUnitsPerPoint: number | null
+        displayUnits: 'ft-in' | 'decimal-ft' | 'm' | null
+      }
+    > = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = {
+        isSet: false,
+        method: null,
+        realUnitsPerPoint: null,
+        displayUnits: null,
+      }
+    }
+    return byPage
+  }
+
+  function createBrightnessByPage(pageCount: number, brightness: number): Record<number, number> {
+    const byPage: Record<number, number> = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = brightness
+    }
+    return byPage
+  }
+
   function mbLimitLabel(bytes: number): string {
     return `${Math.round(bytes / (1024 * 1024))} MB`
   }
@@ -57,32 +111,56 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
       return
     }
 
+    let loadedPdf: Awaited<ReturnType<typeof getDocument>['promise']> | null = null
+
     try {
       const original = new Uint8Array(await file.arrayBuffer())
       const hash = await sha256Hex(original.slice().buffer)
-      const pdf = await getDocument({ data: original.slice() }).promise
+      loadedPdf = await getDocument({ data: original.slice() }).promise
 
-      if (pdf.numPages !== 1) {
-        throw new Error(`Only single-page PDFs are supported. Received ${pdf.numPages} pages.`)
+      if (loadedPdf.numPages > MAX_PDF_IMPORT_PAGES) {
+        options.setError(
+          `This PDF has ${loadedPdf.numPages} pages. The maximum supported is ${MAX_PDF_IMPORT_PAGES}.`,
+        )
+        return
       }
 
-      const page = await pdf.getPage(1)
-      const viewport = page.getViewport({ scale: 1 })
-      if (
-        !Number.isFinite(viewport.width) ||
-        !Number.isFinite(viewport.height) ||
-        viewport.width <= 0 ||
-        viewport.height <= 0 ||
-        viewport.width > MAX_PDF_VIEWPORT_PT ||
-        viewport.height > MAX_PDF_VIEWPORT_PT
-      ) {
-        throw new Error(
-          `PDF page dimensions exceed supported limits (${MAX_PDF_VIEWPORT_PT}pt max width/height).`,
-        )
+      if (loadedPdf.numPages < 1) {
+        throw new Error('PDF has no pages and cannot be imported.')
+      }
+
+      const pages: Array<{ page: number; widthPt: number; heightPt: number }> = []
+      for (let pageNumber = 1; pageNumber <= loadedPdf.numPages; pageNumber += 1) {
+        const page = await loadedPdf.getPage(pageNumber)
+        const viewport = page.getViewport({ scale: 1 })
+        if (
+          !Number.isFinite(viewport.width) ||
+          !Number.isFinite(viewport.height) ||
+          viewport.width <= 0 ||
+          viewport.height <= 0 ||
+          viewport.width > MAX_PDF_VIEWPORT_PT ||
+          viewport.height > MAX_PDF_VIEWPORT_PT
+        ) {
+          throw new Error(
+            `PDF page ${pageNumber} dimensions exceed supported limits (${MAX_PDF_VIEWPORT_PT}pt max width/height).`,
+          )
+        }
+
+        pages.push({
+          page: pageNumber,
+          widthPt: viewport.width,
+          heightPt: viewport.height,
+        })
       }
 
       const base64Data = arrayBufferToBase64(original.buffer)
       const previous = options.project()
+      const firstPage = pages[0]
+      const pageCount = pages.length
+      const defaultBrightness = clampPdfBrightness(previous.settings.pdfBrightness)
+      const viewByPage = createDefaultViewByPage(pageCount)
+      const scaleByPage = createDefaultScaleByPage(pageCount)
+      const brightnessByPage = createBrightnessByPage(pageCount, defaultBrightness)
 
       const nextProject: LpProject = {
         ...cloneProject(previous),
@@ -95,14 +173,30 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
           name: file.name,
           sha256: hash,
           page: 1,
-          widthPt: viewport.width,
-          heightPt: viewport.height,
+          pageCount,
+          pages,
+          widthPt: firstPage.widthPt,
+          heightPt: firstPage.heightPt,
           dataBase64: base64Data,
           path: null,
         },
+        scale: {
+          isSet: false,
+          method: null,
+          realUnitsPerPoint: null,
+          displayUnits: null,
+          byPage: scaleByPage,
+        },
+        settings: {
+          ...previous.settings,
+          pdfBrightness: defaultBrightness,
+          pdfBrightnessByPage: brightnessByPage,
+        },
         view: {
+          currentPage: 1,
           zoom: 1,
           pan: { x: 24, y: 24 },
+          byPage: viewByPage,
         },
       }
 
@@ -112,6 +206,14 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to import PDF.'
       options.setError(message)
+    } finally {
+      if (loadedPdf) {
+        try {
+          await loadedPdf.destroy()
+        } catch {
+          // Ignore cleanup failures.
+        }
+      }
     }
   }
 

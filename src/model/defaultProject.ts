@@ -88,9 +88,19 @@ export function colorForSymbol(_symbolType: SymbolType, activeColor: MaterialCol
 
 export function createDefaultProject(name = 'Untitled LP Sketch'): LpProject {
   const timestamp = new Date().toISOString()
+  const defaultScaleState = {
+    isSet: false,
+    method: null,
+    realUnitsPerPoint: null,
+    displayUnits: null,
+  } as const
+  const defaultViewState = {
+    zoom: 1,
+    pan: { x: 24, y: 24 },
+  } as const
 
   return {
-    schemaVersion: '1.8.0',
+    schemaVersion: '1.9.0',
     projectMeta: {
       id: createElementId('project'),
       name,
@@ -102,32 +112,29 @@ export function createDefaultProject(name = 'Untitled LP Sketch'): LpProject {
       name: '',
       sha256: '0'.repeat(64),
       page: 1,
+      pageCount: 1,
+      pages: [{ page: 1, widthPt: 1200, heightPt: 900 }],
       widthPt: 1200,
       heightPt: 900,
       dataBase64: null,
       path: null,
     },
-    scale: {
-      isSet: false,
-      method: null,
-      realUnitsPerPoint: null,
-      displayUnits: null,
-    },
+    scale: { ...defaultScaleState, byPage: { 1: { ...defaultScaleState } } },
     settings: {
       activeColor: 'green',
       activeClass: 'class1',
       designScale: 'medium',
       pdfBrightness: 1,
+      pdfBrightnessByPage: { 1: 1 },
+      legendDataScope: 'global',
+      notesDataScope: 'global',
       snapEnabled: true,
       autoConnectorsEnabled: true,
       autoConnectorType: 'mechanical',
       angleSnapEnabled: true,
       angleIncrementDeg: 15,
     },
-    view: {
-      zoom: 1,
-      pan: { x: 24, y: 24 },
-    },
+    view: { currentPage: 1, ...defaultViewState, byPage: { 1: { ...defaultViewState } } },
     layers: { ...DEFAULT_LAYER_VISIBILITY },
     elements: {
       lines: [],
@@ -148,6 +155,7 @@ export function createDefaultProject(name = 'Untitled LP Sketch'): LpProject {
     },
     generalNotes: {
       notes: [],
+      notesByPage: { 1: [] },
       placements: [],
     },
   }

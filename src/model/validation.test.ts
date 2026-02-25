@@ -18,6 +18,8 @@ function createSchemaValidProject(name: string): LpProject {
     name: 'plan.pdf',
     sha256: 'a'.repeat(64),
     page: 1,
+    pageCount: 1,
+    pages: [{ page: 1, widthPt: 1000, heightPt: 800 }],
     widthPt: 1000,
     heightPt: 800,
     dataBase64: 'QQ==',
@@ -29,6 +31,14 @@ function createSchemaValidProject(name: string): LpProject {
     method: 'manual',
     realUnitsPerPoint: 0.25,
     displayUnits: 'ft-in',
+    byPage: {
+      1: {
+        isSet: true,
+        method: 'manual',
+        realUnitsPerPoint: 0.25,
+        displayUnits: 'ft-in',
+      },
+    },
   }
 
   return project
@@ -61,6 +71,15 @@ describe('project validation', () => {
 
     expect(result.valid).toBe(false)
     expect(result.errors.length).toBeGreaterThan(0)
+  })
+
+  it('rejects general notes payloads missing notesByPage', () => {
+    const project = createSchemaValidProject('Missing Notes By Page')
+    delete (project.generalNotes as unknown as Record<string, unknown>).notesByPage
+
+    const result = validateProject(project)
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((entry) => entry.includes('/generalNotes'))).toBe(true)
   })
 
   it('rejects brightness settings outside the supported range', () => {

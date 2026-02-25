@@ -79,7 +79,6 @@ import {
 import {
   DEFAULT_AT_LETTER,
   LETTERED_SYMBOL_TYPES,
-  buildLegendItemsFromSymbols,
   defaultAtLetterByMaterial,
   legendSuffixKeyForVariant,
   normalizeSymbolLetter,
@@ -92,9 +91,11 @@ import { legendBoxSize, legendLineText } from './lib/legendUi'
 import {
   GENERAL_NOTES_TITLE,
   MAX_GENERAL_NOTES_COUNT,
+  resolvedGeneralNotesForPage,
 } from './lib/generalNotes'
 import {
   filterProjectByVisibleLayers,
+  filterProjectByCurrentPage,
   conductorLayer,
   symbolLayer,
 } from './lib/layers'
@@ -123,6 +124,7 @@ import {
   selectionsKeySet,
 } from './lib/selection'
 import { cloneProject } from './lib/projectState'
+import { clampPageNumber, normalizePageCount } from './lib/pageState'
 import {
   clampPdfBrightness,
   formatDistance,
@@ -149,6 +151,7 @@ import type {
 } from './components/overlay/types'
 import type {
   AutoConnectorType,
+  DataScope,
   DesignScale,
   LegendItem,
   LegendPlacement,
@@ -296,11 +299,23 @@ function App() {
 
   const pdfSignature = createMemo(() => {
     const pdf = project().pdf
-    return `${pdf.sha256}:${pdf.widthPt}:${pdf.heightPt}:${pdf.dataBase64?.length ?? 0}`
+    return `${pdf.sha256}:${pdf.pageCount}:${pdf.widthPt}:${pdf.heightPt}:${pdf.dataBase64?.length ?? 0}`
   })
 
   const hasPdf = createMemo(() => Boolean(project().pdf.dataBase64))
-  const visibleProject = createMemo(() => filterProjectByVisibleLayers(project()))
+  const visibleProject = createMemo(() => {
+    const current = project()
+    const page = current.view.currentPage
+    const pageScoped = filterProjectByCurrentPage(current, page)
+    const layerAndPageScoped = filterProjectByVisibleLayers(pageScoped)
+    return {
+      ...layerAndPageScoped,
+      generalNotes: {
+        ...layerAndPageScoped.generalNotes,
+        notes: resolvedGeneralNotesForPage(current, page),
+      },
+    }
+  })
   const effectivePdfBrightness = createMemo(() => clampPdfBrightness(pdfBrightnessPreview()))
   const activeColor = createMemo(() => project().settings.activeColor)
 
@@ -403,6 +418,7 @@ function App() {
   const { bindPdfCanvasRef } = usePdfCanvasRenderer({
     pdfState: () => project().pdf,
     pdfSignature,
+    currentPage: () => project().view.currentPage,
     setError,
   })
 
@@ -568,9 +584,8 @@ function App() {
     _items: LegendItem[],
     placement: LegendPlacement,
   ): LegendDisplayEntry[] => {
-    const visible = visibleProject()
-    const visibleItems = buildLegendItemsFromSymbols(visible)
-    return buildLegendDisplayEntries(visible, placement, visibleItems)
+    const legendProject = filterProjectByVisibleLayers(project())
+    return buildLegendDisplayEntries(legendProject, placement)
   }
 
   const legendCustomSuffixInput = createMemo(() => {
@@ -729,11 +744,123 @@ function App() {
     }
   }
 
-  function updateView(mutator: (view: LpProject['view']) => LpProject['view']) {
+  function updateView(mutator: (view: { zoom: number; pan: Point }) => { zoom: number; pan: Point }) {
     setProject((prev) => ({
       ...prev,
-      view: mutator(prev.view),
+      view: (() => {
+        const currentPage = prev.view.currentPage
+        const currentSnapshot = prev.view.byPage[currentPage] ?? {
+          zoom: prev.view.zoom,
+          pan: prev.view.pan,
+        }
+        const nextSnapshot = mutator(currentSnapshot)
+        return {
+          ...prev.view,
+          zoom: nextSnapshot.zoom,
+          pan: nextSnapshot.pan,
+          byPage: {
+            ...prev.view.byPage,
+            [currentPage]: nextSnapshot,
+          },
+        }
+      })(),
     }))
+  }
+
+  function handleSetCurrentPage(requestedPage: number) {
+    const totalPages = normalizePageCount(project().pdf.pageCount)
+    const nextPage = clampPageNumber(requestedPage, totalPages)
+    if (nextPage === project().view.currentPage) {
+      return
+    }
+
+    clearTransientToolState()
+    setSelected(null)
+    setMultiSelection([])
+
+    setProject((prev) => {
+      const pageCount = normalizePageCount(prev.pdf.pageCount)
+      const safePage = clampPageNumber(nextPage, pageCount)
+      const currentPage = clampPageNumber(prev.view.currentPage, pageCount)
+      const pageInfo =
+        prev.pdf.pages.find((entry) => entry.page === safePage) ??
+        prev.pdf.pages[safePage - 1] ?? {
+          page: safePage,
+          widthPt: prev.pdf.widthPt,
+          heightPt: prev.pdf.heightPt,
+        }
+      const currentViewSnapshot = {
+        zoom: prev.view.zoom,
+        pan: prev.view.pan,
+      }
+      const currentScaleSnapshot = {
+        isSet: prev.scale.isSet,
+        method: prev.scale.method,
+        realUnitsPerPoint: prev.scale.realUnitsPerPoint,
+        displayUnits: prev.scale.displayUnits,
+      }
+      const nextViewSnapshot = prev.view.byPage[safePage] ?? {
+        zoom: 1,
+        pan: { x: 24, y: 24 },
+      }
+      const nextScaleSnapshot = prev.scale.byPage[safePage] ?? {
+        isSet: false,
+        method: null,
+        realUnitsPerPoint: null,
+        displayUnits: null,
+      }
+      const nextBrightness = clampPdfBrightness(
+        prev.settings.pdfBrightnessByPage[safePage] ?? prev.settings.pdfBrightness,
+      )
+
+      return {
+        ...prev,
+        pdf: {
+          ...prev.pdf,
+          page: safePage,
+          widthPt: pageInfo.widthPt,
+          heightPt: pageInfo.heightPt,
+        },
+        view: {
+          ...prev.view,
+          currentPage: safePage,
+          zoom: nextViewSnapshot.zoom,
+          pan: nextViewSnapshot.pan,
+          byPage: {
+            ...prev.view.byPage,
+            [currentPage]: currentViewSnapshot,
+            [safePage]: nextViewSnapshot,
+          },
+        },
+        scale: {
+          ...nextScaleSnapshot,
+          byPage: {
+            ...prev.scale.byPage,
+            [currentPage]: currentScaleSnapshot,
+            [safePage]: nextScaleSnapshot,
+          },
+        },
+        settings: {
+          ...prev.settings,
+          pdfBrightness: nextBrightness,
+          pdfBrightnessByPage: {
+            ...prev.settings.pdfBrightnessByPage,
+            [currentPage]: clampPdfBrightness(prev.settings.pdfBrightness),
+            [safePage]: nextBrightness,
+          },
+        },
+      }
+    })
+
+    setStatus(`Page ${nextPage} of ${totalPages}`)
+  }
+
+  function handleGoToPreviousPage() {
+    handleSetCurrentPage(project().view.currentPage - 1)
+  }
+
+  function handleGoToNextPage() {
+    handleSetCurrentPage(project().view.currentPage + 1)
   }
 
   function docPointFromClient(clientX: number, clientY: number): Point | null {
@@ -1110,15 +1237,17 @@ function App() {
   }
 
   function handleClearAllMarks() {
-    if (project().construction.marks.length === 0) {
+    const currentPage = project().view.currentPage
+    const hasMarksOnPage = project().construction.marks.some((mark) => (mark.page ?? 1) === currentPage)
+    if (!hasMarksOnPage) {
       return
     }
 
     commitProjectChange((draft) => {
-      draft.construction.marks = []
+      draft.construction.marks = draft.construction.marks.filter((mark) => (mark.page ?? 1) !== currentPage)
     })
 
-    setStatus('Cleared all marks.')
+    setStatus('Cleared marks on this page.')
   }
 
   function resetLinearAutoSpacingTrace() {
@@ -1145,9 +1274,11 @@ function App() {
       return []
     }
 
+    const currentPage = project().view.currentPage
     const occupied = new Set(
       project()
         .elements.symbols
+        .filter((symbol) => (symbol.page ?? 1) === currentPage)
         .filter((symbol) => LETTERED_SYMBOL_TYPES.has(symbol.symbolType))
         .map((symbol) => pointKeyForExactMatch(symbol.position)),
     )
@@ -1179,11 +1310,13 @@ function App() {
     }
 
     commitProjectChange((draft) => {
+      const currentPage = draft.view.currentPage
       for (const point of pointsToPlace) {
         draft.elements.symbols.push({
           id: createElementId('symbol'),
           symbolType: 'air_terminal',
           position: point,
+          page: currentPage,
           letter,
           color: colorForSymbol('air_terminal', draft.settings.activeColor),
           class: classForSymbol('air_terminal', draft.settings.activeClass),
@@ -1366,11 +1499,13 @@ function App() {
     }
 
     commitProjectChange((draft) => {
+      const currentPage = draft.view.currentPage
       for (const point of points) {
         draft.elements.symbols.push({
           id: createElementId('symbol'),
           symbolType: 'air_terminal',
           position: point,
+          page: currentPage,
           letter,
           color: colorForSymbol('air_terminal', draft.settings.activeColor),
           class: classForSymbol('air_terminal', draft.settings.activeClass),
@@ -1436,6 +1571,7 @@ function App() {
       draft.construction.marks.push({
         id: createElementId('mark'),
         position: resolvedPoint,
+        page: draft.view.currentPage,
       })
     })
 
@@ -1471,11 +1607,19 @@ function App() {
     const realUnitsPerPoint = feet / (inches * 72)
 
     commitProjectChange((draft) => {
-      draft.scale = {
+      const currentPage = draft.view.currentPage
+      const nextScale = {
         isSet: true,
-        method: 'manual',
+        method: 'manual' as const,
         realUnitsPerPoint,
-        displayUnits: 'ft-in',
+        displayUnits: 'ft-in' as const,
+      }
+      draft.scale = {
+        ...nextScale,
+        byPage: {
+          ...draft.scale.byPage,
+          [currentPage]: nextScale,
+        },
       }
     })
 
@@ -2636,6 +2780,38 @@ function App() {
     }))
   }
 
+  function handleSetLegendDataScope(scope: DataScope) {
+    if (project().settings.legendDataScope === scope) {
+      return
+    }
+
+    commitProjectChange((draft) => {
+      draft.settings.legendDataScope = scope
+    })
+
+    const current = selected()
+    if (current?.kind === 'legend') {
+      editLegendPlacementById(current.id)
+    }
+    setStatus(scope === 'page' ? 'Legend data scope set to page.' : 'Legend data scope set to global.')
+  }
+
+  function handleSetNotesDataScope(scope: DataScope) {
+    if (project().settings.notesDataScope === scope) {
+      return
+    }
+
+    commitProjectChange((draft) => {
+      draft.settings.notesDataScope = scope
+    })
+
+    const current = selected()
+    if (current?.kind === 'general_note') {
+      editGeneralNotesPlacementById(current.id)
+    }
+    setStatus(scope === 'page' ? 'General notes scope set to page.' : 'General notes scope set to global.')
+  }
+
   function handlePreviewPdfBrightness(value: number) {
     setPdfBrightnessPreview(clampPdfBrightness(value))
   }
@@ -2649,7 +2825,12 @@ function App() {
     }
 
     commitProjectChange((draft) => {
+      const currentPage = draft.view.currentPage
       draft.settings.pdfBrightness = clamped
+      draft.settings.pdfBrightnessByPage = {
+        ...draft.settings.pdfBrightnessByPage,
+        [currentPage]: clamped,
+      }
     })
   }
 
@@ -2926,6 +3107,18 @@ function App() {
     get pdfBrightness() {
       return effectivePdfBrightness()
     },
+    get currentPage() {
+      return project().view.currentPage
+    },
+    get pageCount() {
+      return normalizePageCount(project().pdf.pageCount)
+    },
+    get canGoToPreviousPage() {
+      return project().view.currentPage > 1
+    },
+    get canGoToNextPage() {
+      return project().view.currentPage < normalizePageCount(project().pdf.pageCount)
+    },
     get manualScaleInchesInput() {
       return manualScaleInchesInput()
     },
@@ -2994,6 +3187,8 @@ function App() {
     onSetDesignScale: handleSetDesignScale,
     onPreviewPdfBrightness: handlePreviewPdfBrightness,
     onCommitPdfBrightness: handleCommitPdfBrightness,
+    onGoToPreviousPage: handleGoToPreviousPage,
+    onGoToNextPage: handleGoToNextPage,
     onSetSnapEnabled: handleSetSnapEnabled,
     onSetAutoConnectorsEnabled: handleSetAutoConnectorsEnabled,
     onSetAutoConnectorType: handleSetAutoConnectorType,
@@ -3149,10 +3344,12 @@ function App() {
             <LegendLabelDialog
               editor={editor()}
               project={project()}
+              scope={project().settings.legendDataScope}
               setDialogRef={(element) => bindLegendLabelDialogRef(element, editor().screen)}
               onTitlePointerDown={handleLegendLabelDialogPointerDown}
               onTitlePointerMove={handleLegendLabelDialogPointerMove}
               onTitlePointerUp={handleLegendLabelDialogPointerUp}
+              onSetScope={handleSetLegendDataScope}
               onSetInput={setLegendLabelEditorInput}
               onApply={applyLegendLabelEditor}
               onCancel={closeLegendLabelDialog}
@@ -3166,10 +3363,12 @@ function App() {
               editor={editor()}
               title={GENERAL_NOTES_TITLE}
               maxNotes={MAX_GENERAL_NOTES_COUNT}
+              scope={project().settings.notesDataScope}
               setDialogRef={(element) => bindGeneralNotesDialogRef(element, editor().screen)}
               onTitlePointerDown={handleGeneralNotesDialogPointerDown}
               onTitlePointerMove={handleGeneralNotesDialogPointerMove}
               onTitlePointerUp={handleGeneralNotesDialogPointerUp}
+              onSetScope={handleSetNotesDataScope}
               onSetInput={setGeneralNotesEditorInput}
               onMoveRow={moveGeneralNotesEditorRow}
               onRemoveRow={removeGeneralNotesEditorRow}

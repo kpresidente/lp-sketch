@@ -19,6 +19,8 @@ function createSchemaValidProject(name: string): LpProject {
     name: 'plan.pdf',
     sha256: 'a'.repeat(64),
     page: 1,
+    pageCount: 1,
+    pages: [{ page: 1, widthPt: 1000, heightPt: 800 }],
     widthPt: 1000,
     heightPt: 800,
     dataBase64: 'QQ==',
@@ -30,6 +32,14 @@ function createSchemaValidProject(name: string): LpProject {
     method: 'manual',
     realUnitsPerPoint: 0.25,
     displayUnits: 'ft-in',
+    byPage: {
+      1: {
+        isSet: true,
+        method: 'manual',
+        realUnitsPerPoint: 0.25,
+        displayUnits: 'ft-in',
+      },
+    },
   }
 
   return project
@@ -59,14 +69,27 @@ describe('project migration', () => {
 
     expect(migration.migrated).toBe(true)
     expect(migration.fromVersion).toBe('1.0.7')
-    expect(migration.toVersion).toBe('1.8.0')
-    expect(result.schemaVersion).toBe('1.8.0')
+    expect(migration.toVersion).toBe('1.9.0')
+    expect(result.schemaVersion).toBe('1.9.0')
     expect('perpendicularSnapEnabled' in (result.settings as unknown as Record<string, unknown>)).toBe(false)
     expect(result.settings.angleIncrementDeg).toBe(15)
     expect(result.settings.designScale).toBe('small')
     expect(result.settings.pdfBrightness).toBe(1)
     expect(result.settings.autoConnectorsEnabled).toBe(true)
     expect(result.settings.autoConnectorType).toBe('mechanical')
+    expect(result.settings.legendDataScope).toBe('global')
+    expect(result.settings.notesDataScope).toBe('global')
+    expect(result.settings.pdfBrightnessByPage[1]).toBe(1)
+    expect(result.pdf.pageCount).toBe(1)
+    expect(result.pdf.pages).toEqual([{ page: 1, widthPt: 1000, heightPt: 800 }])
+    expect(result.view.currentPage).toBe(1)
+    expect(result.view.byPage[1]).toEqual({ zoom: 1, pan: { x: 24, y: 24 } })
+    expect(result.scale.byPage[1]).toEqual({
+      isSet: true,
+      method: 'manual',
+      realUnitsPerPoint: 0.25,
+      displayUnits: 'ft-in',
+    })
     expect(Array.isArray(result.elements.arcs)).toBe(true)
     expect(Array.isArray(result.elements.curves)).toBe(true)
     expect(result.elements.arcs).toHaveLength(0)
@@ -131,8 +154,8 @@ describe('project migration', () => {
     const migration = migrateProjectForLoad(current)
 
     expect(migration.migrated).toBe(false)
-    expect(migration.fromVersion).toBe('1.8.0')
-    expect(migration.toVersion).toBe('1.8.0')
+    expect(migration.fromVersion).toBe('1.9.0')
+    expect(migration.toVersion).toBe('1.9.0')
     expect(migration.project).toEqual(current)
   })
 
@@ -217,6 +240,20 @@ describe('project migration', () => {
     const secondResult = secondMigration.project as LpProject
     expect(secondResult.settings.pdfBrightness).toBe(0)
     expect(secondMigration.migrated).toBe(true)
+  })
+
+  it('creates and normalizes notesByPage for legacy projects', () => {
+    const legacyProject = createSchemaValidProject('Legacy Notes By Page')
+    legacyProject.schemaVersion = '1.3.0'
+    ;(legacyProject.generalNotes as unknown as Record<string, unknown>).notes = ['  Note A  ', '', 42]
+    delete (legacyProject.generalNotes as unknown as Record<string, unknown>).notesByPage
+
+    const migration = migrateProjectForLoad(legacyProject)
+    const result = migration.project as LpProject
+
+    expect(result.generalNotes.notes).toEqual(['Note A'])
+    expect(result.generalNotes.notesByPage).toEqual({ 1: [] })
+    expect(migration.migrated).toBe(true)
   })
 
   it('drops invalid dimension linework flags and preserves valid booleans', () => {

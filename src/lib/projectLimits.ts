@@ -1,5 +1,16 @@
 import type { LpProject } from '../types/project'
 
+function notesByPageCount(project: LpProject): number {
+  let count = 0
+  for (const notes of Object.values(project.generalNotes.notesByPage)) {
+    if (!Array.isArray(notes)) {
+      continue
+    }
+    count += notes.length
+  }
+  return count
+}
+
 export function projectElementCount(project: LpProject): number {
   return (
     project.elements.lines.length +
@@ -12,7 +23,8 @@ export function projectElementCount(project: LpProject): number {
     project.construction.marks.length +
     project.legend.placements.length +
     project.generalNotes.placements.length +
-    project.generalNotes.notes.length
+    project.generalNotes.notes.length +
+    notesByPageCount(project)
   )
 }
 
@@ -31,4 +43,3 @@ export function projectHasRecoverableContent(project: LpProject): boolean {
 
   return false
 }
-

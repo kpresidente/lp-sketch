@@ -66,6 +66,31 @@ export default function ProjectPanel() {
         </button>
       </div>
 
+      <div class="section-label" style={{ "margin-top": "10px" }}>Pages</div>
+      <div class="page-nav-row">
+        <button
+          class="btn page-nav-button"
+          type="button"
+          title="Previous page"
+          onClick={props.onGoToPreviousPage}
+          disabled={!props.hasPdf || !props.canGoToPreviousPage}
+        >
+          Back
+        </button>
+        <button
+          class="btn page-nav-button"
+          type="button"
+          title="Next page"
+          onClick={props.onGoToNextPage}
+          disabled={!props.hasPdf || !props.canGoToNextPage}
+        >
+          Forward
+        </button>
+        <span class="page-nav-value">
+          {props.currentPage} of {props.pageCount}
+        </span>
+      </div>
+
       <div class="section-label" style={{ "margin-top": "10px" }}>PDF Background</div>
       <div class="brightness-row">
         <span class="brightness-label">Brightness</span>

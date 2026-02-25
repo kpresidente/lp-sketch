@@ -296,6 +296,14 @@ describe('export integration', () => {
       method: 'manual',
       realUnitsPerPoint: 1 / 72,
       displayUnits: 'ft-in',
+      byPage: {
+        1: {
+          isSet: true,
+          method: 'manual',
+          realUnitsPerPoint: 1 / 72,
+          displayUnits: 'ft-in',
+        },
+      },
     }
     project.elements.dimensionTexts.push({
       id: 'dimension-text-1',
@@ -616,6 +624,64 @@ describe('export integration', () => {
     const ops = createdCanvases[0].ctx.operations
     expect(hasOperation(ops, 'moveTo', (args) => args[0] === 60 && args[1] === 80)).toBe(false)
     expect(hasOperation(ops, 'lineTo', (args) => args[0] === 220 && args[1] === 180)).toBe(false)
+  })
+
+  it('renders only current-page geometry for export', async () => {
+    const createdCanvases: FakeCanvas[] = []
+    vi.stubGlobal('document', {
+      createElement(tag: string) {
+        if (tag !== 'canvas') {
+          throw new Error('Unexpected element request')
+        }
+        const canvas = createFakeCanvas()
+        createdCanvases.push(canvas)
+        return canvas
+      },
+    })
+
+    const project = createDefaultProject('Page Scoped Export')
+    project.pdf.pageCount = 2
+    project.pdf.pages = [
+      { page: 1, widthPt: 500, heightPt: 380 },
+      { page: 2, widthPt: 640, heightPt: 420 },
+    ]
+    project.view.currentPage = 2
+    project.pdf.page = 2
+    project.pdf.widthPt = 640
+    project.pdf.heightPt = 420
+
+    project.elements.lines.push(
+      {
+        id: 'line-page-1',
+        page: 1,
+        start: { x: 40, y: 40 },
+        end: { x: 160, y: 160 },
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'line-page-2',
+        page: 2,
+        start: { x: 300, y: 80 },
+        end: { x: 440, y: 200 },
+        color: 'green',
+        class: 'class1',
+      },
+    )
+
+    const canvas = await renderProjectCanvas(project, {
+      includeBackground: false,
+      includeMarks: false,
+      pixelRatio: 1,
+    })
+
+    expect(canvas.width).toBe(640)
+    expect(canvas.height).toBe(420)
+    const ops = createdCanvases[0].ctx.operations
+    expect(hasOperation(ops, 'moveTo', (args) => args[0] === 40 && args[1] === 40)).toBe(false)
+    expect(hasOperation(ops, 'lineTo', (args) => args[0] === 160 && args[1] === 160)).toBe(false)
+    expect(hasOperation(ops, 'moveTo', (args) => args[0] === 300 && args[1] === 80)).toBe(true)
+    expect(hasOperation(ops, 'lineTo', (args) => args[0] === 440 && args[1] === 200)).toBe(true)
   })
 
   it('excludes marks when includeMarks is false and includes them when true', async () => {

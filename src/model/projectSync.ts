@@ -29,6 +29,7 @@ export function syncAutoConnectors(project: LpProject) {
       ...existing,
       id: generated.id,
       position: generated.position,
+      page: generated.page,
       color: generated.color,
       class: generated.class,
       autoConnector: true,

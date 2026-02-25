@@ -290,6 +290,14 @@ describe('export regression fixtures', () => {
       method: 'manual',
       realUnitsPerPoint: 1 / 72,
       displayUnits: 'ft-in',
+      byPage: {
+        1: {
+          isSet: true,
+          method: 'manual',
+          realUnitsPerPoint: 1 / 72,
+          displayUnits: 'ft-in',
+        },
+      },
     }
     project.elements.lines.push({
       id: 'line-2',
@@ -327,4 +335,3 @@ describe('export regression fixtures', () => {
     expect(operations).toMatchSnapshot()
   })
 })
-

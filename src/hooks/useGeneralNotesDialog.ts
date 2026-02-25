@@ -64,6 +64,23 @@ export function useGeneralNotesDialog(options: UseGeneralNotesDialogOptions) {
     setGeneralNotesEditorScreen(screen)
   }
 
+  function normalizePlacementPage(page: number | undefined, fallback: number): number {
+    if (typeof page !== 'number' || !Number.isFinite(page)) {
+      return Math.max(1, Math.trunc(fallback))
+    }
+
+    return Math.max(1, Math.trunc(page))
+  }
+
+  function notesForPlacement(projectState: LpProject, placement: { page?: number }): string[] {
+    if (projectState.settings.notesDataScope === 'page') {
+      const placementPage = normalizePlacementPage(placement.page, projectState.view.currentPage)
+      return normalizeGeneralNotesList(projectState.generalNotes.notesByPage[placementPage] ?? [])
+    }
+
+    return normalizeGeneralNotesList(projectState.generalNotes.notes)
+  }
+
   function handleGeneralNotesDialogPointerDown(
     event: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
@@ -123,7 +140,7 @@ export function useGeneralNotesDialog(options: UseGeneralNotesDialogOptions) {
       return
     }
 
-    const notes = normalizeGeneralNotesList(p.generalNotes.notes)
+    const notes = notesForPlacement(p, placement)
     setGeneralNotesEdit({
       placementId,
       notes: notes.length > 0 ? notes : [''],
@@ -217,7 +234,12 @@ export function useGeneralNotesDialog(options: UseGeneralNotesDialogOptions) {
     }
 
     const normalized = normalizeGeneralNotesList(editor.notes)
-    const current = p.generalNotes.notes
+    const scope = p.settings.notesDataScope
+    const placementPage = normalizePlacementPage(placement.page, p.view.currentPage)
+    const current =
+      scope === 'page'
+        ? normalizeGeneralNotesList(p.generalNotes.notesByPage[placementPage] ?? [])
+        : normalizeGeneralNotesList(p.generalNotes.notes)
     const changed =
       current.length !== normalized.length ||
       current.some((note, index) => note !== normalized[index])
@@ -228,11 +250,24 @@ export function useGeneralNotesDialog(options: UseGeneralNotesDialogOptions) {
     }
 
     options.commitProjectChange((draft) => {
+      if (scope === 'page') {
+        draft.generalNotes.notesByPage = {
+          ...draft.generalNotes.notesByPage,
+          [placementPage]: normalized,
+        }
+        return
+      }
+
       draft.generalNotes.notes = normalized
     })
 
     setGeneralNotesEdit(null)
     options.setSelected({ kind: 'general_note', id: editor.placementId })
+    if (scope === 'page') {
+      options.setStatus(normalized.length === 0 ? `Page ${placementPage} notes cleared.` : `Page ${placementPage} notes updated.`)
+      return
+    }
+
     options.setStatus(normalized.length === 0 ? 'General notes cleared.' : 'General notes updated.')
   }
 

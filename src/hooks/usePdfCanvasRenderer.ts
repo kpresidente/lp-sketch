@@ -11,6 +11,7 @@ interface PdfCanvasState {
 interface UsePdfCanvasRendererOptions {
   pdfState: Accessor<PdfCanvasState>
   pdfSignature: Accessor<string>
+  currentPage: Accessor<number>
   setError: (message: string) => void
 }
 
@@ -85,11 +86,16 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
       return
     }
 
-    if (pdf.numPages !== 1) {
-      throw new Error(`Expected a single-page PDF, got ${pdf.numPages} pages.`)
+    if (pdf.numPages < 1) {
+      throw new Error('Unable to render PDF: no pages available.')
     }
 
-    const page = await pdf.getPage(1)
+    const requestedPage = options.currentPage()
+    const safePage = Number.isFinite(requestedPage)
+      ? Math.min(Math.max(1, Math.trunc(requestedPage)), pdf.numPages)
+      : 1
+
+    const page = await pdf.getPage(safePage)
     const viewport = page.getViewport({ scale: 1 })
 
     canvas.width = Math.max(1, Math.round(viewport.width))
@@ -133,7 +139,7 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
   }
 
   createEffect(
-    on(options.pdfSignature, () => {
+    on(() => [options.pdfSignature(), options.currentPage()] as const, () => {
       queueRenderCurrentPdf()
     }),
   )

@@ -1,7 +1,14 @@
 import { SYMBOL_LABELS } from '../model/defaultProject'
 import type { LegendItem, LegendPlacement, LpProject, SymbolClass, SymbolType, WireClass } from '../types/project'
 import { summarizeConductorFootage } from './conductorFootage'
-import { LETTERED_SYMBOL_TYPES, MATERIAL_LABEL, legendItemKey, sortLegendItems } from './legend'
+import { filterProjectByCurrentPage } from './layers'
+import {
+  LETTERED_SYMBOL_TYPES,
+  MATERIAL_LABEL,
+  buildLegendItemsFromSymbols,
+  legendItemKey,
+  sortLegendItems,
+} from './legend'
 
 export type LegendSymbolKind = 'component' | 'conductor'
 
@@ -140,7 +147,29 @@ export function buildLegendDisplayEntries(
   placement: LegendPlacement,
   items: LegendItem[] = project.legend.items,
 ): LegendDisplayEntry[] {
-  const conductorRows = buildConductorRows(project, placement)
-  const symbolRows = buildSymbolRows(project, items, placement)
+  const placementPage = placement.page ?? project.view.currentPage
+  const pageScaleSnapshot = project.scale.byPage[placementPage] ?? {
+    isSet: project.scale.isSet,
+    method: project.scale.method,
+    realUnitsPerPoint: project.scale.realUnitsPerPoint,
+    displayUnits: project.scale.displayUnits,
+  }
+  const scopedProject =
+    project.settings.legendDataScope === 'page'
+      ? {
+          ...filterProjectByCurrentPage(project, placementPage),
+          scale: {
+            ...pageScaleSnapshot,
+            byPage: project.scale.byPage,
+          },
+        }
+      : project
+  const scopedItems =
+    project.settings.legendDataScope === 'page'
+      ? buildLegendItemsFromSymbols(scopedProject)
+      : items
+
+  const conductorRows = buildConductorRows(scopedProject, placement)
+  const symbolRows = buildSymbolRows(scopedProject, scopedItems, placement)
   return [...conductorRows, ...symbolRows]
 }

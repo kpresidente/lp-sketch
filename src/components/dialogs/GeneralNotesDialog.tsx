@@ -1,14 +1,17 @@
 import { For } from 'solid-js'
 import type { GeneralNotesEditState } from '../../types/appRuntime'
+import type { DataScope } from '../../types/project'
 
 interface GeneralNotesDialogProps {
   editor: GeneralNotesEditState
   title: string
   maxNotes: number
+  scope: DataScope
   setDialogRef: (element: HTMLDivElement | undefined) => void
   onTitlePointerDown: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
   onTitlePointerMove: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
   onTitlePointerUp: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
+  onSetScope: (scope: DataScope) => void
   onSetInput: (index: number, value: string) => void
   onMoveRow: (index: number, direction: 'up' | 'down') => void
   onRemoveRow: (index: number) => void
@@ -38,6 +41,27 @@ export default function GeneralNotesDialog(props: GeneralNotesDialogProps) {
         onPointerCancel={props.onTitlePointerUp}
       >
         {props.title}
+      </div>
+      <div class="dialog-scope-row">
+        <span class="dialog-scope-label">Data Scope</span>
+        <div class="btn-row dialog-scope-buttons">
+          <button
+            class={`btn btn-sm ${props.scope === 'page' ? 'active' : ''}`}
+            type="button"
+            aria-pressed={props.scope === 'page'}
+            onClick={() => props.onSetScope('page')}
+          >
+            Page
+          </button>
+          <button
+            class={`btn btn-sm ${props.scope === 'global' ? 'active' : ''}`}
+            type="button"
+            aria-pressed={props.scope === 'global'}
+            onClick={() => props.onSetScope('global')}
+          >
+            Global
+          </button>
+        </div>
       </div>
       <div class="general-notes-table-wrap">
         <table class="legend-label-table">
