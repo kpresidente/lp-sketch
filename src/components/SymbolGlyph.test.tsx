@@ -120,13 +120,18 @@ describe('SymbolGlyph', () => {
       { symbolType: 'air_terminal', selector: 'circle[r="6"]' },
       { symbolType: 'bonded_air_terminal', selector: 'polygon' },
       { symbolType: 'bond', selector: 'polygon' },
-      { symbolType: 'cadweld_connection', selector: 'circle[r="5.4"]' },
+      { symbolType: 'cadweld_connection', selector: 'rect[width="6.4"][height="6.4"]' },
+      {
+        symbolType: 'cadweld_crossrun_connection',
+        selector: 'rect[width="11"][height="11"]',
+      },
       { symbolType: 'continued', selector: 'path' },
       { symbolType: 'connect_existing', selector: 'circle[r="1.333"]' },
-      { symbolType: 'conduit_downlead_ground', selector: 'circle[r="6"]' },
-      { symbolType: 'conduit_downlead_roof', selector: 'circle[r="6"]' },
-      { symbolType: 'surface_downlead_ground', selector: 'rect[width="10.8"][height="10.8"]' },
-      { symbolType: 'surface_downlead_roof', selector: 'rect[width="10.8"][height="10.8"]' },
+      { symbolType: 'mechanical_crossrun_connection', selector: 'circle[r="6"]' },
+      { symbolType: 'conduit_downlead_ground', selector: 'rect[width="10.8"][height="10.8"]' },
+      { symbolType: 'conduit_downlead_roof', selector: 'rect[width="10.8"][height="10.8"]' },
+      { symbolType: 'surface_downlead_ground', selector: 'circle[r="6"]' },
+      { symbolType: 'surface_downlead_roof', selector: 'circle[r="6"]' },
       { symbolType: 'through_roof_to_steel', selector: 'rect[width="11"][height="11"]' },
       { symbolType: 'through_wall_connector', selector: 'circle[r="6"]' },
       { symbolType: 'ground_rod', selector: 'line[stroke-width="2"]', minMatches: 4 },
@@ -157,20 +162,22 @@ describe('SymbolGlyph', () => {
     expect(stem).not.toBeNull()
   })
 
-  it('renders ground-rod class indicator only when enabled', () => {
-    const symbol = makeSymbol('ground_rod', 'class1')
+  it('renders continued as annotation black regardless of active material color', () => {
+    const symbol = makeSymbol('continued', 'none')
+    symbol.color = 'red'
 
-    const defaultRender = renderSymbol(symbol)
-    expect(defaultRender.container.querySelector('text')?.textContent).not.toBe('1')
-    defaultRender.unmount()
+    const { container } = renderSymbol(symbol)
+    const path = container.querySelector('path')
 
-    const enabledRender = render(() => (
-      <svg>
-        <SymbolGlyph symbol={symbol} showGroundRodClassIndicator />
-      </svg>
-    ))
-    expect(enabledRender.container.querySelector('polygon')).not.toBeNull()
-    expect(enabledRender.container.querySelector('text')?.textContent).toBe('1')
+    expect(path?.getAttribute('stroke')).toBe('#111827')
+  })
+
+  it('renders class2 ground rod with four bars and no diamond marker', () => {
+    const symbol = makeSymbol('ground_rod', 'class2')
+    const { container } = renderSymbol(symbol)
+
+    expect(container.querySelectorAll('line[stroke-width="2"]')).toHaveLength(5)
+    expect(container.querySelector('polygon')).toBeNull()
   })
 
   it('scales symbol geometry around a fixed basepoint when annotation scale changes', () => {

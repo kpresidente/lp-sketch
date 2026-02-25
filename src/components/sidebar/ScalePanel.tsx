@@ -1,6 +1,6 @@
 import { For } from 'solid-js'
 import Panel from './Panel'
-import { MISC_ICON, TOOL_ICON, tablerIconClass } from '../../config/iconRegistry'
+import { MISC_ICON, tablerIconClass } from '../../config/iconRegistry'
 import { useAppController } from '../../context/AppControllerContext'
 import type { DesignScale } from '../../types/project'
 
@@ -20,7 +20,7 @@ export default function ScalePanel() {
   return (
     <Panel label="Scale">
       <div class="section-label">Drawing Scale</div>
-      <div class="scale-row">
+      <div class="scale-row scale-row-apply">
         <div class="scale-input-wrap">
           <input
             class="input-field"
@@ -52,24 +52,31 @@ export default function ScalePanel() {
           />
           <span class="scale-input-unit">ft</span>
         </div>
-      </div>
-      <div class="btn-row" style={{ "margin-bottom": "8px" }}>
-        <button class="btn btn-sm" type="button" title="Apply Drawing Scale" onClick={props.onApplyManualScale}>
-          Apply Scale
-        </button>
         <button
-          class={`btn btn-sm ${props.tool === 'calibrate' ? 'active' : ''}`}
+          class="btn btn-icon scale-apply-btn"
+          type="button"
+          aria-label="Apply Scale"
+          title="Apply Drawing Scale"
+          onClick={props.onApplyManualScale}
+        >
+          <i class={tablerIconClass('check')} />
+        </button>
+      </div>
+      <div class="scale-row scale-row-meta">
+        <div class="scale-badge scale-badge-inline" title={props.currentScaleInfo}>
+          <i class={tablerIconClass(MISC_ICON.scaleBadge)} />
+          {props.currentScaleInfo}
+        </div>
+        <button
+          class={`btn btn-sm scale-calibrate-btn ${props.tool === 'calibrate' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'calibrate'}
           title="Calibrate Drawing Scale"
           onClick={() => props.onSelectTool('calibrate')}
         >
-          <i class={tablerIconClass(TOOL_ICON.calibrate)} /> Calibrate
+          <i class={tablerIconClass('focus-2')} />
+          <span class="scale-calibrate-label">Calibrate</span>
         </button>
-      </div>
-      <div class="scale-badge">
-        <i class={tablerIconClass(MISC_ICON.scaleBadge)} />
-        {props.currentScaleInfo}
       </div>
 
       <div class="section-label">Annotation Size</div>

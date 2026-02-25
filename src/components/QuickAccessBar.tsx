@@ -12,6 +12,7 @@ import {
   COMMAND_ICON,
   PROJECT_ACTION_ICON,
   SYMBOL_BUTTON_ICON,
+  SYMBOL_CUSTOM_ICON,
   TOOL_CUSTOM_ICON,
   TOOL_ICON,
   type CustomIconName,
@@ -19,6 +20,11 @@ import {
   tablerIconClass,
 } from '../config/iconRegistry'
 import { CustomIcon } from './icons/CustomIcon'
+import {
+  formatDisabledTooltip,
+  symbolDisabledReasons,
+  toolDisabledReasons,
+} from '../lib/componentAvailability'
 
 const QUICK_ACCESS_STORAGE_KEY = 'lp-sketch.quick-access.v1'
 
@@ -44,7 +50,9 @@ const SYMBOL_QUICK_OPTIONS: readonly SymbolType[] = [
   'bonded_air_terminal',
   'bond',
   'cable_to_cable_connection',
+  'mechanical_crossrun_connection',
   'cadweld_connection',
+  'cadweld_crossrun_connection',
   'conduit_downlead_ground',
   'conduit_downlead_roof',
   'surface_downlead_ground',
@@ -137,6 +145,8 @@ interface QuickAccessBarProps {
   tool: Tool
   activeSymbol: SymbolType
   colorOptions: readonly MaterialColor[]
+  scaleIsSet: boolean
+  scaleRealUnitsPerPoint: number | null
   historyPastCount: number
   historyFutureCount: number
   designScale: DesignScale
@@ -266,6 +276,7 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
       label: SYMBOL_LABELS[symbolType],
       kind: 'symbol',
       icon: SYMBOL_BUTTON_ICON[symbolType],
+      customIcon: SYMBOL_CUSTOM_ICON[symbolType],
       symbolType,
     }))
 
@@ -403,6 +414,7 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
         label: 'Connector Type: Cadweld',
         kind: 'choice',
         icon: SYMBOL_BUTTON_ICON.cadweld_connection,
+        customIcon: SYMBOL_CUSTOM_ICON.cadweld_connection,
         choiceId: 'auto_connector_cadweld',
       },
       {
@@ -672,7 +684,36 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
     }
   }
 
+  const availabilityProject = createMemo(() => ({
+    scale: {
+      isSet: props.scaleIsSet,
+      realUnitsPerPoint: props.scaleRealUnitsPerPoint,
+    },
+  }))
+
+  function quickItemDisabledReasons(item: QuickAddableItem): string[] {
+    if (item.kind === 'tool' && item.toolId) {
+      return toolDisabledReasons(item.toolId, availabilityProject(), props.activeColor)
+    }
+    if (item.kind === 'symbol' && item.symbolType) {
+      return symbolDisabledReasons(item.symbolType, props.activeColor)
+    }
+    return []
+  }
+
+  function quickItemTitle(item: QuickAddableItem): string {
+    return formatDisabledTooltip(item.label, quickItemDisabledReasons(item))
+  }
+
+  function isQuickItemDisabled(item: QuickAddableItem): boolean {
+    return quickItemDisabledReasons(item).length > 0
+  }
+
   function activateQuickItem(item: QuickAddableItem) {
+    if (isQuickItemDisabled(item)) {
+      return
+    }
+
     if (item.kind === 'tool' && item.toolId) {
       props.onSelectTool(item.toolId)
       setOpenFlyoutItemId(null)
@@ -878,7 +919,8 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
               class={`quick-access-btn ${item && isQuickItemActive(item) ? 'active' : ''}`}
               aria-label={item?.label}
               aria-pressed={item ? isQuickItemActive(item) : false}
-              title={item?.label}
+              title={item ? quickItemTitle(item) : undefined}
+              disabled={item ? isQuickItemDisabled(item) : false}
               onClick={() => {
                 if (!item) {
                   return
@@ -986,6 +1028,7 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
                     step="0.05"
                     value={props.pdfBrightness}
                     aria-label="PDF background brightness"
+                    title={props.hasPdf ? 'Adjust PDF background brightness' : 'Import a PDF to enable brightness control'}
                     disabled={!props.hasPdf}
                     onInput={(event) => props.onPreviewPdfBrightness(Number.parseFloat(event.currentTarget.value))}
                     onChange={(event) => props.onCommitPdfBrightness(Number.parseFloat(event.currentTarget.value))}

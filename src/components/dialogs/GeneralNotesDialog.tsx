@@ -1,4 +1,4 @@
-import { For } from 'solid-js'
+import { Index } from 'solid-js'
 import type { GeneralNotesEditState } from '../../types/appRuntime'
 import type { DataScope } from '../../types/project'
 
@@ -74,9 +74,8 @@ export default function GeneralNotesDialog(props: GeneralNotesDialogProps) {
             </tr>
           </thead>
           <tbody>
-            <For each={props.editor.notes}>
-              {(note, indexAccessor) => {
-                const index = indexAccessor()
+            <Index each={props.editor.notes}>
+              {(noteAccessor, index) => {
                 const noteId = `general-note-row-${index}`
                 return (
                   <tr>
@@ -87,7 +86,7 @@ export default function GeneralNotesDialog(props: GeneralNotesDialogProps) {
                         class="input-field legend-label-input"
                         type="text"
                         maxLength={120}
-                        value={note}
+                        value={noteAccessor()}
                         onInput={(event) => props.onSetInput(index, event.currentTarget.value)}
                         onKeyDown={(event) => {
                           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
@@ -133,7 +132,7 @@ export default function GeneralNotesDialog(props: GeneralNotesDialogProps) {
                   </tr>
                 )
               }}
-            </For>
+            </Index>
           </tbody>
         </table>
       </div>

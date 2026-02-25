@@ -1,7 +1,13 @@
 import type { SymbolType, Tool } from '../types/project'
 
 export type TablerIconName = string
-export type CustomIconName = 'at-arc' | 'steel-bond-filled' | 'multi-select-hand-plus'
+export type CustomIconName =
+  | 'at-arc'
+  | 'steel-bond-filled'
+  | 'multi-select-hand-plus'
+  | 'cadweld-connection'
+  | 'mechanical-crossrun-connection'
+  | 'cadweld-crossrun-connection'
 
 export function tablerIconClass(icon: TablerIconName): string {
   return `ti ti-${icon}`
@@ -33,6 +39,8 @@ export const PROJECT_ACTION_ICON = {
   exportPng: 'photo',
   exportJpg: 'photo',
   exportPdf: 'file-type-pdf',
+  reportBug: 'bug',
+  reportFeature: 'sparkles-2',
 } as const
 
 export const TOOL_ICON: Record<Tool, TablerIconName> = {
@@ -64,14 +72,16 @@ export const SYMBOL_BUTTON_ICON: Record<SymbolType, TablerIconName> = {
   air_terminal: 'circle',
   bonded_air_terminal: 'hexagon',
   bond: 'square-rotated',
-  cadweld_connection: 'circle-dot',
+  cadweld_connection: 'square',
+  cadweld_crossrun_connection: 'squares',
   continued: 'ease-in-out',
   connect_existing: 'ease-out-control-point',
   cable_to_cable_connection: 'point',
-  conduit_downlead_ground: 'circle-chevrons-down',
-  conduit_downlead_roof: 'circle-chevron-down',
-  surface_downlead_ground: 'square-chevrons-down',
-  surface_downlead_roof: 'square-chevron-down',
+  mechanical_crossrun_connection: 'circles-relation',
+  conduit_downlead_ground: 'square-chevrons-down',
+  conduit_downlead_roof: 'square-chevron-down',
+  surface_downlead_ground: 'circle-chevrons-down',
+  surface_downlead_roof: 'circle-chevron-down',
   through_roof_to_steel: 'square-asterisk',
   through_wall_connector: 'code-circle',
   ground_rod: 'circuit-ground',
@@ -80,4 +90,10 @@ export const SYMBOL_BUTTON_ICON: Record<SymbolType, TablerIconName> = {
 
 export const SYMBOL_CLASS2_CUSTOM_ICON: Partial<Record<SymbolType, CustomIconName>> = {
   steel_bond: 'steel-bond-filled',
+}
+
+export const SYMBOL_CUSTOM_ICON: Partial<Record<SymbolType, CustomIconName>> = {
+  cadweld_connection: 'cadweld-connection',
+  mechanical_crossrun_connection: 'mechanical-crossrun-connection',
+  cadweld_crossrun_connection: 'cadweld-crossrun-connection',
 }

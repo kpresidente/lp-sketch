@@ -19,6 +19,8 @@ interface CanvasStageProps {
   tool: Tool
   activeSymbol: SymbolType
   colorOptions: readonly MaterialColor[]
+  scaleIsSet: boolean
+  scaleRealUnitsPerPoint: number | null
   selectedKind: Selection['kind'] | null
   historyPastCount: number
   historyFutureCount: number
@@ -36,6 +38,8 @@ interface CanvasStageProps {
   selectionDebugEnabled: boolean
   onSetSelectionDebugEnabled: (enabled: boolean) => void
   calibrationPreview: string | null
+  lineSegmentDistanceLabel: string | null
+  linePathTotalDistanceLabel: string | null
   measureDistanceLabel: string | null
   markSpanDistanceLabel: string | null
   linearAutoSpacingPathDistanceLabel: string | null
@@ -116,6 +120,8 @@ export default function CanvasStage(props: CanvasStageProps) {
         selectionDebugEnabled={props.selectionDebugEnabled}
         onSetSelectionDebugEnabled={props.onSetSelectionDebugEnabled}
         calibrationPreview={props.calibrationPreview}
+        lineSegmentDistanceLabel={props.lineSegmentDistanceLabel}
+        linePathTotalDistanceLabel={props.linePathTotalDistanceLabel}
         measureDistanceLabel={props.measureDistanceLabel}
         markSpanDistanceLabel={props.markSpanDistanceLabel}
         linearAutoSpacingPathDistanceLabel={props.linearAutoSpacingPathDistanceLabel}
@@ -222,6 +228,8 @@ export default function CanvasStage(props: CanvasStageProps) {
           tool={props.tool}
           activeSymbol={props.activeSymbol}
           colorOptions={props.colorOptions}
+          scaleIsSet={props.scaleIsSet}
+          scaleRealUnitsPerPoint={props.scaleRealUnitsPerPoint}
           historyPastCount={props.historyPastCount}
           historyFutureCount={props.historyFutureCount}
           designScale={props.designScale}

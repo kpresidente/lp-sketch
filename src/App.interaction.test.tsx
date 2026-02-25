@@ -1360,21 +1360,21 @@ describe('App interaction integration', () => {
 
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cable_to_cable_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="mechanical_crossrun_connection"] circle[stroke="#2e8b57"]',
       ),
     ).not.toBeNull()
 
     await fireEvent.click(historyButton(container, 0))
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cable_to_cable_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="mechanical_crossrun_connection"] circle[stroke="#2e8b57"]',
       ),
     ).toBeNull()
 
     await fireEvent.click(historyButton(container, 1))
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cable_to_cable_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="mechanical_crossrun_connection"] circle[stroke="#2e8b57"]',
       ),
     ).not.toBeNull()
   })
@@ -1427,7 +1427,7 @@ describe('App interaction integration', () => {
 
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cadweld_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="cadweld_crossrun_connection"] rect[stroke="#2e8b57"]',
       ),
     ).not.toBeNull()
     expect(
@@ -1485,12 +1485,12 @@ describe('App interaction integration', () => {
 
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cable_to_cable_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="mechanical_crossrun_connection"] circle[stroke="#2e8b57"]',
       ),
     ).not.toBeNull()
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cadweld_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="cadweld_connection"] rect[stroke="#2e8b57"]',
       ),
     ).toBeNull()
 
@@ -1498,7 +1498,7 @@ describe('App interaction integration', () => {
     await fireEvent.click(cadweldModeButton)
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cable_to_cable_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="mechanical_crossrun_connection"] circle[stroke="#2e8b57"]',
       ),
     ).not.toBeNull()
 
@@ -1534,12 +1534,12 @@ describe('App interaction integration', () => {
 
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cable_to_cable_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="mechanical_crossrun_connection"] circle[stroke="#2e8b57"]',
       ),
     ).not.toBeNull()
     expect(
       container.querySelector(
-        'svg.overlay-layer g[data-symbol-type="cadweld_connection"] circle[stroke="#2e8b57"]',
+        'svg.overlay-layer g[data-symbol-type="cadweld_crossrun_connection"] rect[stroke="#2e8b57"]',
       ),
     ).not.toBeNull()
   })
@@ -1716,7 +1716,6 @@ describe('App interaction integration', () => {
   it('applies calibration from two points and updates scale display', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('20')
 
     await fireEvent.click(screen.getByRole('button', { name: 'Calibrate' }))
 
@@ -1736,15 +1735,17 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
 
-    expect(promptSpy).toHaveBeenCalled()
+    expect(screen.getByText('Calibration span set. Enter real distance and apply.')).toBeTruthy()
+    const distanceInput = screen.getByLabelText('Calibration distance in feet') as HTMLInputElement
+    await fireEvent.input(distanceInput, { target: { value: '20' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
     expect(screen.getByText('Scale calibrated from two points.')).toBeTruthy()
     expect(screen.getByText(`Scale: 1" = 14.4'`)).toBeTruthy()
   })
 
-  it('cancels calibration when prompt is dismissed', async () => {
+  it('cancels pending calibration from the properties bar', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
-    vi.spyOn(window, 'prompt').mockReturnValue(null)
 
     await fireEvent.click(screen.getByRole('button', { name: 'Calibrate' }))
 
@@ -1764,14 +1765,15 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
 
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
     expect(screen.getByText('Calibration canceled.')).toBeTruthy()
     expect(screen.getByText('Scale: unset')).toBeTruthy()
   })
 
-  it('rejects non-positive calibration distance input', async () => {
+  it('rejects non-positive calibration distance input from properties bar', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
-    vi.spyOn(window, 'prompt').mockReturnValue('0')
 
     await fireEvent.click(screen.getByRole('button', { name: 'Calibrate' }))
 
@@ -1790,6 +1792,10 @@ describe('App interaction integration', () => {
       pointerId: 63,
       pointerType: 'mouse',
     })
+
+    const distanceInput = screen.getByLabelText('Calibration distance in feet') as HTMLInputElement
+    await fireEvent.input(distanceInput, { target: { value: '0' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
 
     expect(screen.getByText('Calibration distance must be a positive number.')).toBeTruthy()
     expect(screen.getByText('Scale: unset')).toBeTruthy()

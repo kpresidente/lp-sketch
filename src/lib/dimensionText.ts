@@ -4,7 +4,101 @@ import type {
   ScaleDisplayUnits,
   Point,
 } from '../types/project'
+import { approximateTextWidthForScale } from './annotationScale'
 import { distance } from './geometry'
+
+interface MeasureTextLike {
+  width: number
+}
+
+interface TextMeasureContextLike {
+  font: string
+  measureText?: (text: string) => MeasureTextLike
+}
+
+const DIMENSION_FONT_REFERENCE_PX = 14
+const DIMENSION_MIN_WIDTH_PX = 10
+
+let sharedMeasureContext: TextMeasureContextLike | null | undefined
+
+const DIMENSION_LABEL_CHAR_WIDTH_BY_CHAR: Record<string, number> = {
+  '0': 7.8,
+  '1': 6.4,
+  '2': 7.8,
+  '3': 7.8,
+  '4': 7.9,
+  '5': 7.8,
+  '6': 7.8,
+  '7': 7.5,
+  '8': 7.8,
+  '9': 7.8,
+  "'": 2.4,
+  '"': 3.8,
+  '.': 2.8,
+  '-': 3.8,
+  ' ': 3.8,
+}
+
+function getSharedMeasureContext(): TextMeasureContextLike | null {
+  if (sharedMeasureContext !== undefined) {
+    return sharedMeasureContext
+  }
+
+  if (typeof document === 'undefined') {
+    sharedMeasureContext = null
+    return sharedMeasureContext
+  }
+
+  try {
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    if (!context || typeof context.measureText !== 'function') {
+      sharedMeasureContext = null
+      return sharedMeasureContext
+    }
+
+    sharedMeasureContext = context
+    return sharedMeasureContext
+  } catch {
+    sharedMeasureContext = null
+    return sharedMeasureContext
+  }
+}
+
+function approximateDimensionLabelWidthPx(label: string, scale: number, fontSizePx: number): number {
+  const text = label.trim()
+  if (text.length === 0) {
+    return Math.max(DIMENSION_MIN_WIDTH_PX * scale, approximateTextWidthForScale(text, scale))
+  }
+
+  let baseWidth = 0
+  for (const char of text) {
+    baseWidth += DIMENSION_LABEL_CHAR_WIDTH_BY_CHAR[char] ?? 7.8
+  }
+
+  const fontScale = fontSizePx / DIMENSION_FONT_REFERENCE_PX
+  return Math.max(DIMENSION_MIN_WIDTH_PX * scale, baseWidth * fontScale)
+}
+
+export function dimensionLabelWidthPx(
+  label: string,
+  scale: number,
+  fontSizePx: number,
+  measureContext?: TextMeasureContextLike,
+): number {
+  const context = measureContext ?? getSharedMeasureContext()
+  if (context && typeof context.measureText === 'function') {
+    const priorFont = context.font
+    context.font = `${fontSizePx}px Segoe UI, Arial, sans-serif`
+    const measuredWidth = context.measureText(label).width
+    context.font = priorFont
+    if (Number.isFinite(measuredWidth) && measuredWidth > 0) {
+      return Math.max(DIMENSION_MIN_WIDTH_PX * scale, measuredWidth)
+    }
+  }
+
+  return approximateDimensionLabelWidthPx(label, scale, fontSizePx)
+}
 
 function formatDistance(distanceValue: number, units: ScaleDisplayUnits): string {
   if (units === 'decimal-ft') {
@@ -173,10 +267,7 @@ export function dimensionBarLineSegments(
     return []
   }
 
-  const labelCenter = {
-    x: labelPosition.x + labelWidthPt / 2,
-    y: labelPosition.y + labelHeightPt / 2,
-  }
+  const labelCenter = { x: labelPosition.x, y: labelPosition.y + labelHeightPt / 2 }
   const toLabel = {
     x: labelCenter.x - geometry.barStart.x,
     y: labelCenter.y - geometry.barStart.y,

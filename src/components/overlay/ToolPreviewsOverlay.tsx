@@ -1,6 +1,7 @@
 import { For, Match, Show, Switch } from 'solid-js'
 import {
   dimensionBarLineSegments,
+  dimensionLabelWidthPx,
   dimensionExtensionLineSegments,
   dimensionLineworkGeometry,
 } from '../../lib/dimensionText'
@@ -462,6 +463,14 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
                 8,
               )
               : null
+          const previewLabelWidth =
+            placementPreview
+              ? dimensionLabelWidthPx(
+                placementPreview.label,
+                1,
+                12,
+              )
+              : 54
           const lineworkExtensions = linework
             ? dimensionExtensionLineSegments(linework, 3)
             : null
@@ -469,7 +478,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
             ? dimensionBarLineSegments(
               linework,
               placementPreview?.position ?? preview.start,
-              54,
+              previewLabelWidth,
               16,
               4,
             )
@@ -543,9 +552,9 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
                       opacity={0.7}
                     />
                     <rect
-                      x={placement().position.x - 4}
+                      x={placement().position.x - previewLabelWidth / 2 - 4}
                       y={placement().position.y - 3}
-                      width={(placement().label.length * 7.4) + 8}
+                      width={previewLabelWidth + 8}
                       height={18}
                       fill="rgba(255,255,255,0.92)"
                       stroke="#111827"
@@ -558,6 +567,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
                       fill="#111827"
                       font-size="12px"
                       font-family="Segoe UI, Arial, sans-serif"
+                      text-anchor="middle"
                       dominant-baseline="hanging"
                     >
                       {placement().label}

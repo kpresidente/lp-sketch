@@ -535,7 +535,7 @@ exports[`export regression fixtures > matches golden canvas operations for dimen
   },
   {
     "args": [
-      199,
+      179.8,
       212,
     ],
     "op": "lineTo",
@@ -556,7 +556,7 @@ exports[`export regression fixtures > matches golden canvas operations for dimen
   },
   {
     "args": [
-      266.5,
+      230.2,
       212,
     ],
     "op": "moveTo",
@@ -585,7 +585,7 @@ exports[`export regression fixtures > matches golden canvas operations for dimen
       212,
       "#111827",
       "21px Segoe UI, Arial, sans-serif",
-      "left",
+      "center",
       "top",
     ],
     "op": "fillText",

@@ -1,6 +1,7 @@
 import { For, Show } from 'solid-js'
 import {
   dimensionBarLineSegments,
+  dimensionLabelWidthPx,
   dimensionExtensionLineSegments,
   dimensionLineworkGeometry,
 } from '../../lib/dimensionText'
@@ -33,7 +34,8 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
           props.hovered?.id === dimensionText.id &&
           !isSelected()
         const label = () => props.dimensionTextLabel(dimensionText)
-        const labelWidth = () => props.approximateTextWidth(label())
+        const labelWidth = () =>
+          dimensionLabelWidthPx(label(), designScale(), props.textFontSizePx)
         const selectedWidth = () => labelWidth()
         const geometry = dimensionText.showLinework
           ? dimensionLineworkGeometry(
@@ -95,7 +97,7 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
             </Show>
             <Show when={isSelected() || isHovered()}>
               <rect
-                x={dimensionText.position.x - 4 * designScale()}
+                x={dimensionText.position.x - selectedWidth() / 2 - 4 * designScale()}
                 y={dimensionText.position.y - 3 * designScale()}
                 width={selectedWidth() + 8 * designScale()}
                 height={props.textLineHeightPx + 6 * designScale()}
@@ -113,6 +115,7 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
               fill="#111827"
               font-size={`${props.textFontSizePx}px`}
               font-family="Segoe UI, Arial, sans-serif"
+              text-anchor="middle"
               dominant-baseline="hanging"
             >
               {label()}

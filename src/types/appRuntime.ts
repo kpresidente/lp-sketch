@@ -115,6 +115,12 @@ export interface TargetDistanceSnapLock {
 }
 
 export interface LegendLabelEditState {
+  rows: Array<{
+    key: string
+    itemName: string
+    countLabel: string
+    baseLabel: string
+  }>
   placementId: string
   inputByKey: Record<string, string>
   screen: Point

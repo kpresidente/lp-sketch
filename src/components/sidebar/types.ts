@@ -10,6 +10,7 @@ import type {
   SymbolType,
   Tool,
 } from '../../types/project'
+import type { ReportType } from '../../lib/reporting'
 
 export type CornerKind = 'outside' | 'inside'
 
@@ -19,6 +20,7 @@ export interface AppSidebarProps {
   tool: Tool
   selectedKind: Selection['kind'] | null
   toolOptions: Array<{ id: Tool; label: string }>
+  lineStart: { x: number; y: number } | null
   lineContinuous: boolean
   curveContinuous: boolean
   arcStart: { x: number; y: number } | null
@@ -41,6 +43,7 @@ export interface AppSidebarProps {
   symbolLabels: Record<SymbolType, string>
   textDraftInput: string
   arrowStart: { x: number; y: number } | null
+  symbolDirectionStart: { x: number; y: number } | null
   selectedLegendPlacement: LegendPlacement | null
   selectedGeneralNotesPlacement: GeneralNotePlacement | null
   colorOptions: MaterialColor[]
@@ -53,6 +56,10 @@ export interface AppSidebarProps {
   manualScaleInchesInput: string
   manualScaleFeetInput: string
   measureTargetDistanceInput: string
+  calibrationPointsCount: number
+  calibrationPendingDistancePt: number | null
+  calibrationDistanceInput: string
+  calibrationInputError: string
   currentScaleInfo: string
   historyPastCount: number
   historyFutureCount: number
@@ -66,6 +73,7 @@ export interface AppSidebarProps {
   onLoadProject: (event: Event) => void
   onExportImage: (format: 'png' | 'jpg') => void
   onExportPdf: () => void
+  onOpenReportDialog: (type: ReportType) => void
   onSelectTool: (tool: Tool) => void
   onSetLineContinuous: (value: boolean) => void
   onSetCurveContinuous: (value: boolean) => void
@@ -108,6 +116,9 @@ export interface AppSidebarProps {
   onSetManualScaleInchesInput: (value: string) => void
   onSetManualScaleFeetInput: (value: string) => void
   onSetMeasureTargetDistanceInput: (value: string) => void
+  onSetCalibrationDistanceInput: (value: string) => void
+  onApplyCalibration: () => void
+  onCancelCalibration: () => void
   onApplyManualScale: () => void
   onBringSelectedToFront: () => void
   onSendSelectedToBack: () => void

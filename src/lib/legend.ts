@@ -15,7 +15,9 @@ export const SYMBOL_SIDEBAR_ORDER: SymbolType[] = [
   'bonded_air_terminal',
   'bond',
   'cable_to_cable_connection',
+  'mechanical_crossrun_connection',
   'cadweld_connection',
+  'cadweld_crossrun_connection',
   'continued',
   'connect_existing',
   'conduit_downlead_ground',
@@ -27,6 +29,10 @@ export const SYMBOL_SIDEBAR_ORDER: SymbolType[] = [
   'steel_bond',
   'ground_rod',
 ]
+
+const NON_LEGEND_SYMBOLS = new Set<SymbolType>([
+  'continued',
+])
 
 const SYMBOL_ORDER_INDEX = new Map(SYMBOL_SIDEBAR_ORDER.map((type, index) => [type, index]))
 const MATERIAL_ORDER_INDEX = new Map(MATERIAL_ORDER.map((color, index) => [color, index]))
@@ -115,6 +121,10 @@ export function buildLegendItemsFromSymbols(project: LpProject): LegendItem[] {
   const index = new Map<string, LegendItem>()
 
   for (const symbol of project.elements.symbols) {
+    if (NON_LEGEND_SYMBOLS.has(symbol.symbolType)) {
+      continue
+    }
+
     const key = legendItemKey(symbol)
     const existing = index.get(key)
 

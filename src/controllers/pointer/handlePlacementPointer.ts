@@ -5,8 +5,8 @@ import {
   quadraticControlPointForThrough,
   snapAngleDegrees,
 } from '../../lib/geometry'
+import { buildAutoConnectorSymbolsForAddedConductors } from '../../lib/autoConnectors'
 import { isDownleadSymbolType } from '../../lib/conductorFootage'
-import { realUnitsPerPointFromCalibrationSpan } from '../../lib/scale'
 import { DIRECTIONAL_SYMBOLS, classForSymbol, colorForSymbol } from '../../model/defaultProject'
 import type {
   LpProject,
@@ -31,6 +31,8 @@ interface HandlePlacementPointerDownContext {
   lineStart: () => Point | null
   setLineStart: (point: Point | null) => void
   lineContinuous: () => boolean
+  linePathCommittedDistancePt: () => number
+  setLinePathCommittedDistancePt: (distancePt: number) => void
   dimensionStart: () => Point | null
   dimensionEnd: () => Point | null
   setDimensionStart: (point: Point | null) => void
@@ -55,8 +57,10 @@ interface HandlePlacementPointerDownContext {
   textDraftInput: () => string
   arrowStart: () => Point | null
   setArrowStart: (point: Point | null) => void
+  pendingCalibrationDistancePt: () => number | null
   calibrationPoints: () => Point[]
   setCalibrationPoints: (points: Point[]) => void
+  setPendingCalibrationDistancePt: (distancePt: number | null) => void
 }
 
 export function handlePlacementPointerDown(
@@ -88,6 +92,7 @@ export function handlePlacementPointerDown(
     const start = context.lineStart()
 
     if (!start) {
+      context.setLinePathCommittedDistancePt(0)
       context.setLineStart(resolvedPoint)
       context.setStatus('Line start point set.')
       return true
@@ -97,22 +102,36 @@ export function handlePlacementPointerDown(
       return true
     }
 
+    const segmentDistancePt = distance(start, resolvedPoint)
+    const lineId = context.createElementId('line')
     context.commitProjectChange((draft) => {
       draft.elements.lines.push({
-        id: context.createElementId('line'),
+        id: lineId,
         start,
         end: resolvedPoint,
         page: draft.view.currentPage,
         color: draft.settings.activeColor,
         class: draft.settings.activeClass,
       })
+
+      const autoConnectors = buildAutoConnectorSymbolsForAddedConductors(
+        draft,
+        [{ kind: 'line', id: lineId }],
+      )
+      if (autoConnectors.length > 0) {
+        draft.elements.symbols.push(...autoConnectors)
+      }
     })
 
     context.setStatus('Line segment added.')
 
     if (context.lineContinuous()) {
+      context.setLinePathCommittedDistancePt(
+        context.linePathCommittedDistancePt() + segmentDistancePt,
+      )
       context.setLineStart(resolvedPoint)
     } else {
+      context.setLinePathCommittedDistancePt(0)
       context.setLineStart(null)
     }
 
@@ -207,9 +226,10 @@ export function handlePlacementPointerDown(
       return true
     }
 
+    const arcId = context.createElementId('arc')
     context.commitProjectChange((draft) => {
       draft.elements.arcs.push({
-        id: context.createElementId('arc'),
+        id: arcId,
         start,
         end,
         through: resolvedPoint,
@@ -217,6 +237,14 @@ export function handlePlacementPointerDown(
         color: draft.settings.activeColor,
         class: draft.settings.activeClass,
       })
+
+      const autoConnectors = buildAutoConnectorSymbolsForAddedConductors(
+        draft,
+        [{ kind: 'arc', id: arcId }],
+      )
+      if (autoConnectors.length > 0) {
+        draft.elements.symbols.push(...autoConnectors)
+      }
     })
 
     context.setArcStart(null)
@@ -257,9 +285,10 @@ export function handlePlacementPointerDown(
 
     const control = quadraticControlPointForThrough(start, throughPoint, resolvedPoint)
 
+    const curveId = context.createElementId('curve')
     context.commitProjectChange((draft) => {
       draft.elements.curves.push({
-        id: context.createElementId('curve'),
+        id: curveId,
         start,
         end: resolvedPoint,
         through: control,
@@ -267,6 +296,14 @@ export function handlePlacementPointerDown(
         color: draft.settings.activeColor,
         class: draft.settings.activeClass,
       })
+
+      const autoConnectors = buildAutoConnectorSymbolsForAddedConductors(
+        draft,
+        [{ kind: 'curve', id: curveId }],
+      )
+      if (autoConnectors.length > 0) {
+        draft.elements.symbols.push(...autoConnectors)
+      }
     })
 
     if (context.curveContinuous()) {
@@ -439,9 +476,15 @@ export function handlePlacementPointerDown(
   }
 
   if (currentTool === 'calibrate') {
+    if (context.pendingCalibrationDistancePt() !== null) {
+      context.setStatus('Apply or cancel current calibration before starting a new one.')
+      return true
+    }
+
     const points = context.calibrationPoints()
 
     if (points.length === 0) {
+      context.setPendingCalibrationDistancePt(null)
       context.setCalibrationPoints([resolvedPoint])
       context.setStatus('Calibration start point set.')
       return true
@@ -456,41 +499,9 @@ export function handlePlacementPointerDown(
       return true
     }
 
-    const input = window.prompt('Enter real-world distance in feet for this span:', '20')
-
-    if (!input) {
-      context.setCalibrationPoints([])
-      context.setStatus('Calibration canceled.')
-      return true
-    }
-
-    const realDistance = Number.parseFloat(input)
-
-    if (!Number.isFinite(realDistance) || realDistance <= 0) {
-      context.setCalibrationPoints([])
-      context.setError('Calibration distance must be a positive number.')
-      return true
-    }
-
-    context.commitProjectChange((draft) => {
-      const currentPage = draft.view.currentPage
-      const nextScale = {
-        isSet: true,
-        method: 'calibrated' as const,
-        realUnitsPerPoint: realUnitsPerPointFromCalibrationSpan(pointDistance, realDistance),
-        displayUnits: 'ft-in' as const,
-      }
-      draft.scale = {
-        ...nextScale,
-        byPage: {
-          ...draft.scale.byPage,
-          [currentPage]: nextScale,
-        },
-      }
-    })
-
     context.setCalibrationPoints([])
-    context.setStatus('Scale calibrated from two points.')
+    context.setPendingCalibrationDistancePt(pointDistance)
+    context.setStatus('Calibration span set. Enter real distance and apply.')
     return true
   }
 

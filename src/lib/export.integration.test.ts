@@ -403,6 +403,9 @@ describe('export integration', () => {
       'ground_rod',
       'steel_bond',
       'cable_to_cable_connection',
+      'mechanical_crossrun_connection',
+      'cadweld_connection',
+      'cadweld_crossrun_connection',
     ]
 
     symbolTypes.forEach((symbolType, index) => {

@@ -66,6 +66,26 @@ export default function ProjectPanel() {
         </button>
       </div>
 
+      <div class="section-label" style={{ "margin-top": "10px" }}>Report</div>
+      <div class="btn-grid-3">
+        <button
+          class="btn"
+          type="button"
+          title="Report a bug"
+          onClick={() => props.onOpenReportDialog('bug')}
+        >
+          <i class={tablerIconClass(PROJECT_ACTION_ICON.reportBug)} /> Bug
+        </button>
+        <button
+          class="btn"
+          type="button"
+          title="Request a feature"
+          onClick={() => props.onOpenReportDialog('feature')}
+        >
+          <i class={tablerIconClass(PROJECT_ACTION_ICON.reportFeature)} /> Feature
+        </button>
+      </div>
+
       <div class="section-label" style={{ "margin-top": "10px" }}>Pages</div>
       <div class="page-nav-row">
         <button
@@ -102,6 +122,7 @@ export default function ProjectPanel() {
           step="0.05"
           value={props.pdfBrightness}
           aria-label="PDF background brightness"
+          title={props.hasPdf ? 'Adjust PDF background brightness' : 'Import a PDF to enable brightness control'}
           disabled={!props.hasPdf}
           onInput={(event) => props.onPreviewPdfBrightness(Number.parseFloat(event.currentTarget.value))}
           onChange={(event) => props.onCommitPdfBrightness(Number.parseFloat(event.currentTarget.value))}

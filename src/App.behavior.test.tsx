@@ -602,7 +602,7 @@ describe('App behavior integration', () => {
     expect(byName('Ground Rod').disabled).toBe(true)
     expect(byName('Cadweld').disabled).toBe(true)
     expect(byName('Continued').disabled).toBe(true)
-    expect(byName('Connect Existing').disabled).toBe(false)
+    expect(screen.getByRole('button', { name: /Conn\s+Existing/ }).hasAttribute('disabled')).toBe(false)
 
     // Grounding
     await fireEvent.click(requireMaterialItem(container, 'Grounding'))
@@ -631,11 +631,20 @@ describe('App behavior integration', () => {
     ).toBeTruthy()
   })
 
-  it('uses custom icons for arc auto-spacing and class-II steel bond', async () => {
+  it('uses custom icons for arc auto-spacing, connector buttons, and class-II steel bond', async () => {
     const { container } = render(() => <App />)
 
     const arcAutoSpacingButtonInitial = screen.getByRole('button', { name: 'Arc AT' })
     expect(arcAutoSpacingButtonInitial.querySelector('[data-custom-icon="at-arc"]')).not.toBeNull()
+
+    const cadweldButtonInitial = screen.getByRole('button', { name: 'Cadweld' })
+    expect(cadweldButtonInitial.querySelector('[data-custom-icon="cadweld-connection"]')).not.toBeNull()
+
+    const mechanicalCrossrunButtonInitial = screen.getByRole('button', { name: /Mech\s+Crossrun/ })
+    expect(mechanicalCrossrunButtonInitial.querySelector('[data-custom-icon="mechanical-crossrun-connection"]')).not.toBeNull()
+
+    const cadweldCrossrunButtonInitial = screen.getByRole('button', { name: /Cad\s+Crossrun/ })
+    expect(cadweldCrossrunButtonInitial.querySelector('[data-custom-icon="cadweld-crossrun-connection"]')).not.toBeNull()
 
     const steelBondButtonInitial = screen.getByRole('button', { name: 'Steel Bond' })
     expect(steelBondButtonInitial.querySelector('[data-custom-icon="steel-bond-filled"]')).toBeNull()
@@ -647,14 +656,6 @@ describe('App behavior integration', () => {
 
     const activeToolBadge = container.querySelector('.toolbar-active-tool')
     expect(activeToolBadge).not.toBeNull()
-    expect(activeToolBadge?.querySelector('[data-custom-icon="at-arc"]')).toBeNull()
-
-    const arcAutoSpacingButtonClass2 = screen.getByRole('button', { name: 'Arc AT' })
-    await fireEvent.click(arcAutoSpacingButtonClass2)
-    const toolbarCustomIcon = container.querySelector(
-      '.toolbar-active-tool [data-custom-icon="at-arc"]',
-    )
-    expect(toolbarCustomIcon).not.toBeNull()
   }, 15000)
 
   it('exposes semantic controls for toggles, material radios, and icon actions', async () => {

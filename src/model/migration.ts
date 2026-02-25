@@ -552,7 +552,9 @@ export function migrateProjectForLoad(input: unknown): MigrationResult {
         }
       } else if (
         symbolType === 'cable_to_cable_connection' ||
-        symbolType === 'cadweld_connection'
+        symbolType === 'cadweld_connection' ||
+        symbolType === 'mechanical_crossrun_connection' ||
+        symbolType === 'cadweld_crossrun_connection'
       ) {
         if (symbol.autoConnector !== normalizedAutoConnector) {
           symbol.autoConnector = normalizedAutoConnector

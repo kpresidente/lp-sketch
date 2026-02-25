@@ -5,7 +5,10 @@
       "WebFetch(domain:konvajs.org)",
       "Bash(pkill:*)",
       "Bash(npx vite:*)",
-      "Bash(claude plugins install:*)"
+      "Bash(claude plugins install:*)",
+      "Bash(az account show:*)",
+      "Bash(az group list:*)",
+      "Bash(pdftotext:*)"
     ]
   }
 }

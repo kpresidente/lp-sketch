@@ -5,7 +5,6 @@ import {
   isDownleadSymbolType,
   symbolVerticalFootageFt,
 } from '../../lib/conductorFootage'
-import { hasBothGroundRodClasses } from '../../lib/symbolClass'
 import type { OverlayLayerProps } from './types'
 
 type SymbolsOverlayProps = Pick<
@@ -15,7 +14,6 @@ type SymbolsOverlayProps = Pick<
 
 export default function SymbolsOverlay(props: SymbolsOverlayProps) {
   const designScale = () => props.annotationScale ?? 1
-  const showGroundRodClassIndicator = () => hasBothGroundRodClasses(props.project.elements.symbols)
 
   return (
     <For each={props.project.elements.symbols}>
@@ -30,7 +28,6 @@ export default function SymbolsOverlay(props: SymbolsOverlayProps) {
             <SymbolGlyph
               symbol={symbol}
               annotationScale={designScale()}
-              showGroundRodClassIndicator={showGroundRodClassIndicator()}
               selected={isSelected()}
               hovered={
                 props.hovered?.kind === 'symbol' &&

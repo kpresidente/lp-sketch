@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest'
 import AnnotationEditDialog from './AnnotationEditDialog'
 import GeneralNotesDialog from './GeneralNotesDialog'
 import LegendLabelDialog from './LegendLabelDialog'
+import ReportDialog from './ReportDialog'
 import type { GeneralNotesEditState, LegendLabelEditState } from '../../types/appRuntime'
-import { createDefaultProject } from '../../model/defaultProject'
 
 describe('dialog accessibility semantics', () => {
   it('renders annotation edit dialog as a labeled dialog', () => {
@@ -30,22 +30,15 @@ describe('dialog accessibility semantics', () => {
   })
 
   it('renders legend label editor as a labeled dialog with table caption', () => {
-    const project = createDefaultProject()
-    project.legend.placements.push({
-      id: 'legend-1',
-      position: { x: 50, y: 60 },
-      editedLabels: {},
-    })
-    project.elements.symbols.push({
-      id: 'symbol-1',
-      symbolType: 'air_terminal',
-      position: { x: 80, y: 90 },
-      letter: 'A',
-      color: 'green',
-      class: 'class1',
-    })
-
     const editor: LegendLabelEditState = {
+      rows: [
+        {
+          key: 'air_terminal|green|class1|A',
+          itemName: 'Air Terminal A',
+          countLabel: '1',
+          baseLabel: 'Class I Copper Air Terminal',
+        },
+      ],
       placementId: 'legend-1',
       inputByKey: {},
       screen: { x: 100, y: 120 },
@@ -54,7 +47,6 @@ describe('dialog accessibility semantics', () => {
     render(() => (
       <LegendLabelDialog
         editor={editor}
-        project={project}
         scope="global"
         setDialogRef={() => undefined}
         onTitlePointerDown={() => undefined}
@@ -100,5 +92,28 @@ describe('dialog accessibility semantics', () => {
 
     expect(screen.getByRole('dialog', { name: 'General Notes editor' })).toBeTruthy()
     expect(screen.getByText('General notes list')).toBeTruthy()
+  })
+
+  it('renders report dialog as a labeled dialog', () => {
+    render(() => (
+      <ReportDialog
+        draft={{
+          type: 'bug',
+          title: '',
+          details: '',
+          reproSteps: '',
+        }}
+        submitting={false}
+        errorMessage=""
+        onSetType={() => undefined}
+        onSetTitle={() => undefined}
+        onSetDetails={() => undefined}
+        onSetReproSteps={() => undefined}
+        onSubmit={() => undefined}
+        onCancel={() => undefined}
+      />
+    ))
+
+    expect(screen.getByRole('dialog', { name: 'Report issue' })).toBeTruthy()
   })
 })

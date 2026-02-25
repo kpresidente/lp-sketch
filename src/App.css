@@ -172,7 +172,7 @@
 
 .panel-header .panel-chevron {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 14px;
   transition: transform var(--transition);
 }
 
@@ -322,10 +322,19 @@ select.select-field:focus {
   text-align: center;
 }
 
+.btn-grid-3 .btn .btn-text.btn-text-stack {
+  white-space: pre-line;
+  line-height: 1.05;
+}
+
 .btn-grid-3 .btn.btn-multiline {
   white-space: normal;
   line-height: 1.15;
   min-height: 58px;
+}
+
+.btn-grid-3 .btn.btn-connections-secondary {
+  min-height: 66px;
 }
 
 .btn-grid-3 .btn i {
@@ -524,6 +533,52 @@ select.select-field:focus {
 
 .scale-row .input-field { flex: 1; }
 
+.scale-row-apply {
+  align-items: stretch;
+}
+
+.scale-row-apply .scale-input-wrap {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.scale-apply-btn {
+  width: 42px;
+  min-width: 42px;
+  height: auto;
+  align-self: stretch;
+}
+
+.scale-apply-btn i {
+  font-size: 18px;
+}
+
+.scale-row-meta {
+  align-items: stretch;
+}
+
+.scale-badge.scale-badge-inline {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scale-calibrate-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.scale-calibrate-btn .scale-calibrate-label {
+  overflow: hidden;
+  text-overflow: clip;
+}
+
 .brightness-row {
   display: flex;
   align-items: center;
@@ -541,6 +596,14 @@ select.select-field:focus {
 .brightness-slider {
   flex: 1;
   min-width: 0;
+}
+
+.brightness-slider:not(:disabled) {
+  cursor: pointer;
+}
+
+.brightness-slider:disabled {
+  cursor: not-allowed;
 }
 
 .brightness-value {
@@ -1335,6 +1398,32 @@ select.select-field:focus {
 
 .general-notes-row-actions .btn {
   flex: none;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.report-dialog {
+  width: min(92vw, 640px);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.report-type-group {
+  width: fit-content;
+}
+
+.report-textarea {
+  min-height: 84px;
+  resize: vertical;
 }
 
 .quick-access-rail {

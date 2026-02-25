@@ -20,6 +20,7 @@ export const SYMBOL_LABELS: Record<SymbolType, string> = {
   bonded_air_terminal: 'Bonded air terminal',
   bond: 'Bond',
   cadweld_connection: 'Cadweld connection',
+  cadweld_crossrun_connection: 'Cadweld crossrun connection',
   continued: 'Continued',
   connect_existing: 'Connect existing',
   conduit_downlead_ground: 'Conduit downlead to ground',
@@ -31,6 +32,7 @@ export const SYMBOL_LABELS: Record<SymbolType, string> = {
   ground_rod: 'Ground rod',
   steel_bond: 'Steel bond',
   cable_to_cable_connection: 'Mechanical connection',
+  mechanical_crossrun_connection: 'Mechanical crossrun connection',
 }
 
 export const DIRECTIONAL_SYMBOLS = new Set<SymbolType>([
@@ -53,6 +55,10 @@ export const DOWNLEAD_SYMBOLS = new Set<SymbolType>([
 export const NO_CLASS_SYMBOLS = new Set<SymbolType>([
   'continued',
   'connect_existing',
+])
+
+const ANNOTATION_STYLE_SYMBOLS = new Set<SymbolType>([
+  'continued',
 ])
 
 export const DEFAULT_LAYER_VISIBILITY: Record<LayerId, boolean> = {
@@ -82,7 +88,11 @@ export function classForSymbol(symbolType: SymbolType, activeClass: WireClass): 
   return activeClass
 }
 
-export function colorForSymbol(_symbolType: SymbolType, activeColor: MaterialColor): MaterialColor {
+export function colorForSymbol(symbolType: SymbolType, activeColor: MaterialColor): MaterialColor {
+  if (ANNOTATION_STYLE_SYMBOLS.has(symbolType)) {
+    return 'green'
+  }
+
   return activeColor
 }
 

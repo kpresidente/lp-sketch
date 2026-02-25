@@ -119,4 +119,29 @@ describe('legend utilities', () => {
 
     expect(key).toBe('ground_rod|blue|none|')
   })
+
+  it('excludes annotation-only continued symbols from legend items', () => {
+    const project = createDefaultProject()
+    project.elements.symbols.push(
+      {
+        id: 'continued-1',
+        symbolType: 'continued',
+        position: { x: 10, y: 10 },
+        color: 'green',
+        class: 'none',
+      },
+      {
+        id: 'bond-1',
+        symbolType: 'bond',
+        position: { x: 20, y: 20 },
+        color: 'green',
+        class: 'none',
+      },
+    )
+
+    const items = buildLegendItemsFromSymbols(project)
+
+    expect(items).toHaveLength(1)
+    expect(items[0].symbolType).toBe('bond')
+  })
 })

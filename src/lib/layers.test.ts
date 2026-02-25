@@ -7,6 +7,7 @@ describe('layers helpers', () => {
     expect(symbolLayer('air_terminal')).toBe('rooftop')
     expect(symbolLayer('conduit_downlead_ground')).toBe('downleads')
     expect(symbolLayer('ground_rod')).toBe('grounding')
+    expect(symbolLayer('continued')).toBe('annotation')
   })
 
   it('filters project render content by layer visibility', () => {
@@ -47,6 +48,14 @@ describe('layers helpers', () => {
         position: { x: 30, y: 30 },
         directionDeg: 90,
         color: 'red',
+        class: 'none',
+      },
+      {
+        id: 'sym-continued',
+        symbolType: 'continued',
+        position: { x: 14, y: 14 },
+        directionDeg: 90,
+        color: 'green',
         class: 'none',
       },
     )

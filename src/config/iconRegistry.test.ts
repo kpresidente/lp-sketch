@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SymbolType, Tool } from '../types/project'
 import {
   SYMBOL_BUTTON_ICON,
+  SYMBOL_CUSTOM_ICON,
   SYMBOL_CLASS2_CUSTOM_ICON,
   TOOL_CUSTOM_ICON,
   TOOL_ICON,
@@ -32,8 +33,10 @@ const SYMBOL_TYPES: SymbolType[] = [
   'bonded_air_terminal',
   'bond',
   'cadweld_connection',
+  'cadweld_crossrun_connection',
   'continued',
   'connect_existing',
+  'mechanical_crossrun_connection',
   'conduit_downlead_ground',
   'conduit_downlead_roof',
   'surface_downlead_ground',
@@ -62,10 +65,13 @@ describe('icon registry coverage', () => {
     }
   })
 
-  it('keeps approved custom overrides for phase-1 icon gaps', () => {
+  it('keeps approved custom overrides for tool and symbol icon gaps', () => {
     expect(TOOL_CUSTOM_ICON.arc_auto_spacing).toBe('at-arc')
     expect(TOOL_CUSTOM_ICON.multi_select).toBe('multi-select-hand-plus')
     expect(SYMBOL_CLASS2_CUSTOM_ICON.steel_bond).toBe('steel-bond-filled')
+    expect(SYMBOL_CUSTOM_ICON.cadweld_connection).toBe('cadweld-connection')
+    expect(SYMBOL_CUSTOM_ICON.mechanical_crossrun_connection).toBe('mechanical-crossrun-connection')
+    expect(SYMBOL_CUSTOM_ICON.cadweld_crossrun_connection).toBe('cadweld-crossrun-connection')
   })
 
   it('uses hand-finger base glyph for select mode', () => {

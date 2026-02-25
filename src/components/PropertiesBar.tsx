@@ -50,6 +50,8 @@ interface PropertiesBarProps {
   selectionDebugEnabled: boolean
   onSetSelectionDebugEnabled: (enabled: boolean) => void
   calibrationPreview: string | null
+  lineSegmentDistanceLabel: string | null
+  linePathTotalDistanceLabel: string | null
   measureDistanceLabel: string | null
   markSpanDistanceLabel: string | null
   linearAutoSpacingPathDistanceLabel: string | null
@@ -103,6 +105,16 @@ export default function PropertiesBar(props: PropertiesBarProps) {
         <Show when={props.calibrationPreview}>
           <span class="tb-status">
             Measure: <span class="tb-status-val">{props.calibrationPreview}</span>
+          </span>
+        </Show>
+        <Show when={props.lineSegmentDistanceLabel}>
+          <span class="tb-status">
+            Line: <span class="tb-status-val">{props.lineSegmentDistanceLabel}</span>
+          </span>
+        </Show>
+        <Show when={props.linePathTotalDistanceLabel}>
+          <span class="tb-status">
+            Line Total: <span class="tb-status-val">{props.linePathTotalDistanceLabel}</span>
           </span>
         </Show>
         <Show when={props.measureDistanceLabel}>

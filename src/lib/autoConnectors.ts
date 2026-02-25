@@ -8,15 +8,17 @@ import type {
 } from '../types/project'
 import {
   distance,
-  distanceToCircularArc,
   distanceToSegment,
   lineSegmentIntersection,
   sampleCircularArcPolyline,
+  sampleQuadraticPolyline,
 } from './geometry'
 
 const NODE_CLUSTER_EPSILON_PT = 0.75
 const NODE_TOUCH_EPSILON_PT = 0.9
+const CONNECTOR_DEDUPE_EPSILON_PT = 1
 const ARC_INTERSECTION_SAMPLE_STEPS = 56
+const CURVE_INTERSECTION_SAMPLE_STEPS = 56
 
 interface Bounds {
   minX: number
@@ -25,22 +27,10 @@ interface Bounds {
   maxY: number
 }
 
-interface LineConductor {
-  kind: 'line'
+interface Conductor {
+  kind: 'line' | 'arc' | 'curve'
   id: string
   start: Point
-  end: Point
-  page: number
-  bounds: Bounds
-  color: MaterialColor
-  class: WireClass
-}
-
-interface ArcConductor {
-  kind: 'arc'
-  id: string
-  start: Point
-  through: Point
   end: Point
   page: number
   polyline: Point[]
@@ -49,14 +39,27 @@ interface ArcConductor {
   class: WireClass
 }
 
-type Conductor = LineConductor | ArcConductor
+export type AutoConnectorJunction = 'tee' | 'crossrun'
 
 export interface AutoConnectorNode {
   position: Point
   color: MaterialColor
   connectorClass: WireClass
   page: number
+  junction: AutoConnectorJunction
 }
+
+export interface AddedConductorRef {
+  kind: 'line' | 'arc' | 'curve'
+  id: string
+}
+
+const AUTO_CONNECTOR_SYMBOL_TYPES = new Set<SymbolElement['symbolType']>([
+  'cable_to_cable_connection',
+  'cadweld_connection',
+  'mechanical_crossrun_connection',
+  'cadweld_crossrun_connection',
+])
 
 function clusterPoints(points: Point[], epsilon: number): Point[] {
   const clusters: Array<{ points: Point[]; center: Point }> = []
@@ -91,15 +94,6 @@ function clusterPoints(points: Point[], epsilon: number): Point[] {
   }
 
   return clusters.map((cluster) => cluster.center)
-}
-
-function boundsForSegment(start: Point, end: Point): Bounds {
-  return {
-    minX: Math.min(start.x, end.x),
-    minY: Math.min(start.y, end.y),
-    maxX: Math.max(start.x, end.x),
-    maxY: Math.max(start.y, end.y),
-  }
 }
 
 function boundsForPolyline(points: Point[]): Bounds {
@@ -148,20 +142,45 @@ function pointInBounds(point: Point, bounds: Bounds, padding = 0): boolean {
   )
 }
 
-function inScopeArcs(project: LpProject): ArcConductor[] {
-  return project.elements.arcs.map<ArcConductor>((arc) => {
+function samplePolylineDistance(point: Point, polyline: Point[]): number {
+  if (polyline.length < 2) {
+    return Number.POSITIVE_INFINITY
+  }
+
+  let nearest = Number.POSITIVE_INFINITY
+  for (let i = 1; i < polyline.length; i += 1) {
+    nearest = Math.min(nearest, distanceToSegment(point, polyline[i - 1], polyline[i]))
+  }
+  return nearest
+}
+
+function inScopeConductors(project: LpProject): Conductor[] {
+  const lines = project.elements.lines.map<Conductor>((line) => {
+    const polyline = [line.start, line.end]
+    return {
+      kind: 'line',
+      id: line.id,
+      start: line.start,
+      end: line.end,
+      page: line.page ?? 1,
+      polyline,
+      bounds: boundsForPolyline(polyline),
+      color: line.color,
+      class: line.class,
+    }
+  })
+
+  const arcs = project.elements.arcs.map<Conductor>((arc) => {
     const polyline = sampleCircularArcPolyline(
       arc.start,
       arc.through,
       arc.end,
       ARC_INTERSECTION_SAMPLE_STEPS,
     )
-
     return {
       kind: 'arc',
       id: arc.id,
       start: arc.start,
-      through: arc.through,
       end: arc.end,
       page: arc.page ?? 1,
       polyline,
@@ -170,6 +189,47 @@ function inScopeArcs(project: LpProject): ArcConductor[] {
       class: arc.class,
     }
   })
+
+  const curves = project.elements.curves.map<Conductor>((curve) => {
+    const polyline = sampleQuadraticPolyline(
+      curve.start,
+      curve.through,
+      curve.end,
+      CURVE_INTERSECTION_SAMPLE_STEPS,
+    )
+    return {
+      kind: 'curve',
+      id: curve.id,
+      start: curve.start,
+      end: curve.end,
+      page: curve.page ?? 1,
+      polyline,
+      bounds: boundsForPolyline(polyline),
+      color: curve.color,
+      class: curve.class,
+    }
+  })
+
+  return [...lines, ...arcs, ...curves]
+}
+
+function intersectionsBetweenConductors(a: Conductor, b: Conductor): Point[] {
+  const intersections: Point[] = []
+
+  for (let i = 1; i < a.polyline.length; i += 1) {
+    const aStart = a.polyline[i - 1]
+    const aEnd = a.polyline[i]
+    for (let j = 1; j < b.polyline.length; j += 1) {
+      const bStart = b.polyline[j - 1]
+      const bEnd = b.polyline[j]
+      const intersection = lineSegmentIntersection(aStart, aEnd, bStart, bEnd)
+      if (intersection) {
+        intersections.push(intersection)
+      }
+    }
+  }
+
+  return intersections
 }
 
 function endpointCandidates(conductors: Conductor[]): Point[] {
@@ -181,49 +241,16 @@ function endpointCandidates(conductors: Conductor[]): Point[] {
   return points
 }
 
-function lineLineIntersections(lines: LineConductor[]): Point[] {
+function allPairIntersections(conductors: Conductor[]): Point[] {
   const points: Point[] = []
-  for (let i = 0; i < lines.length; i += 1) {
-    for (let j = i + 1; j < lines.length; j += 1) {
-      if (!boundsOverlap(lines[i].bounds, lines[j].bounds, NODE_TOUCH_EPSILON_PT)) {
+
+  for (let i = 0; i < conductors.length; i += 1) {
+    for (let j = i + 1; j < conductors.length; j += 1) {
+      if (!boundsOverlap(conductors[i].bounds, conductors[j].bounds, NODE_TOUCH_EPSILON_PT)) {
         continue
       }
 
-      const intersection = lineSegmentIntersection(
-        lines[i].start,
-        lines[i].end,
-        lines[j].start,
-        lines[j].end,
-      )
-      if (intersection) {
-        points.push(intersection)
-      }
-    }
-  }
-  return points
-}
-
-function lineArcIntersections(lines: LineConductor[], arcs: ArcConductor[]): Point[] {
-  const points: Point[] = []
-
-  for (const line of lines) {
-    const lineBounds = line.bounds
-    for (const arc of arcs) {
-      if (!boundsOverlap(lineBounds, arc.bounds, NODE_TOUCH_EPSILON_PT)) {
-        continue
-      }
-
-      for (let i = 1; i < arc.polyline.length; i += 1) {
-        const intersection = lineSegmentIntersection(
-          line.start,
-          line.end,
-          arc.polyline[i - 1],
-          arc.polyline[i],
-        )
-        if (intersection) {
-          points.push(intersection)
-        }
-      }
+      points.push(...intersectionsBetweenConductors(conductors[i], conductors[j]))
     }
   }
 
@@ -240,10 +267,7 @@ function resolveConnectorMaterial(colors: Set<MaterialColor>): MaterialColor {
   if (colors.has('red')) {
     return 'red'
   }
-  if (colors.has('cyan')) {
-    return 'cyan'
-  }
-  if (colors.has('green')) {
+  if (colors.has('green') || colors.has('cyan')) {
     return 'green'
   }
   if (colors.has('blue')) {
@@ -271,15 +295,10 @@ function conductorBranchContribution(conductor: Conductor, node: Point): number 
   if (onEnd && !onStart) {
     contribution += 1
   }
+
   if (!onStart && !onEnd) {
-    if (conductor.kind === 'line') {
-      if (distanceToSegment(node, conductor.start, conductor.end) <= NODE_TOUCH_EPSILON_PT) {
-        contribution += 2
-      }
-    } else if (
-      distanceToCircularArc(node, conductor.start, conductor.through, conductor.end, 96)
-      <= NODE_TOUCH_EPSILON_PT
-    ) {
+    const onConductor = samplePolylineDistance(node, conductor.polyline) <= NODE_TOUCH_EPSILON_PT
+    if (onConductor) {
       contribution += 2
     }
   }
@@ -287,70 +306,50 @@ function conductorBranchContribution(conductor: Conductor, node: Point): number 
   return contribution
 }
 
-export function computeAutoConnectorNodes(project: LpProject): AutoConnectorNode[] {
-  const arcs = inScopeArcs(project)
-  const lineConductors = project.elements.lines.map<LineConductor>((line) => ({
-    kind: 'line',
-    id: line.id,
-    start: line.start,
-    end: line.end,
-    page: line.page ?? 1,
-    bounds: boundsForSegment(line.start, line.end),
-    color: line.color,
-    class: line.class,
-  }))
-  const connectors: AutoConnectorNode[] = []
-  const conductorsByPage = new Map<number, Conductor[]>()
-  for (const conductor of [...lineConductors, ...arcs]) {
-    const page = conductor.page
-    const existing = conductorsByPage.get(page)
-    if (existing) {
-      existing.push(conductor)
-    } else {
-      conductorsByPage.set(page, [conductor])
-    }
+function junctionForBranchCount(branchCount: number): AutoConnectorJunction | null {
+  if (branchCount < 3) {
+    return null
   }
 
-  for (const [page, conductors] of conductorsByPage.entries()) {
-    const pageLines = conductors.filter((conductor): conductor is LineConductor => conductor.kind === 'line')
-    const pageArcs = conductors.filter((conductor): conductor is ArcConductor => conductor.kind === 'arc')
-    const candidates = [
-      ...endpointCandidates(conductors),
-      ...lineLineIntersections(pageLines),
-      ...lineArcIntersections(pageLines, pageArcs),
-    ]
-    const nodes = clusterPoints(candidates, NODE_CLUSTER_EPSILON_PT)
+  return branchCount >= 4 ? 'crossrun' : 'tee'
+}
 
-    for (const node of nodes) {
-      let branchCount = 0
-      const classes = new Set<WireClass>()
-      const colors = new Set<MaterialColor>()
+function resolveNodeFromPoint(
+  node: Point,
+  conductors: Conductor[],
+  page: number,
+): AutoConnectorNode | null {
+  let branchCount = 0
+  const classes = new Set<WireClass>()
+  const colors = new Set<MaterialColor>()
 
-      for (const conductor of conductors) {
-        const contribution = conductorBranchContribution(conductor, node)
-        if (contribution <= 0) {
-          continue
-        }
-
-        branchCount += contribution
-        classes.add(conductor.class)
-        colors.add(conductor.color)
-      }
-
-      if (branchCount < 3 || colors.size === 0 || classes.size === 0) {
-        continue
-      }
-
-      connectors.push({
-        position: node,
-        color: resolveConnectorMaterial(colors),
-        connectorClass: resolveConnectorClass(classes),
-        page,
-      })
+  for (const conductor of conductors) {
+    const contribution = conductorBranchContribution(conductor, node)
+    if (contribution <= 0) {
+      continue
     }
+
+    branchCount += contribution
+    classes.add(conductor.class)
+    colors.add(conductor.color)
   }
 
-  connectors.sort((a, b) => {
+  const junction = junctionForBranchCount(branchCount)
+  if (!junction || colors.size === 0 || classes.size === 0) {
+    return null
+  }
+
+  return {
+    position: node,
+    color: resolveConnectorMaterial(colors),
+    connectorClass: resolveConnectorClass(classes),
+    page,
+    junction,
+  }
+}
+
+function sortNodes(nodes: AutoConnectorNode[]): AutoConnectorNode[] {
+  return [...nodes].sort((a, b) => {
     if (a.page !== b.page) {
       return a.page - b.page
     }
@@ -360,22 +359,123 @@ export function computeAutoConnectorNodes(project: LpProject): AutoConnectorNode
     if (Math.abs(a.position.x - b.position.x) > 1e-6) {
       return a.position.x - b.position.x
     }
-    return a.color.localeCompare(b.color)
+    const colorOrder = a.color.localeCompare(b.color)
+    if (colorOrder !== 0) {
+      return colorOrder
+    }
+    return a.junction.localeCompare(b.junction)
   })
-
-  return connectors
 }
 
-function autoConnectorSymbolType(connectorType: AutoConnectorType): SymbolElement['symbolType'] {
-  return connectorType === 'cadweld'
-    ? 'cadweld_connection'
+function autoConnectorSymbolType(
+  connectorType: AutoConnectorType,
+  junction: AutoConnectorJunction,
+): SymbolElement['symbolType'] {
+  if (connectorType === 'cadweld') {
+    return junction === 'crossrun'
+      ? 'cadweld_crossrun_connection'
+      : 'cadweld_connection'
+  }
+
+  return junction === 'crossrun'
+    ? 'mechanical_crossrun_connection'
     : 'cable_to_cable_connection'
 }
 
-function autoConnectorId(position: Point, color: MaterialColor, page: number): string {
+function autoConnectorId(
+  position: Point,
+  color: MaterialColor,
+  page: number,
+  junction: AutoConnectorJunction,
+  connectorType: AutoConnectorType,
+): string {
   const x = Math.round(position.x * 10)
   const y = Math.round(position.y * 10)
-  return `auto-connector-p${page}-${x}-${y}-${color}`
+  const mode = connectorType === 'cadweld' ? 'c' : 'm'
+  return `auto-connector-p${page}-${x}-${y}-${color}-${junction}-${mode}`
+}
+
+function hasConnectorNear(
+  symbols: readonly SymbolElement[],
+  position: Point,
+  page: number,
+): boolean {
+  return symbols.some((symbol) =>
+    AUTO_CONNECTOR_SYMBOL_TYPES.has(symbol.symbolType) &&
+    (symbol.page ?? 1) === page &&
+    distance(symbol.position, position) <= CONNECTOR_DEDUPE_EPSILON_PT,
+  )
+}
+
+function findConductorByRef(
+  conductors: readonly Conductor[],
+  ref: AddedConductorRef,
+): Conductor | null {
+  const match = conductors.find((conductor) => conductor.kind === ref.kind && conductor.id === ref.id)
+  return match ?? null
+}
+
+function candidatesForAddedConductor(
+  addedConductor: Conductor,
+  conductorsOnPage: readonly Conductor[],
+): Point[] {
+  const points: Point[] = [
+    { ...addedConductor.start },
+    { ...addedConductor.end },
+  ]
+
+  for (const conductor of conductorsOnPage) {
+    if (conductor.id === addedConductor.id && conductor.kind === addedConductor.kind) {
+      continue
+    }
+
+    if (!boundsOverlap(addedConductor.bounds, conductor.bounds, NODE_TOUCH_EPSILON_PT)) {
+      continue
+    }
+
+    points.push(...intersectionsBetweenConductors(addedConductor, conductor))
+  }
+
+  return clusterPoints(points, NODE_CLUSTER_EPSILON_PT)
+}
+
+export function isAutoConnectorSymbolType(symbolType: SymbolElement['symbolType']): boolean {
+  return AUTO_CONNECTOR_SYMBOL_TYPES.has(symbolType)
+}
+
+export function computeAutoConnectorNodes(project: LpProject): AutoConnectorNode[] {
+  const conductors = inScopeConductors(project)
+  const conductorsByPage = new Map<number, Conductor[]>()
+
+  for (const conductor of conductors) {
+    const existing = conductorsByPage.get(conductor.page)
+    if (existing) {
+      existing.push(conductor)
+    } else {
+      conductorsByPage.set(conductor.page, [conductor])
+    }
+  }
+
+  const nodes: AutoConnectorNode[] = []
+  for (const [page, conductorsOnPage] of conductorsByPage.entries()) {
+    const candidates = clusterPoints(
+      [
+        ...endpointCandidates(conductorsOnPage),
+        ...allPairIntersections(conductorsOnPage),
+      ],
+      NODE_CLUSTER_EPSILON_PT,
+    )
+
+    for (const candidate of candidates) {
+      const node = resolveNodeFromPoint(candidate, conductorsOnPage, page)
+      if (!node) {
+        continue
+      }
+      nodes.push(node)
+    }
+  }
+
+  return sortNodes(nodes)
 }
 
 export function buildAutoConnectorSymbols(
@@ -385,8 +485,8 @@ export function buildAutoConnectorSymbols(
   const nodes = computeAutoConnectorNodes(project)
 
   return nodes.map((node) => ({
-    id: autoConnectorId(node.position, node.color, node.page),
-    symbolType: autoConnectorSymbolType(connectorType),
+    id: autoConnectorId(node.position, node.color, node.page, node.junction, connectorType),
+    symbolType: autoConnectorSymbolType(connectorType, node.junction),
     position: node.position,
     page: node.page,
     color: node.color,
@@ -395,15 +495,88 @@ export function buildAutoConnectorSymbols(
   }))
 }
 
-export function stripAutoConnectorSymbols(symbols: SymbolElement[]): SymbolElement[] {
-  return symbols.filter((symbol) => {
-    if (!symbol.autoConnector) {
-      return true
+export function buildAutoConnectorSymbolsForAddedConductors(
+  project: LpProject,
+  addedConductors: readonly AddedConductorRef[],
+  connectorType: AutoConnectorType = project.settings.autoConnectorType,
+): SymbolElement[] {
+  if (!project.settings.autoConnectorsEnabled || addedConductors.length === 0) {
+    return []
+  }
+
+  const conductors = inScopeConductors(project)
+  if (conductors.length === 0) {
+    return []
+  }
+
+  const conductorsByPage = new Map<number, Conductor[]>()
+  for (const conductor of conductors) {
+    const existing = conductorsByPage.get(conductor.page)
+    if (existing) {
+      existing.push(conductor)
+    } else {
+      conductorsByPage.set(conductor.page, [conductor])
+    }
+  }
+
+  const pending: SymbolElement[] = []
+  for (const conductorRef of addedConductors) {
+    const addedConductor = findConductorByRef(conductors, conductorRef)
+    if (!addedConductor) {
+      continue
     }
 
-    return (
-      symbol.symbolType !== 'cable_to_cable_connection' &&
-      symbol.symbolType !== 'cadweld_connection'
-    )
+    const conductorsOnPage = conductorsByPage.get(addedConductor.page)
+    if (!conductorsOnPage || conductorsOnPage.length === 0) {
+      continue
+    }
+
+    const candidates = candidatesForAddedConductor(addedConductor, conductorsOnPage)
+    for (const candidate of candidates) {
+      const node = resolveNodeFromPoint(candidate, conductorsOnPage, addedConductor.page)
+      if (!node) {
+        continue
+      }
+
+      if (
+        hasConnectorNear(project.elements.symbols, node.position, node.page) ||
+        hasConnectorNear(pending, node.position, node.page)
+      ) {
+        continue
+      }
+
+      pending.push({
+        id: autoConnectorId(node.position, node.color, node.page, node.junction, connectorType),
+        symbolType: autoConnectorSymbolType(connectorType, node.junction),
+        position: node.position,
+        page: node.page,
+        color: node.color,
+        class: node.connectorClass,
+        autoConnector: true,
+      })
+    }
+  }
+
+  return [...pending].sort((a, b) => {
+    const pageA = a.page ?? 1
+    const pageB = b.page ?? 1
+    if (pageA !== pageB) {
+      return pageA - pageB
+    }
+    if (Math.abs(a.position.y - b.position.y) > 1e-6) {
+      return a.position.y - b.position.y
+    }
+    if (Math.abs(a.position.x - b.position.x) > 1e-6) {
+      return a.position.x - b.position.x
+    }
+    const colorOrder = a.color.localeCompare(b.color)
+    if (colorOrder !== 0) {
+      return colorOrder
+    }
+    return a.symbolType.localeCompare(b.symbolType)
   })
+}
+
+export function stripAutoConnectorSymbols(symbols: SymbolElement[]): SymbolElement[] {
+  return symbols.filter((symbol) => !symbol.autoConnector || !AUTO_CONNECTOR_SYMBOL_TYPES.has(symbol.symbolType))
 }

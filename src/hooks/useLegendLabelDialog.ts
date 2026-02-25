@@ -1,6 +1,6 @@
 import { createEffect, createSignal, type Accessor, type Setter } from 'solid-js'
 import { clampDialogPositionToViewport } from '../lib/appUiHelpers'
-import { buildLegendDisplayEntries, legendEditorBaseLabel } from '../lib/legendDisplay'
+import { buildLegendDisplayEntries, legendEditorBaseLabel, legendEditorItemName } from '../lib/legendDisplay'
 import type { LegendLabelDialogDragState, LegendLabelEditState } from '../types/appRuntime'
 import type { LpProject, Point, Selection } from '../types/project'
 
@@ -129,11 +129,18 @@ export function useLegendLabelDialog(options: UseLegendLabelDialogOptions) {
     }
 
     const inputByKey: Record<string, string> = {}
-    for (const entry of entries) {
-      inputByKey[entry.key] = placement.editedLabels[entry.key] ?? legendEditorBaseLabel(p, entry)
+    const rows = entries.map((entry) => ({
+      key: entry.key,
+      itemName: legendEditorItemName(entry),
+      countLabel: entry.countLabel,
+      baseLabel: legendEditorBaseLabel(p, entry),
+    }))
+    for (const row of rows) {
+      inputByKey[row.key] = placement.editedLabels[row.key] ?? row.baseLabel
     }
 
     setLegendLabelEdit({
+      rows,
       placementId,
       inputByKey,
       screen: legendLabelDialogScreenFromDocPoint(placement.position),
@@ -168,14 +175,12 @@ export function useLegendLabelDialog(options: UseLegendLabelDialogOptions) {
       return
     }
 
-    const entries = buildLegendDisplayEntries(p, placement)
     const nextEditedLabels: Record<string, string> = {}
-    for (const entry of entries) {
-      const baseLabel = legendEditorBaseLabel(p, entry)
-      const currentValue = editor.inputByKey[entry.key] ?? baseLabel
+    for (const row of editor.rows) {
+      const currentValue = editor.inputByKey[row.key] ?? row.baseLabel
       const normalized = currentValue.trim()
-      if (normalized.length > 0 && normalized !== baseLabel) {
-        nextEditedLabels[entry.key] = normalized
+      if (normalized.length > 0 && normalized !== row.baseLabel) {
+        nextEditedLabels[row.key] = normalized
       }
     }
 

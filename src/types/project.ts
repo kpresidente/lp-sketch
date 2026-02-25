@@ -15,6 +15,7 @@ export type SymbolType =
   | 'bonded_air_terminal'
   | 'bond'
   | 'cadweld_connection'
+  | 'cadweld_crossrun_connection'
   | 'continued'
   | 'connect_existing'
   | 'conduit_downlead_ground'
@@ -26,6 +27,7 @@ export type SymbolType =
   | 'ground_rod'
   | 'steel_bond'
   | 'cable_to_cable_connection'
+  | 'mechanical_crossrun_connection'
 
 export type ScaleDisplayUnits = 'ft-in' | 'decimal-ft' | 'm'
 export type DataScope = 'page' | 'global'

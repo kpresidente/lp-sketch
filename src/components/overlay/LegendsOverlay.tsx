@@ -1,11 +1,10 @@
 import { For, Show } from 'solid-js'
 import SymbolGlyph from '../SymbolGlyph'
 import { COLOR_HEX } from '../../model/defaultProject'
-import { legendSymbolScale } from '../../lib/legendSymbolScale'
+import { legendSymbolCenterOffsetY, legendSymbolScale } from '../../lib/legendSymbolScale'
 import { wireDashPatternSvgForScale, wireStrokeWidthForScale } from '../../lib/annotationScale'
 import type { SymbolElement } from '../../types/project'
 import type { OverlayLayerProps } from './types'
-import { hasBothGroundRodClasses } from '../../lib/symbolClass'
 
 type LegendsOverlayProps = Pick<
   OverlayLayerProps,
@@ -22,7 +21,6 @@ type LegendsOverlayProps = Pick<
 
 export default function LegendsOverlay(props: LegendsOverlayProps) {
   const designScale = () => props.annotationScale ?? 1
-  const showGroundRodClassIndicator = () => hasBothGroundRodClasses(props.project.elements.symbols)
 
   return (
     <For each={props.project.legend.placements}>
@@ -139,12 +137,17 @@ export default function LegendsOverlay(props: LegendsOverlayProps) {
                     props.legendUi.titleHeightPx +
                     props.legendUi.rowHeightPx +
                     index() * props.legendUi.rowHeightPx
+                  const symbolType = entry.symbolType ?? 'air_terminal'
+                  const symbolScale = legendSymbolScale(symbolType, designScale())
                   const legendSymbol: SymbolElement = {
                     id: `legend-symbol-${entry.key}`,
-                    symbolType: entry.symbolType ?? 'air_terminal',
+                    symbolType,
                     position: {
                       x: origin.x + props.legendUi.symbolCenterXPx,
-                      y: rowTop + props.legendUi.rowHeightPx / 2,
+                      y:
+                        rowTop +
+                        props.legendUi.rowHeightPx / 2 +
+                        legendSymbolCenterOffsetY(symbolType, symbolScale),
                     },
                     color: entry.color,
                     class: entry.class,
@@ -170,8 +173,7 @@ export default function LegendsOverlay(props: LegendsOverlayProps) {
                       >
                         <SymbolGlyph
                           symbol={legendSymbol}
-                          annotationScale={legendSymbolScale(entry.symbolType ?? 'air_terminal', designScale())}
-                          showGroundRodClassIndicator={showGroundRodClassIndicator()}
+                          annotationScale={symbolScale}
                         />
                       </Show>
                       <text

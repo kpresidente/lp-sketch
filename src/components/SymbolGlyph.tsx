@@ -1,10 +1,11 @@
 import { Show, type JSX } from 'solid-js'
 import { COLOR_HEX } from '../model/defaultProject'
 import type { SymbolElement } from '../types/project'
-import { groundRodClassLabel, resolvedSymbolClass } from '../lib/symbolClass'
+import { resolvedSymbolClass } from '../lib/symbolClass'
 
 const SYMBOL_SIZE = 14
 const HALF = SYMBOL_SIZE / 2
+const ANNOTATION_SYMBOL_COLOR = '#111827'
 const LETTERED_AIR_TERMINAL_SYMBOLS = new Set<SymbolElement['symbolType']>([
   'air_terminal',
   'bonded_air_terminal',
@@ -15,7 +16,6 @@ interface SymbolGlyphProps {
   selected?: boolean
   hovered?: boolean
   annotationScale?: number
-  showGroundRodClassIndicator?: boolean
 }
 
 function classFill(className: SymbolElement['class'], color: string) {
@@ -36,7 +36,9 @@ function classStrokeWidth(className: SymbolElement['class'], scale: number) {
 
 function commonStyle(symbol: SymbolElement, scale: number) {
   const className = resolvedSymbolClass(symbol)
-  const color = COLOR_HEX[symbol.color]
+  const color = symbol.symbolType === 'continued'
+    ? ANNOTATION_SYMBOL_COLOR
+    : COLOR_HEX[symbol.color]
   return {
     className,
     color,
@@ -124,7 +126,6 @@ function chevronUpShape(color: string, scale: number): JSX.Element {
 function symbolShape(
   symbol: SymbolElement,
   scale: number,
-  showGroundRodClassIndicator: boolean,
 ): JSX.Element {
   const style = commonStyle(symbol, scale)
 
@@ -156,7 +157,7 @@ function symbolShape(
     case 'conduit_downlead_ground':
       return (
         <>
-          <circle cx={0} cy={0} r={6 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
+          <rect x={-5.4 * scale} y={-5.4 * scale} width={10.8 * scale} height={10.8 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
           {doubleChevronsDownShape(style.innerStroke, scale)}
         </>
       )
@@ -164,7 +165,7 @@ function symbolShape(
     case 'conduit_downlead_roof':
       return (
         <>
-          <circle cx={0} cy={0} r={6 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
+          <rect x={-5.4 * scale} y={-5.4 * scale} width={10.8 * scale} height={10.8 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
           {chevronUpShape(style.innerStroke, scale)}
         </>
       )
@@ -172,7 +173,7 @@ function symbolShape(
     case 'surface_downlead_ground':
       return (
         <>
-          <rect x={-5.4 * scale} y={-5.4 * scale} width={10.8 * scale} height={10.8 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
+          <circle cx={0} cy={0} r={6 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
           {doubleChevronsDownShape(style.innerStroke, scale)}
         </>
       )
@@ -180,7 +181,7 @@ function symbolShape(
     case 'surface_downlead_roof':
       return (
         <>
-          <rect x={-5.4 * scale} y={-5.4 * scale} width={10.8 * scale} height={10.8 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
+          <circle cx={0} cy={0} r={6 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
           {chevronUpShape(style.innerStroke, scale)}
         </>
       )
@@ -220,34 +221,12 @@ function symbolShape(
       return (
         <>
           <line x1={0} y1={0} x2={0} y2={27 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
+          <Show when={style.className === 'class2'}>
+            <line x1={-13 * scale} y1={23 * scale} x2={13 * scale} y2={23 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
+          </Show>
           <line x1={-10 * scale} y1={27 * scale} x2={10 * scale} y2={27 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
           <line x1={-6.4 * scale} y1={31 * scale} x2={6.4 * scale} y2={31 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
           <line x1={-3.6 * scale} y1={35 * scale} x2={3.6 * scale} y2={35 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
-          <Show when={showGroundRodClassIndicator && groundRodClassLabel(symbol)}>
-            {(label) => (
-              <>
-                <polygon
-                  points={`0,${8.8 * scale} ${5.6 * scale},${14.4 * scale} 0,${20 * scale} ${-5.6 * scale},${14.4 * scale}`}
-                  fill={style.fill}
-                  stroke={style.color}
-                  stroke-width={style.strokeWidth}
-                  stroke-linejoin="round"
-                />
-                <text
-                  x={0}
-                  y={14.4 * scale}
-                  fill={style.innerStroke}
-                  font-size={`${8 * scale}px`}
-                  font-weight="700"
-                  font-family="Segoe UI, Arial, sans-serif"
-                  text-anchor="middle"
-                  dominant-baseline="middle"
-                >
-                  {label()}
-                </text>
-              </>
-            )}
-          </Show>
         </>
       )
 
@@ -277,13 +256,68 @@ function symbolShape(
         />
       )
 
-    case 'cadweld_connection':
+    case 'mechanical_crossrun_connection': {
+      const innerFill = style.className === 'class2' ? '#ffffff' : style.fill
       return (
         <>
-          <circle cx={0} cy={0} r={5.4 * scale} fill={style.fill} stroke={style.color} stroke-width={style.strokeWidth} />
-          <circle cx={0} cy={0} r={1.7 * scale} fill={style.color} stroke={style.color} stroke-width={1.2 * scale} />
+          <circle
+            cx={0}
+            cy={0}
+            r={6 * scale}
+            fill={style.fill}
+            stroke={style.color}
+            stroke-width={style.strokeWidth}
+          />
+          <circle
+            cx={0}
+            cy={0}
+            r={3.2 * scale}
+            fill={innerFill}
+            stroke={style.color}
+            stroke-width={style.strokeWidth}
+          />
         </>
       )
+    }
+
+    case 'cadweld_connection':
+      return (
+        <rect
+          x={-3.2 * scale}
+          y={-3.2 * scale}
+          width={6.4 * scale}
+          height={6.4 * scale}
+          fill={style.fill}
+          stroke={style.color}
+          stroke-width={style.strokeWidth}
+        />
+      )
+
+    case 'cadweld_crossrun_connection': {
+      const innerFill = style.className === 'class2' ? '#ffffff' : style.fill
+      return (
+        <>
+          <rect
+            x={-5.5 * scale}
+            y={-5.5 * scale}
+            width={11 * scale}
+            height={11 * scale}
+            fill={style.fill}
+            stroke={style.color}
+            stroke-width={style.strokeWidth}
+          />
+          <rect
+            x={-3.2 * scale}
+            y={-3.2 * scale}
+            width={6.4 * scale}
+            height={6.4 * scale}
+            fill={innerFill}
+            stroke={style.color}
+            stroke-width={style.strokeWidth}
+          />
+        </>
+      )
+    }
 
     case 'continued':
       return (
@@ -366,7 +400,7 @@ export default function SymbolGlyph(props: SymbolGlyphProps): JSX.Element {
     >
       <circle cx={0} cy={0} r={half() + 5 * designScale()} fill="transparent" stroke="none" />
       <g transform={`rotate(${rotation()})`}>
-        {symbolShape(props.symbol, designScale(), props.showGroundRodClassIndicator ?? false)}
+        {symbolShape(props.symbol, designScale())}
       </g>
       <Show when={props.symbol.letter}>
         {(letter) => (

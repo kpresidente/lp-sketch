@@ -12,7 +12,15 @@ const GROUNDING_SYMBOLS = new Set<SymbolType>([
   'steel_bond',
 ])
 
+const ANNOTATION_SYMBOLS = new Set<SymbolType>([
+  'continued',
+])
+
 export function symbolLayer(symbolType: SymbolType): LayerId {
+  if (ANNOTATION_SYMBOLS.has(symbolType)) {
+    return 'annotation'
+  }
+
   if (DOWNLEAD_SYMBOLS.has(symbolType)) {
     return 'downleads'
   }
@@ -83,14 +91,7 @@ export function filterProjectByVisibleLayers(project: LpProject): LpProject {
   const allowLayer = (layer: LayerId) => project.layers[layer]
 
   const symbolVisible = (symbolType: SymbolType): boolean => {
-    const layer = symbolLayer(symbolType)
-    if (layer === 'downleads') {
-      return downleadsVisible
-    }
-    if (layer === 'grounding') {
-      return groundingVisible
-    }
-    return rooftopVisible
+    return allowLayer(symbolLayer(symbolType))
   }
 
   return {

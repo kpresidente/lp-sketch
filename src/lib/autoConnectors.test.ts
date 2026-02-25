@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createDefaultProject } from '../model/defaultProject'
 import {
   buildAutoConnectorSymbols,
+  buildAutoConnectorSymbolsForAddedConductors,
   computeAutoConnectorNodes,
   stripAutoConnectorSymbols,
 } from './autoConnectors'
@@ -29,7 +30,7 @@ describe('auto connector classifier', () => {
     expect(computeAutoConnectorNodes(project)).toEqual([])
   })
 
-  it('places a connector when a third branch meets an L-corner node', () => {
+  it('classifies a 3-branch junction as tee', () => {
     const project = createDefaultProject('T-junction')
     project.elements.lines.push(
       {
@@ -59,10 +60,11 @@ describe('auto connector classifier', () => {
     expect(nodes).toHaveLength(1)
     expect(nodes[0].position.x).toBeCloseTo(100, 3)
     expect(nodes[0].position.y).toBeCloseTo(0, 3)
+    expect(nodes[0].junction).toBe('tee')
   })
 
-  it('places connectors for line-line and line-arc interior intersections', () => {
-    const project = createDefaultProject('Mixed intersections')
+  it('classifies a + line intersection as crossrun', () => {
+    const project = createDefaultProject('Crossrun')
     project.elements.lines.push(
       {
         id: 'line-h',
@@ -79,6 +81,23 @@ describe('auto connector classifier', () => {
         class: 'class1',
       },
     )
+
+    const nodes = computeAutoConnectorNodes(project)
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0].junction).toBe('crossrun')
+    expect(nodes[0].position.x).toBeCloseTo(50, 3)
+    expect(nodes[0].position.y).toBeCloseTo(50, 3)
+  })
+
+  it('detects intersections that involve arcs and curves', () => {
+    const project = createDefaultProject('Arc and curve intersections')
+    project.elements.lines.push({
+      id: 'line-v',
+      start: { x: 50, y: 0 },
+      end: { x: 50, y: 100 },
+      color: 'green',
+      class: 'class1',
+    })
     project.elements.arcs.push({
       id: 'arc-1',
       start: { x: 20, y: 80 },
@@ -87,11 +106,20 @@ describe('auto connector classifier', () => {
       color: 'green',
       class: 'class1',
     })
+    project.elements.curves.push({
+      id: 'curve-1',
+      start: { x: 10, y: 20 },
+      through: { x: 70, y: 35 },
+      end: { x: 90, y: 20 },
+      color: 'green',
+      class: 'class1',
+    })
 
     const nodes = computeAutoConnectorNodes(project)
     expect(nodes.length).toBeGreaterThanOrEqual(2)
-    expect(nodes.some((entry) => Math.abs(entry.position.x - 50) < 1 && Math.abs(entry.position.y - 50) < 1)).toBe(true)
-    expect(nodes.some((entry) => Math.abs(entry.position.x - 50) < 1 && Math.abs(entry.position.y - 20) < 1)).toBe(true)
+    expect(
+      nodes.some((entry) => Math.abs(entry.position.x - 50) < 1 && Math.abs(entry.position.y - 20) < 1),
+    ).toBe(true)
   })
 
   it('does not infer connectors across different pages', () => {
@@ -144,50 +172,36 @@ describe('auto connector classifier', () => {
     expect(nodes[0].connectorClass).toBe('class2')
   })
 
-  it('builds auto connector symbols and strips them without removing manual connectors', () => {
-    const project = createDefaultProject('Auto symbol projection')
+  it('builds connector symbol families by junction type', () => {
+    const project = createDefaultProject('Connector symbol family')
     project.elements.lines.push(
       {
-        id: 'line-a',
-        start: { x: 0, y: 0 },
-        end: { x: 100, y: 0 },
+        id: 'line-h',
+        start: { x: 0, y: 50 },
+        end: { x: 100, y: 50 },
         color: 'green',
         class: 'class1',
       },
       {
-        id: 'line-b',
-        start: { x: 50, y: -50 },
-        end: { x: 50, y: 50 },
+        id: 'line-v',
+        start: { x: 50, y: 0 },
+        end: { x: 50, y: 100 },
         color: 'green',
         class: 'class1',
       },
     )
-    project.elements.symbols.push({
-      id: 'manual-connector',
-      symbolType: 'cable_to_cable_connection',
-      position: { x: 50, y: 0 },
-      color: 'green',
-      class: 'none',
-    })
 
-    const autoSymbols = buildAutoConnectorSymbols(project)
-    expect(autoSymbols).toHaveLength(1)
-    expect(autoSymbols[0].autoConnector).toBe(true)
-    expect(autoSymbols[0].page).toBe(1)
-    expect(autoSymbols[0].class).toBe('class1')
-    expect(autoSymbols[0].symbolType).toBe('cable_to_cable_connection')
+    const mechanical = buildAutoConnectorSymbols(project, 'mechanical')
+    expect(mechanical).toHaveLength(1)
+    expect(mechanical[0].symbolType).toBe('mechanical_crossrun_connection')
 
-    const stripped = stripAutoConnectorSymbols([
-      ...project.elements.symbols,
-      ...autoSymbols,
-    ])
-    expect(stripped).toHaveLength(1)
-    expect(stripped[0].id).toBe('manual-connector')
+    const cadweld = buildAutoConnectorSymbols(project, 'cadweld')
+    expect(cadweld).toHaveLength(1)
+    expect(cadweld[0].symbolType).toBe('cadweld_crossrun_connection')
   })
 
-  it('supports cadweld auto-connector symbol mode', () => {
-    const project = createDefaultProject('Cadweld Auto Symbol Projection')
-    project.settings.autoConnectorType = 'cadweld'
+  it('adds connectors only for newly added conductors and deduplicates against existing connector symbols', () => {
+    const project = createDefaultProject('Placement-time connectors')
     project.elements.lines.push(
       {
         id: 'line-a',
@@ -198,18 +212,65 @@ describe('auto connector classifier', () => {
       },
       {
         id: 'line-b',
-        start: { x: 50, y: -50 },
-        end: { x: 50, y: 50 },
+        start: { x: 100, y: 0 },
+        end: { x: 100, y: 80 },
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'line-c',
+        start: { x: 100, y: 0 },
+        end: { x: 160, y: 0 },
         color: 'green',
         class: 'class1',
       },
     )
 
-    const autoSymbols = buildAutoConnectorSymbols(project)
-    expect(autoSymbols).toHaveLength(1)
-    expect(autoSymbols[0].symbolType).toBe('cadweld_connection')
+    const first = buildAutoConnectorSymbolsForAddedConductors(project, [{ kind: 'line', id: 'line-c' }])
+    expect(first).toHaveLength(1)
+    expect(first[0].symbolType).toBe('cable_to_cable_connection')
 
-    const stripped = stripAutoConnectorSymbols(autoSymbols)
-    expect(stripped).toHaveLength(0)
+    project.elements.symbols.push(first[0])
+    const second = buildAutoConnectorSymbolsForAddedConductors(project, [{ kind: 'line', id: 'line-c' }])
+    expect(second).toHaveLength(0)
+  })
+
+  it('strips only auto-generated connector symbols, preserving manual connectors', () => {
+    const symbols = [
+      {
+        id: 'manual-mech',
+        symbolType: 'cable_to_cable_connection',
+        position: { x: 10, y: 10 },
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'manual-cross',
+        symbolType: 'mechanical_crossrun_connection',
+        position: { x: 12, y: 12 },
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'auto-mech',
+        symbolType: 'cable_to_cable_connection',
+        position: { x: 20, y: 20 },
+        color: 'green',
+        class: 'class1',
+        autoConnector: true,
+      },
+      {
+        id: 'auto-cross',
+        symbolType: 'cadweld_crossrun_connection',
+        position: { x: 22, y: 22 },
+        color: 'green',
+        class: 'class2',
+        autoConnector: true,
+      },
+    ]
+
+    const stripped = stripAutoConnectorSymbols(symbols)
+    expect(stripped).toHaveLength(2)
+    expect(stripped.map((entry) => entry.id).sort()).toEqual(['manual-cross', 'manual-mech'])
   })
 })

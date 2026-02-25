@@ -94,16 +94,56 @@ function MultiSelectHandPlusIcon(): JSX.Element {
   )
 }
 
+function CadweldConnectionIcon(): JSX.Element {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect
+        x="8.2"
+        y="8.2"
+        width="7.6"
+        height="7.6"
+        stroke="currentColor"
+        stroke-width="2"
+      />
+    </svg>
+  )
+}
+
+function MechanicalCrossrunConnectionIcon(): JSX.Element {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="6.6" stroke="currentColor" stroke-width="2" />
+      <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="2" />
+    </svg>
+  )
+}
+
+function CadweldCrossrunConnectionIcon(): JSX.Element {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5.2" y="5.2" width="13.6" height="13.6" stroke="currentColor" stroke-width="2" />
+      <rect x="8.2" y="8.2" width="7.6" height="7.6" stroke="currentColor" stroke-width="2" />
+    </svg>
+  )
+}
+
 export function CustomIcon(props: CustomIconProps): JSX.Element {
   const glyph = () => {
     switch (props.name) {
       case 'at-arc':
         return <AtArcIcon />
+      case 'cadweld-connection':
+        return <CadweldConnectionIcon />
+      case 'mechanical-crossrun-connection':
+        return <MechanicalCrossrunConnectionIcon />
+      case 'cadweld-crossrun-connection':
+        return <CadweldCrossrunConnectionIcon />
       case 'multi-select-hand-plus':
         return <MultiSelectHandPlusIcon />
       case 'steel-bond-filled':
-      default:
         return <SteelBondFilledIcon />
+      default:
+        return <AtArcIcon />
     }
   }
 

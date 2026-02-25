@@ -1,15 +1,18 @@
+import type { JSX } from 'solid-js'
 import Panel from './Panel'
 import type { SymbolType, Tool } from '../../types/project'
 import {
   SYMBOL_BUTTON_ICON,
+  SYMBOL_CUSTOM_ICON,
   SYMBOL_CLASS2_CUSTOM_ICON,
   TOOL_CUSTOM_ICON,
   TOOL_ICON,
   tablerIconClass,
 } from '../../config/iconRegistry'
 import {
-  isSymbolDisabledForMaterial,
-  isToolDisabledForMaterial,
+  formatDisabledTooltip,
+  symbolDisabledReasons,
+  toolDisabledReasons,
 } from '../../lib/componentAvailability'
 import { CustomIcon } from '../icons/CustomIcon'
 import { useAppController } from '../../context/AppControllerContext'
@@ -21,12 +24,15 @@ export default function ComponentsPanel() {
     props.tool === 'symbol' && props.activeSymbol === symbolType
 
   const toolBtn = (id: Tool, label: string, buttonClass = '', labelClass = '', title = label) => (
+    (() => {
+      const reasons = toolDisabledReasons(id, props.project, props.project.settings.activeColor)
+      return (
     <button
       class={`btn ${buttonClass} ${isToolActive(id) ? 'active' : ''}`.trim()}
       type="button"
       aria-pressed={isToolActive(id)}
-      title={title}
-      disabled={isToolDisabledForMaterial(id, props.project.settings.activeColor)}
+      title={formatDisabledTooltip(title, reasons)}
+      disabled={reasons.length > 0}
       onClick={() => props.onSelectTool(id)}
     >
       {TOOL_CUSTOM_ICON[id]
@@ -34,21 +40,26 @@ export default function ComponentsPanel() {
         : <i class={tablerIconClass(TOOL_ICON[id])} />}
       <span class={`btn-text ${labelClass}`.trim()}>{label}</span>
     </button>
+      )
+    })()
   )
 
   const symbolBtn = (
     symbolType: SymbolType,
-    label: string,
+    label: string | JSX.Element,
     buttonClass = '',
     labelClass = '',
-    title = label,
+    title = typeof label === 'string' ? label : '',
   ) => (
+    (() => {
+      const reasons = symbolDisabledReasons(symbolType, props.project.settings.activeColor)
+      return (
     <button
       class={`btn ${buttonClass} ${isSymbolActive(symbolType) ? 'active' : ''}`.trim()}
       type="button"
       aria-pressed={isSymbolActive(symbolType)}
-      title={title}
-      disabled={isSymbolDisabledForMaterial(symbolType, props.project.settings.activeColor)}
+      title={formatDisabledTooltip(title, reasons)}
+      disabled={reasons.length > 0}
       onClick={() => {
         props.onSetActiveSymbol(symbolType)
         props.onSelectTool('symbol')
@@ -56,9 +67,13 @@ export default function ComponentsPanel() {
     >
       {props.project.settings.activeClass === 'class2' && SYMBOL_CLASS2_CUSTOM_ICON[symbolType]
         ? <CustomIcon name={SYMBOL_CLASS2_CUSTOM_ICON[symbolType]} />
-        : <i class={tablerIconClass(SYMBOL_BUTTON_ICON[symbolType])} />}
+        : SYMBOL_CUSTOM_ICON[symbolType]
+          ? <CustomIcon name={SYMBOL_CUSTOM_ICON[symbolType]} />
+          : <i class={tablerIconClass(SYMBOL_BUTTON_ICON[symbolType])} />}
       <span class={`btn-text ${labelClass}`.trim()}>{label}</span>
     </button>
+      )
+    })()
   )
 
   return (
@@ -79,10 +94,15 @@ export default function ComponentsPanel() {
       </div>
 
       <div class="section-label">Connections</div>
-      <div class="btn-grid-3">
+      <div class="btn-grid-3" style={{ "margin-bottom": "5px" }}>
         {symbolBtn('bond', 'Bond')}
         {symbolBtn('cable_to_cable_connection', 'Mechanical')}
         {symbolBtn('cadweld_connection', 'Cadweld')}
+      </div>
+      <div class="btn-grid-3">
+        {symbolBtn('connect_existing', 'Conn\nExisting', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Connect Existing')}
+        {symbolBtn('mechanical_crossrun_connection', 'Mech\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Mechanical Crossrun')}
+        {symbolBtn('cadweld_crossrun_connection', 'Cad\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Cadweld Crossrun')}
       </div>
 
       <div class="section-label">Downleads</div>
@@ -105,12 +125,6 @@ export default function ComponentsPanel() {
       <div class="btn-grid-3">
         {symbolBtn('ground_rod', 'Ground Rod')}
         {symbolBtn('steel_bond', 'Steel Bond')}
-      </div>
-
-      <div class="section-label">Miscellaneous</div>
-      <div class="btn-grid-3">
-        {symbolBtn('continued', 'Continued')}
-        {symbolBtn('connect_existing', 'Connect Existing')}
       </div>
     </Panel>
   )

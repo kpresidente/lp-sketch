@@ -1,10 +1,9 @@
-import { buildLegendDisplayEntries, legendEditorBaseLabel, legendEditorItemName } from '../../lib/legendDisplay'
+import { Index } from 'solid-js'
 import type { LegendLabelEditState } from '../../types/appRuntime'
-import type { DataScope, LpProject } from '../../types/project'
+import type { DataScope } from '../../types/project'
 
 interface LegendLabelDialogProps {
   editor: LegendLabelEditState
-  project: LpProject
   scope: DataScope
   setDialogRef: (element: HTMLDivElement | undefined) => void
   onTitlePointerDown: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
@@ -70,29 +69,22 @@ export default function LegendLabelDialog(props: LegendLabelDialogProps) {
             </tr>
           </thead>
           <tbody>
-            {(() => {
-              const placement = props.project.legend.placements.find(
-                (entry) => entry.id === props.editor.placementId,
-              )
-              if (!placement) {
-                return null
-              }
-
-              const entries = buildLegendDisplayEntries(props.project, placement)
-              return entries.map((entry) => {
+            <Index each={props.editor.rows}>
+              {(rowAccessor) => {
+                const row = rowAccessor()
                 const inputValue =
-                  props.editor.inputByKey[entry.key] ?? legendEditorBaseLabel(props.project, entry)
+                  props.editor.inputByKey[row.key] ?? row.baseLabel
 
                 return (
                   <tr>
-                    <td>{legendEditorItemName(entry)}</td>
-                    <td class="legend-label-count-cell">{entry.countLabel}</td>
+                    <td>{row.itemName}</td>
+                    <td class="legend-label-count-cell">{row.countLabel}</td>
                     <td>
                       <input
                         class="input-field legend-label-input"
                         type="text"
                         value={inputValue}
-                        onInput={(event) => props.onSetInput(entry.key, event.currentTarget.value)}
+                        onInput={(event) => props.onSetInput(row.key, event.currentTarget.value)}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter') {
                             event.preventDefault()
@@ -106,8 +98,8 @@ export default function LegendLabelDialog(props: LegendLabelDialogProps) {
                     </td>
                   </tr>
                 )
-              })
-            })()}
+              }}
+            </Index>
           </tbody>
         </table>
       </div>

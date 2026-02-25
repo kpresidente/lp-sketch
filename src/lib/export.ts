@@ -3,7 +3,6 @@ import { COLOR_HEX } from '../model/defaultProject'
 import type { LpProject, SymbolElement } from '../types/project'
 import {
   annotationScaleFactor,
-  approximateTextWidthForScale,
   approximateLegendLineWidthForScale,
   scaledLegendMetrics,
   textFontSizePxForScale,
@@ -19,19 +18,21 @@ import {
 import { downloadBlob } from './files'
 import {
   dimensionBarLineSegments,
+  dimensionLabelWidthPx,
   dimensionExtensionLineSegments,
   dimensionLineworkGeometry,
   dimensionTextLabel,
 } from './dimensionText'
 import { circularArcGeometryFromThreePoints } from './geometry'
 import { buildLegendItemsFromSymbols } from './legend'
-import { legendSymbolScale } from './legendSymbolScale'
+import { legendSymbolCenterOffsetY, legendSymbolScale } from './legendSymbolScale'
 import { buildLegendDisplayEntries, type LegendDisplayEntry } from './legendDisplay'
 import { GENERAL_NOTES_TITLE, generalNotesBoxSize, generalNotesDisplayLines, scaledGeneralNotesMetrics } from './generalNotes'
 import { filterProjectByCurrentPage, filterProjectByVisibleLayers } from './layers'
-import { groundRodClassLabel, hasBothGroundRodClasses, resolvedSymbolClass } from './symbolClass'
+import { resolvedSymbolClass } from './symbolClass'
 
 const LEGEND_TITLE = 'Legend'
+const ANNOTATION_SYMBOL_COLOR = '#111827'
 const LETTERED_AIR_TERMINAL_SYMBOLS = new Set<SymbolElement['symbolType']>([
   'air_terminal',
   'bonded_air_terminal',
@@ -223,10 +224,11 @@ function drawSymbol(
   ctx: CanvasRenderingContext2D,
   symbol: SymbolElement,
   designScale: number,
-  showGroundRodClassIndicator: boolean,
 ) {
   const className = resolvedSymbolClass(symbol)
-  const color = colorFor(symbol.color)
+  const color = symbol.symbolType === 'continued'
+    ? ANNOTATION_SYMBOL_COLOR
+    : colorFor(symbol.color)
   const fill = classFill(className, color)
   const strokeWidth = classStrokeWidth(className, designScale)
   const innerStroke = className === 'class2' ? '#ffffff' : color
@@ -264,35 +266,35 @@ function drawSymbol(
       break
 
     case 'conduit_downlead_ground': {
-      const ring = new Path2D()
-      ring.arc(0, 0, 6 * designScale, 0, Math.PI * 2)
-      fillAndStroke(ctx, ring, fill, color, strokeWidth)
+      const square = new Path2D(
+        `M${-5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${5.4 * designScale} L${-5.4 * designScale} ${5.4 * designScale} Z`,
+      )
+      fillAndStroke(ctx, square, fill, color, strokeWidth)
       drawDoubleChevronsDown(ctx, innerStroke, designScale)
       break
     }
 
     case 'conduit_downlead_roof': {
-      const ring = new Path2D()
-      ring.arc(0, 0, 6 * designScale, 0, Math.PI * 2)
-      fillAndStroke(ctx, ring, fill, color, strokeWidth)
+      const square = new Path2D(
+        `M${-5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${5.4 * designScale} L${-5.4 * designScale} ${5.4 * designScale} Z`,
+      )
+      fillAndStroke(ctx, square, fill, color, strokeWidth)
       drawChevronUp(ctx, innerStroke, designScale)
       break
     }
 
     case 'surface_downlead_ground': {
-      const square = new Path2D(
-        `M${-5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${5.4 * designScale} L${-5.4 * designScale} ${5.4 * designScale} Z`,
-      )
-      fillAndStroke(ctx, square, fill, color, strokeWidth)
+      const ring = new Path2D()
+      ring.arc(0, 0, 6 * designScale, 0, Math.PI * 2)
+      fillAndStroke(ctx, ring, fill, color, strokeWidth)
       drawDoubleChevronsDown(ctx, innerStroke, designScale)
       break
     }
 
     case 'surface_downlead_roof': {
-      const square = new Path2D(
-        `M${-5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${-5.4 * designScale} L${5.4 * designScale} ${5.4 * designScale} L${-5.4 * designScale} ${5.4 * designScale} Z`,
-      )
-      fillAndStroke(ctx, square, fill, color, strokeWidth)
+      const ring = new Path2D()
+      ring.arc(0, 0, 6 * designScale, 0, Math.PI * 2)
+      fillAndStroke(ctx, ring, fill, color, strokeWidth)
       drawChevronUp(ctx, innerStroke, designScale)
       break
     }
@@ -340,6 +342,13 @@ function drawSymbol(
       ctx.lineTo(0, 27 * designScale)
       ctx.stroke()
 
+      if (className === 'class2') {
+        ctx.beginPath()
+        ctx.moveTo(-13 * designScale, 23 * designScale)
+        ctx.lineTo(13 * designScale, 23 * designScale)
+        ctx.stroke()
+      }
+
       ctx.beginPath()
       ctx.moveTo(-10 * designScale, 27 * designScale)
       ctx.lineTo(10 * designScale, 27 * designScale)
@@ -354,20 +363,6 @@ function drawSymbol(
       ctx.moveTo(-3.6 * designScale, 35 * designScale)
       ctx.lineTo(3.6 * designScale, 35 * designScale)
       ctx.stroke()
-
-      const classLabel = groundRodClassLabel(symbol)
-      if (showGroundRodClassIndicator && classLabel) {
-        const diamond = new Path2D(
-          `M0 ${8.8 * designScale} L${5.6 * designScale} ${14.4 * designScale} L0 ${20 * designScale} L${-5.6 * designScale} ${14.4 * designScale} Z`,
-        )
-        fillAndStroke(ctx, diamond, fill, color, strokeWidth)
-
-        ctx.fillStyle = innerStroke
-        ctx.font = `700 ${8 * designScale}px Segoe UI, Arial, sans-serif`
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(classLabel, 0, 14.4 * designScale)
-      }
       break
     }
 
@@ -387,14 +382,37 @@ function drawSymbol(
       break
     }
 
-    case 'cadweld_connection': {
+    case 'mechanical_crossrun_connection': {
       const outer = new Path2D()
-      outer.arc(0, 0, 5.4 * designScale, 0, Math.PI * 2)
+      outer.arc(0, 0, 6 * designScale, 0, Math.PI * 2)
       fillAndStroke(ctx, outer, fill, color, strokeWidth)
 
-      const center = new Path2D()
-      center.arc(0, 0, 1.7 * designScale, 0, Math.PI * 2)
-      fillAndStroke(ctx, center, color, color, 1.2 * designScale)
+      const inner = new Path2D()
+      inner.arc(0, 0, 3.2 * designScale, 0, Math.PI * 2)
+      const innerFill = className === 'class2' ? '#ffffff' : fill
+      fillAndStroke(ctx, inner, innerFill, color, strokeWidth)
+      break
+    }
+
+    case 'cadweld_connection': {
+      const square = new Path2D(
+        `M${-3.2 * designScale} ${-3.2 * designScale} L${3.2 * designScale} ${-3.2 * designScale} L${3.2 * designScale} ${3.2 * designScale} L${-3.2 * designScale} ${3.2 * designScale} Z`,
+      )
+      fillAndStroke(ctx, square, fill, color, strokeWidth)
+      break
+    }
+
+    case 'cadweld_crossrun_connection': {
+      const outer = new Path2D(
+        `M${-5.5 * designScale} ${-5.5 * designScale} L${5.5 * designScale} ${-5.5 * designScale} L${5.5 * designScale} ${5.5 * designScale} L${-5.5 * designScale} ${5.5 * designScale} Z`,
+      )
+      fillAndStroke(ctx, outer, fill, color, strokeWidth)
+
+      const inner = new Path2D(
+        `M${-3.2 * designScale} ${-3.2 * designScale} L${3.2 * designScale} ${-3.2 * designScale} L${3.2 * designScale} ${3.2 * designScale} L${-3.2 * designScale} ${3.2 * designScale} Z`,
+      )
+      const innerFill = className === 'class2' ? '#ffffff' : fill
+      fillAndStroke(ctx, inner, innerFill, color, strokeWidth)
       break
     }
 
@@ -521,7 +539,6 @@ function drawLegendPlacements(
   designScale: number,
 ) {
   const legendMetrics = scaledLegendMetrics(designScale)
-  const showGroundRodClassIndicator = hasBothGroundRodClasses(project.elements.symbols)
 
   for (const placement of project.legend.placements) {
     const legendItems = buildLegendItemsFromSymbols(project)
@@ -607,12 +624,14 @@ function drawLegendPlacements(
         ctx.stroke()
         ctx.setLineDash([])
       } else {
+        const symbolType = entry.symbolType ?? 'air_terminal'
+        const symbolScale = legendSymbolScale(symbolType, designScale)
         const legendSymbol: SymbolElement = {
           id: `legend-symbol-${i}`,
-          symbolType: entry.symbolType ?? 'air_terminal',
+          symbolType,
           position: {
             x: legendMetrics.symbolCenterXPx,
-            y: symbolCenterY,
+            y: symbolCenterY + legendSymbolCenterOffsetY(symbolType, symbolScale),
           },
           color: entry.color,
           class: entry.class,
@@ -620,8 +639,7 @@ function drawLegendPlacements(
         drawSymbol(
           ctx,
           legendSymbol,
-          legendSymbolScale(entry.symbolType ?? 'air_terminal', designScale),
-          showGroundRodClassIndicator,
+          symbolScale,
         )
       }
 
@@ -701,7 +719,6 @@ function drawProjectElements(
 ) {
   const designScale = annotationScaleFactor(project.settings.designScale)
   const textFontSizePx = textFontSizePxForScale(designScale)
-  const showGroundRodClassIndicator = hasBothGroundRodClasses(project.elements.symbols)
 
   for (const line of project.elements.lines) {
     ctx.strokeStyle = colorFor(line.color)
@@ -760,7 +777,7 @@ function drawProjectElements(
   ctx.setLineDash([])
 
   for (const symbol of project.elements.symbols) {
-    drawSymbol(ctx, symbol, designScale, showGroundRodClassIndicator)
+    drawSymbol(ctx, symbol, designScale)
   }
 
   for (const symbol of project.elements.symbols) {
@@ -792,6 +809,12 @@ function drawProjectElements(
 
   for (const dimensionText of project.elements.dimensionTexts) {
     const label = dimensionTextLabel(dimensionText, project.scale)
+    const labelWidth = dimensionLabelWidthPx(
+      label,
+      designScale,
+      textFontSizePx,
+      ctx,
+    )
     if (dimensionText.showLinework) {
       const geometry = dimensionLineworkGeometry(
         {
@@ -805,7 +828,7 @@ function drawProjectElements(
         const barSegments = dimensionBarLineSegments(
           geometry,
           dimensionText.position,
-          approximateTextWidthForScale(label, designScale),
+          labelWidth,
           textLineHeightPxForScale(designScale),
           4 * designScale,
         )
@@ -833,12 +856,14 @@ function drawProjectElements(
 
     ctx.fillStyle = '#111827'
     ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
+    ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillText(
       label,
       dimensionText.position.x,
       dimensionText.position.y,
     )
+    ctx.textAlign = 'left'
   }
 
   for (const arrow of project.elements.arrows) {

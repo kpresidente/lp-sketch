@@ -1,7 +1,19 @@
 import Panel from './Panel'
-import { COMMAND_ICON, TOOL_CUSTOM_ICON, TOOL_ICON, tablerIconClass } from '../../config/iconRegistry'
+import {
+  COMMAND_ICON,
+  SYMBOL_BUTTON_ICON,
+  SYMBOL_CUSTOM_ICON,
+  TOOL_CUSTOM_ICON,
+  TOOL_ICON,
+  tablerIconClass,
+} from '../../config/iconRegistry'
 import { CustomIcon } from '../icons/CustomIcon'
 import { useAppController } from '../../context/AppControllerContext'
+import {
+  formatDisabledTooltip,
+  symbolDisabledReasons,
+  toolDisabledReasons,
+} from '../../lib/componentAvailability'
 
 export default function ToolsPanel() {
   const props = useAppController()
@@ -12,6 +24,21 @@ export default function ToolsPanel() {
     }
     return <i class={tablerIconClass(TOOL_ICON[toolId])} />
   }
+  const annotationToolTitle = (toolId: 'text' | 'dimension_text' | 'arrow' | 'legend' | 'general_notes' | 'measure' | 'measure_mark', baseTitle: string) => (
+    formatDisabledTooltip(baseTitle, toolDisabledReasons(toolId, props.project, props.project.settings.activeColor))
+  )
+  const annotationToolDisabled = (toolId: 'text' | 'dimension_text' | 'arrow' | 'legend' | 'general_notes' | 'measure' | 'measure_mark') => (
+    toolDisabledReasons(toolId, props.project, props.project.settings.activeColor).length > 0
+  )
+  const continuedSymbolTitle = () => (
+    formatDisabledTooltip(
+      'Continued',
+      symbolDisabledReasons('continued', props.project.settings.activeColor),
+    )
+  )
+  const continuedSymbolDisabled = () => (
+    symbolDisabledReasons('continued', props.project.settings.activeColor).length > 0
+  )
 
   return (
     <Panel label="Tools">
@@ -138,7 +165,8 @@ export default function ToolsPanel() {
           class={`btn ${props.tool === 'text' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'text'}
-          title="Text"
+          title={annotationToolTitle('text', 'Text')}
+          disabled={annotationToolDisabled('text')}
           onClick={() => props.onSelectTool('text')}
         >
           <i class={tablerIconClass(TOOL_ICON.text)} /> Text
@@ -147,7 +175,8 @@ export default function ToolsPanel() {
           class={`btn ${props.tool === 'dimension_text' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'dimension_text'}
-          title="Dimension Text"
+          title={annotationToolTitle('dimension_text', 'Dimension Text')}
+          disabled={annotationToolDisabled('dimension_text')}
           onClick={() => props.onSelectTool('dimension_text')}
         >
           <i class={tablerIconClass(TOOL_ICON.dimension_text)} /> Dim Text
@@ -156,7 +185,8 @@ export default function ToolsPanel() {
           class={`btn ${props.tool === 'arrow' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'arrow'}
-          title="Arrow"
+          title={annotationToolTitle('arrow', 'Arrow')}
+          disabled={annotationToolDisabled('arrow')}
           onClick={() => props.onSelectTool('arrow')}
         >
           <i class={tablerIconClass(TOOL_ICON.arrow)} /> Arrow
@@ -165,7 +195,8 @@ export default function ToolsPanel() {
           class={`btn ${props.tool === 'legend' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'legend'}
-          title="Legend"
+          title={annotationToolTitle('legend', 'Legend')}
+          disabled={annotationToolDisabled('legend')}
           onClick={() => props.onSelectTool('legend')}
         >
           <i class={tablerIconClass(TOOL_ICON.legend)} /> Legend
@@ -174,7 +205,8 @@ export default function ToolsPanel() {
           class={`btn ${props.tool === 'general_notes' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'general_notes'}
-          title="General Notes"
+          title={annotationToolTitle('general_notes', 'General Notes')}
+          disabled={annotationToolDisabled('general_notes')}
           onClick={() => props.onSelectTool('general_notes')}
         >
           <i class={tablerIconClass(TOOL_ICON.general_notes)} /> Notes
@@ -183,7 +215,8 @@ export default function ToolsPanel() {
           class={`btn ${props.tool === 'measure' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'measure'}
-          title="Measure"
+          title={annotationToolTitle('measure', 'Measure')}
+          disabled={annotationToolDisabled('measure')}
           onClick={() => props.onSelectTool('measure')}
         >
           <i class={tablerIconClass(TOOL_ICON.measure)} /> Measure
@@ -192,10 +225,27 @@ export default function ToolsPanel() {
           class={`btn ${props.tool === 'measure_mark' ? 'active' : ''}`}
           type="button"
           aria-pressed={props.tool === 'measure_mark'}
-          title="Mark"
+          title={annotationToolTitle('measure_mark', 'Mark')}
+          disabled={annotationToolDisabled('measure_mark')}
           onClick={() => props.onSelectTool('measure_mark')}
         >
           <i class={tablerIconClass(TOOL_ICON.measure_mark)} /> Mark
+        </button>
+        <button
+          class={`btn ${props.tool === 'symbol' && props.activeSymbol === 'continued' ? 'active' : ''}`}
+          type="button"
+          aria-pressed={props.tool === 'symbol' && props.activeSymbol === 'continued'}
+          title={continuedSymbolTitle()}
+          disabled={continuedSymbolDisabled()}
+          onClick={() => {
+            props.onSetActiveSymbol('continued')
+            props.onSelectTool('symbol')
+          }}
+        >
+          {SYMBOL_CUSTOM_ICON.continued
+            ? <CustomIcon name={SYMBOL_CUSTOM_ICON.continued} />
+            : <i class={tablerIconClass(SYMBOL_BUTTON_ICON.continued)} />}
+          Continued
         </button>
       </div>
     </Panel>

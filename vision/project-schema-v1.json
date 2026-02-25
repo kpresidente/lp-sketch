@@ -94,6 +94,7 @@
         "bonded_air_terminal",
         "bond",
         "cadweld_connection",
+        "cadweld_crossrun_connection",
         "continued",
         "connect_existing",
         "conduit_downlead_ground",
@@ -104,7 +105,8 @@
         "through_wall_connector",
         "ground_rod",
         "steel_bond",
-        "cable_to_cable_connection"
+        "cable_to_cable_connection",
+        "mechanical_crossrun_connection"
       ]
     },
     "point": {
@@ -774,8 +776,10 @@
                   "air_terminal",
                   "bonded_air_terminal",
                   "cadweld_connection",
+                  "cadweld_crossrun_connection",
                   "conduit_downlead_ground",
                   "conduit_downlead_roof",
+                  "mechanical_crossrun_connection",
                   "surface_downlead_ground",
                   "surface_downlead_roof",
                   "through_roof_to_steel"
@@ -839,7 +843,12 @@
           "if": {
             "properties": {
               "symbolType": {
-                "const": "cable_to_cable_connection"
+                "enum": [
+                  "cable_to_cable_connection",
+                  "cadweld_connection",
+                  "mechanical_crossrun_connection",
+                  "cadweld_crossrun_connection"
+                ]
               }
             }
           },
@@ -856,7 +865,12 @@
             "properties": {
               "symbolType": {
                 "not": {
-                  "const": "cable_to_cable_connection"
+                  "enum": [
+                    "cable_to_cable_connection",
+                    "cadweld_connection",
+                    "mechanical_crossrun_connection",
+                    "cadweld_crossrun_connection"
+                  ]
                 }
               }
             }

@@ -1,0 +1,9 @@
+{
+  "name": "lp-sketch-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "dependencies": {
+    "@azure/storage-blob": "^12.26.0"
+  }
+}

@@ -291,7 +291,7 @@ describe('overlay branch rendering', () => {
     expect(container.querySelector('rect[stroke="#111827"][stroke-dasharray="4 2"]')).not.toBeNull()
     expect(container.querySelector('polygon[fill="#ffffff"][stroke="#2e8b57"]')).not.toBeNull()
     expect(container.querySelector('circle[fill="#ffffff"][stroke="#2563eb"]')).not.toBeNull()
-    expect(container.querySelector('rect[fill="#DC143C"][stroke="#DC143C"]')).not.toBeNull()
+    expect(container.querySelector('circle[fill="#DC143C"][stroke="#DC143C"]')).not.toBeNull()
     expect(screen.getByText('Description')).toBeTruthy()
     expect(screen.getByText('Count')).toBeTruthy()
     expect(screen.getByText('Bond')).toBeTruthy()

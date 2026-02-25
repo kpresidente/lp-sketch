@@ -1,6 +1,7 @@
 import { For } from 'solid-js'
 import { isDownleadSymbolType } from '../lib/conductorFootage'
 import { useAppController } from '../context/AppControllerContext'
+import { DIRECTIONAL_SYMBOLS } from '../model/defaultProject'
 
 const LETTER_OPTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 type PropertiesController = ReturnType<typeof useAppController>
@@ -39,6 +40,46 @@ function dimensionHint(props: PropertiesController): string {
 
 function arrowHint(props: PropertiesController): string {
   return props.arrowStart ? 'Click head point' : 'Click tail point'
+}
+
+function lineHint(props: PropertiesController): string {
+  return props.lineStart ? 'Click endpoint 2' : 'Click endpoint 1'
+}
+
+function linearAutoSpacingHint(props: PropertiesController): string {
+  if (props.linearAutoSpacingVerticesCount === 0) {
+    return 'Click point 1 to start trace'
+  }
+  return 'Click to add vertices, then finish open/closed'
+}
+
+function measureHint(props: PropertiesController): string {
+  return props.measureTargetDistanceInput.trim().length > 0
+    ? 'Click points to measure path against target'
+    : 'Click points to measure path'
+}
+
+function measureMarkHint(props: PropertiesController): string {
+  return props.project.construction.marks.length > 0
+    ? 'Click to continue mark path, right-click for corner'
+    : 'Click start point, then continue path'
+}
+
+function calibrateHint(props: PropertiesController): string {
+  if (props.calibrationPendingDistancePt !== null) {
+    return 'Enter real distance in feet, then apply or cancel'
+  }
+  if (props.calibrationPointsCount === 0) {
+    return 'Click point 1'
+  }
+  return 'Click point 2'
+}
+
+function symbolHint(props: PropertiesController): string {
+  if (!DIRECTIONAL_SYMBOLS.has(props.activeSymbol)) {
+    return 'Click to place component'
+  }
+  return props.symbolDirectionStart ? 'Click to set direction' : 'Click to place'
 }
 
 export default function PropertiesToolOptions() {
@@ -93,6 +134,8 @@ export default function PropertiesToolOptions() {
               onClick={() => props.onSetLineContinuous(!props.lineContinuous)}
             />
           </div>
+          <div class="tb-sep" />
+          <span class="tb-hint">{lineHint(props)}</span>
         </div>
       )
     }
@@ -214,6 +257,8 @@ export default function PropertiesToolOptions() {
           <span class="tb-status">
             Vertices: <span class="tb-status-val">{props.linearAutoSpacingVerticesCount}</span>
           </span>
+          <div class="tb-sep" />
+          <span class="tb-hint">{linearAutoSpacingHint(props)}</span>
           {!props.project.scale.isSet && (
             <>
               <div class="tb-sep" />
@@ -310,6 +355,8 @@ export default function PropertiesToolOptions() {
           <button class="tb-btn" type="button" onClick={props.onClearMeasurement}>
             Clear
           </button>
+          <div class="tb-sep" />
+          <span class="tb-hint">{measureHint(props)}</span>
         </div>
       )
     }
@@ -372,6 +419,8 @@ export default function PropertiesToolOptions() {
           <span class="tb-status">
             Marks: <span class="tb-status-val">{props.project.construction.marks.length}</span>
           </span>
+          <div class="tb-sep" />
+          <span class="tb-hint">{measureMarkHint(props)}</span>
         </div>
       )
     }
@@ -557,6 +606,8 @@ export default function PropertiesToolOptions() {
           </div>
           <div class="tb-sep" />
           <span class="tb-hint">Used for new downlead placements.</span>
+          <div class="tb-sep" />
+          <span class="tb-hint">{symbolHint(props)}</span>
         </div>
       )
     }
@@ -593,6 +644,64 @@ export default function PropertiesToolOptions() {
               Clear
             </button>
           </div>
+          <div class="tb-sep" />
+          <span class="tb-hint">{symbolHint(props)}</span>
+        </div>
+      )
+    }
+
+    if (props.tool === 'symbol') {
+      return (
+        <div class="properties-tool-options-inline">
+          <span class="tb-hint">{symbolHint(props)}</span>
+        </div>
+      )
+    }
+
+    if (props.tool === 'calibrate') {
+      return (
+        <div class="properties-tool-options-inline">
+          <span class="tb-hint">{calibrateHint(props)}</span>
+          {props.calibrationPendingDistancePt !== null && (
+            <>
+              <div class="tb-sep" />
+              <div class="tb-field">
+                <span class="tb-field-label">Distance</span>
+                <input
+                  class="tb-input tb-input-narrow"
+                  type="number"
+                  min="0"
+                  step="any"
+                  inputmode="decimal"
+                  aria-label="Calibration distance in feet"
+                  value={props.calibrationDistanceInput}
+                  onInput={(event) => props.onSetCalibrationDistanceInput(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      props.onApplyCalibration()
+                    } else if (event.key === 'Escape') {
+                      event.preventDefault()
+                      props.onCancelCalibration()
+                    }
+                  }}
+                />
+                <span class="tb-unit">ft</span>
+              </div>
+              <button class="tb-btn tb-btn-primary" type="button" onClick={props.onApplyCalibration}>
+                Apply
+              </button>
+              <button class="tb-btn" type="button" onClick={props.onCancelCalibration}>
+                Cancel
+              </button>
+            </>
+          )}
+          {props.calibrationInputError && (
+            <>
+              <div class="tb-sep" />
+              <span class="tb-error">{props.calibrationInputError}</span>
+            </>
+          )}
         </div>
       )
     }

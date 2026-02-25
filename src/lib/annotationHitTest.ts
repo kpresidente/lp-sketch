@@ -2,7 +2,7 @@ import {
   approximateTextWidthForScale,
   textLineHeightPxForScale,
 } from './annotationScale'
-import { dimensionTextLabel } from './dimensionText'
+import { dimensionLabelWidthPx, dimensionTextLabel } from './dimensionText'
 import { docToScreen } from './geometry'
 import type {
   DimensionTextElement,
@@ -39,17 +39,15 @@ export function pointHitsDimensionText(
   designScale: number,
 ): boolean {
   const label = dimensionTextLabel(dimensionText, projectState.scale)
-  return pointHitsText(
-    point,
-    {
-      id: dimensionText.id,
-      position: dimensionText.position,
-      text: label,
-      color: 'red',
-      layer: 'annotation',
-    },
-    projectState.view,
-    tolerancePx,
-    designScale,
+  const pointScreen = docToScreen(point, projectState.view)
+  const labelScreen = docToScreen(dimensionText.position, projectState.view)
+  const height = textLineHeightPxForScale(designScale)
+  const width = dimensionLabelWidthPx(label, designScale, 14 * designScale)
+
+  return (
+    pointScreen.x >= labelScreen.x - width / 2 - tolerancePx &&
+    pointScreen.x <= labelScreen.x + width / 2 + tolerancePx &&
+    pointScreen.y >= labelScreen.y - tolerancePx &&
+    pointScreen.y <= labelScreen.y + height + tolerancePx
   )
 }

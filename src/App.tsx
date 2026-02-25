@@ -16,6 +16,7 @@ import { createSidebarController } from './components/sidebar/createSidebarContr
 import AnnotationEditDialog from './components/dialogs/AnnotationEditDialog'
 import GeneralNotesDialog from './components/dialogs/GeneralNotesDialog'
 import LegendLabelDialog from './components/dialogs/LegendLabelDialog'
+import ReportDialog from './components/dialogs/ReportDialog'
 import { AppControllerProvider } from './context/AppControllerContext'
 import { useGeneralNotesDialog } from './hooks/useGeneralNotesDialog'
 import { useLegendLabelDialog } from './hooks/useLegendLabelDialog'
@@ -100,9 +101,9 @@ import {
   symbolLayer,
 } from './lib/layers'
 import {
-  isSymbolDisabledForMaterial,
-  isToolDisabledForMaterial,
-  isToolSelectionAllowedForMaterial,
+  isToolSelectionAllowed,
+  symbolDisabledReasons,
+  toolDisabledReasons,
 } from './lib/componentAvailability'
 import {
   isDownleadSymbolType,
@@ -125,6 +126,15 @@ import {
 } from './lib/selection'
 import { cloneProject } from './lib/projectState'
 import { clampPageNumber, normalizePageCount } from './lib/pageState'
+import { realUnitsPerPointFromCalibrationSpan } from './lib/scale'
+import {
+  buildReportPayload,
+  createDefaultReportDraft,
+  normalizeReportDraft,
+  submitReport,
+  validateReportDraft,
+  type ReportType,
+} from './lib/reporting'
 import {
   clampPdfBrightness,
   formatDistance,
@@ -144,7 +154,7 @@ import {
   createDefaultProject,
   createElementId,
 } from './model/defaultProject'
-import { syncAutoConnectors, syncLegendItems } from './model/projectSync'
+import { syncLegendItems } from './model/projectSync'
 import type {
   DimensionTextPreview,
   SelectionHandlePreview,
@@ -209,8 +219,10 @@ const SYMBOL_OPTIONS: SymbolType[] = [
   'bonded_air_terminal',
   'bond',
   'cadweld_connection',
+  'cadweld_crossrun_connection',
   'continued',
   'connect_existing',
+  'mechanical_crossrun_connection',
   'conduit_downlead_ground',
   'conduit_downlead_roof',
   'surface_downlead_ground',
@@ -252,6 +264,7 @@ function App() {
   const [cursorDoc, setCursorDoc] = createSignal<Point | null>(null)
   const [snapPointPreview, setSnapPointPreview] = createSignal<SnapPointPreview | null>(null)
   const [lineStart, setLineStart] = createSignal<Point | null>(null)
+  const [linePathCommittedDistancePt, setLinePathCommittedDistancePt] = createSignal(0)
   const [arcStart, setArcStart] = createSignal<Point | null>(null)
   const [arcEnd, setArcEnd] = createSignal<Point | null>(null)
   const [lineContinuous, setLineContinuous] = createSignal(false)
@@ -277,6 +290,9 @@ function App() {
   )
   const [arrowStart, setArrowStart] = createSignal<Point | null>(null)
   const [calibrationPoints, setCalibrationPoints] = createSignal<Point[]>([])
+  const [pendingCalibrationDistancePt, setPendingCalibrationDistancePt] = createSignal<number | null>(null)
+  const [calibrationDistanceInput, setCalibrationDistanceInput] = createSignal('20')
+  const [calibrationInputError, setCalibrationInputError] = createSignal('')
   const [textDraftInput, setTextDraftInput] = createSignal('NOTE')
 
   const [manualScaleInchesInput, setManualScaleInchesInput] = createSignal('')
@@ -286,6 +302,10 @@ function App() {
   const [downleadVerticalFootagePlacementInput, setDownleadVerticalFootagePlacementInput] = createSignal('0')
   const [downleadVerticalFootageSelectedInput, setDownleadVerticalFootageSelectedInput] = createSignal('')
   const [annotationEdit, setAnnotationEdit] = createSignal<AnnotationEditState | null>(null)
+  const [reportDialogOpen, setReportDialogOpen] = createSignal(false)
+  const [reportDraft, setReportDraft] = createSignal(createDefaultReportDraft())
+  const [reportSubmitting, setReportSubmitting] = createSignal(false)
+  const [reportDialogError, setReportDialogError] = createSignal('')
 
   const [statusMessage, setStatusMessage] = createSignal('')
   const [errorMessage, setErrorMessage] = createSignal('')
@@ -476,6 +496,51 @@ function App() {
     return formatDistance(pointDistance * scale.realUnitsPerPoint, scale.displayUnits)
   })
 
+  const lineSegmentDistancePt = createMemo(() => {
+    if (tool() !== 'line') {
+      return 0
+    }
+
+    const start = lineStart()
+    const current = cursorDoc()
+    if (!start || !current) {
+      return 0
+    }
+
+    return distance(start, current)
+  })
+
+  const lineSegmentDistanceLabel = createMemo(() => {
+    if (tool() !== 'line' || !lineStart()) {
+      return null
+    }
+
+    const scale = project().scale
+    if (!scale.isSet || !scale.realUnitsPerPoint || !scale.displayUnits) {
+      return 'unscaled'
+    }
+
+    return formatDistance(lineSegmentDistancePt() * scale.realUnitsPerPoint, scale.displayUnits)
+  })
+
+  const linePathTotalDistanceLabel = createMemo(() => {
+    if (tool() !== 'line' || !lineContinuous() || !lineStart()) {
+      return null
+    }
+
+    const start = lineStart()
+    const current = cursorDoc()
+    const activeSegment = start && current ? distance(start, current) : 0
+    const totalDistancePt = linePathCommittedDistancePt() + activeSegment
+
+    const scale = project().scale
+    if (!scale.isSet || !scale.realUnitsPerPoint || !scale.displayUnits) {
+      return 'unscaled'
+    }
+
+    return formatDistance(totalDistancePt * scale.realUnitsPerPoint, scale.displayUnits)
+  })
+
   const measureDistancePt = createMemo(() => {
     const points = measurePoints()
     const current = cursorDoc()
@@ -609,6 +674,66 @@ function App() {
     setStatusMessage('')
   }
 
+  function handleOpenReportDialog(type: ReportType = 'bug') {
+    setReportDraft({ ...createDefaultReportDraft(), type })
+    setReportDialogError('')
+    setReportSubmitting(false)
+    setReportDialogOpen(true)
+  }
+
+  function handleSetReportType(type: ReportType) {
+    setReportDraft((prev) => ({ ...prev, type }))
+  }
+
+  function handleSetReportTitle(value: string) {
+    setReportDraft((prev) => ({ ...prev, title: value }))
+  }
+
+  function handleSetReportDetails(value: string) {
+    setReportDraft((prev) => ({ ...prev, details: value }))
+  }
+
+  function handleSetReportReproSteps(value: string) {
+    setReportDraft((prev) => ({ ...prev, reproSteps: value }))
+  }
+
+  function handleCloseReportDialog() {
+    if (reportSubmitting()) {
+      return
+    }
+    setReportDialogOpen(false)
+    setReportDialogError('')
+  }
+
+  async function handleSubmitReport() {
+    const normalized = normalizeReportDraft(reportDraft())
+    const errors = validateReportDraft(normalized)
+    if (errors.length > 0) {
+      setReportDialogError(errors[0])
+      return
+    }
+
+    setReportDialogError('')
+    setReportDraft(normalized)
+    setReportSubmitting(true)
+    const payload = buildReportPayload(normalized, project())
+    const result = await submitReport(payload)
+    setReportSubmitting(false)
+
+    if (!result.ok) {
+      setReportDialogError(result.message ?? 'Unable to submit report.')
+      return
+    }
+
+    setReportDialogOpen(false)
+    setReportDialogError('')
+    if (result.reportId) {
+      setStatus(`Report submitted (${result.reportId}).`)
+    } else {
+      setStatus('Report submitted.')
+    }
+  }
+
   function nowMs() {
     if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
       return performance.now()
@@ -694,6 +819,7 @@ function App() {
     clearTouchSpacingPending()
     clearTouchGesture()
     setLineStart(null)
+    setLinePathCommittedDistancePt(0)
     setArcStart(null)
     setArcEnd(null)
     setLinearAutoSpacingVertices([])
@@ -707,6 +833,8 @@ function App() {
     setSymbolDirectionStart(null)
     setArrowStart(null)
     setCalibrationPoints([])
+    setPendingCalibrationDistancePt(null)
+    setCalibrationInputError('')
     setCursorDoc(null)
     setSnapPointPreview(null)
     setHoveredSelection(null)
@@ -725,7 +853,6 @@ function App() {
     const before = cloneProject(project())
     const after = cloneProject(before)
     mutator(after)
-    syncAutoConnectors(after)
     syncLegendItems(after)
     after.projectMeta.updatedAt = new Date().toISOString()
 
@@ -735,7 +862,6 @@ function App() {
 
   function replaceProject(nextProject: LpProject, resetHistory = true) {
     const synced = cloneProject(nextProject)
-    syncAutoConnectors(synced)
     syncLegendItems(synced)
     setProject(synced)
 
@@ -1209,7 +1335,6 @@ function App() {
     }
 
     const synced = cloneProject(result.project)
-    syncAutoConnectors(synced)
     syncLegendItems(synced)
     setProject(synced)
     setHistory(result.history)
@@ -1226,7 +1351,6 @@ function App() {
     }
 
     const synced = cloneProject(result.project)
-    syncAutoConnectors(synced)
     syncLegendItems(synced)
     setProject(synced)
     setHistory(result.history)
@@ -1766,6 +1890,8 @@ function App() {
       lineStart,
       setLineStart,
       lineContinuous,
+      linePathCommittedDistancePt,
+      setLinePathCommittedDistancePt,
       dimensionStart,
       dimensionEnd,
       setDimensionStart,
@@ -1792,9 +1918,14 @@ function App() {
       textDraftInput,
       arrowStart,
       setArrowStart,
+      pendingCalibrationDistancePt,
       calibrationPoints,
       setCalibrationPoints: (points) => {
         setCalibrationPoints(points)
+      },
+      setPendingCalibrationDistancePt: (distancePt) => {
+        setCalibrationInputError('')
+        setPendingCalibrationDistancePt(distancePt)
       },
     })
   }
@@ -1921,7 +2052,6 @@ function App() {
     } else {
       moveSelectionHandleByDelta(nextProject, drag.sourceProject, drag.handle, delta)
     }
-    syncAutoConnectors(nextProject)
     syncLegendItems(nextProject)
     setProject(nextProject)
   }
@@ -2151,7 +2281,16 @@ function App() {
     handleRedo,
     deleteSelection,
     deleteMultiSelection,
-    clearTransientToolState,
+    clearTransientToolState: () => {
+      if (
+        tool() === 'calibrate' &&
+        (calibrationPoints().length > 0 || pendingCalibrationDistancePt() !== null)
+      ) {
+        cancelPendingCalibration()
+        return
+      }
+      clearTransientToolState()
+    },
     onResize: syncDialogResize,
     onCleanupExtra: () => {
       activeTouchPoints.clear()
@@ -2580,13 +2719,22 @@ function App() {
 
   function handleSelectTool(nextTool: Tool) {
     const activeMaterial = project().settings.activeColor
-    if (isToolDisabledForMaterial(nextTool, activeMaterial)) {
-      setStatus('This component is unavailable for the selected material.')
+    const toolReasons = toolDisabledReasons(nextTool, project(), activeMaterial)
+    if (toolReasons.length > 0) {
+      setStatus(toolReasons[0])
       return
     }
 
-    if (nextTool === 'symbol' && isSymbolDisabledForMaterial(activeSymbol(), activeMaterial)) {
-      setStatus('This component is unavailable for the selected material.')
+    if (nextTool === 'symbol') {
+      const symbolReasons = symbolDisabledReasons(activeSymbol(), activeMaterial)
+      if (symbolReasons.length > 0) {
+        setStatus(symbolReasons[0])
+        return
+      }
+    }
+
+    if (!isToolSelectionAllowed(nextTool, activeSymbol(), project(), activeMaterial)) {
+      setStatus('This tool is currently disabled.')
       return
     }
 
@@ -2634,6 +2782,56 @@ function App() {
   function handleSetMeasureTargetDistanceInput(value: string) {
     clearTargetDistanceSnapLock()
     setMeasureTargetDistanceInput(normalizeNonNegativeIntegerInput(value))
+  }
+
+  function handleSetCalibrationDistanceInput(value: string) {
+    setCalibrationInputError('')
+    setCalibrationDistanceInput(value)
+  }
+
+  function applyCalibrationFromPendingSpan() {
+    const spanDistancePt = pendingCalibrationDistancePt()
+    if (!spanDistancePt || spanDistancePt <= 0) {
+      setCalibrationInputError('Set a calibration span before applying scale.')
+      setError('Set a calibration span before applying scale.')
+      return
+    }
+
+    const realDistance = Number.parseFloat(calibrationDistanceInput().trim())
+    if (!Number.isFinite(realDistance) || realDistance <= 0) {
+      setCalibrationInputError('Calibration distance must be a positive number.')
+      setError('Calibration distance must be a positive number.')
+      return
+    }
+
+    commitProjectChange((draft) => {
+      const currentPage = draft.view.currentPage
+      const nextScale = {
+        isSet: true,
+        method: 'calibrated' as const,
+        realUnitsPerPoint: realUnitsPerPointFromCalibrationSpan(spanDistancePt, realDistance),
+        displayUnits: 'ft-in' as const,
+      }
+      draft.scale = {
+        ...nextScale,
+        byPage: {
+          ...draft.scale.byPage,
+          [currentPage]: nextScale,
+        },
+      }
+    })
+
+    setCalibrationPoints([])
+    setPendingCalibrationDistancePt(null)
+    setCalibrationInputError('')
+    setStatus('Scale calibrated from two points.')
+  }
+
+  function cancelPendingCalibration() {
+    setCalibrationPoints([])
+    setPendingCalibrationDistancePt(null)
+    setCalibrationInputError('')
+    setStatus('Calibration canceled.')
   }
 
   function handleSetDownleadVerticalFootagePlacementInput(value: string) {
@@ -2693,8 +2891,9 @@ function App() {
   }
 
   function handleSetActiveSymbol(nextSymbol: SymbolType) {
-    if (isSymbolDisabledForMaterial(nextSymbol, project().settings.activeColor)) {
-      setStatus('This component is unavailable for the selected material.')
+    const reasons = symbolDisabledReasons(nextSymbol, project().settings.activeColor)
+    if (reasons.length > 0) {
+      setStatus(reasons[0])
       return
     }
 
@@ -2764,9 +2963,17 @@ function App() {
     }))
 
     const currentTool = tool()
-    if (!isToolSelectionAllowedForMaterial(currentTool, activeSymbol(), color)) {
+    if (!isToolSelectionAllowed(currentTool, activeSymbol(), project(), color)) {
+      const reasons =
+        currentTool === 'symbol'
+          ? symbolDisabledReasons(activeSymbol(), color)
+          : toolDisabledReasons(currentTool, project(), color)
       handleSelectTool('select')
-      setStatus('Current component is unavailable for the selected material. Switched to Select.')
+      if (reasons.length > 0) {
+        setStatus(`${reasons[0]} Switched to Select.`)
+      } else {
+        setStatus('Current tool is unavailable. Switched to Select.')
+      }
     }
   }
 
@@ -3034,6 +3241,9 @@ function App() {
       return selected()?.kind ?? null
     },
     toolOptions: TOOL_OPTIONS,
+    get lineStart() {
+      return lineStart()
+    },
     get lineContinuous() {
       return lineContinuous()
     },
@@ -3096,6 +3306,9 @@ function App() {
     get arrowStart() {
       return arrowStart()
     },
+    get symbolDirectionStart() {
+      return symbolDirectionStart()
+    },
     get selectedLegendPlacement() {
       return selectedLegendPlacement()
     },
@@ -3128,6 +3341,18 @@ function App() {
     get measureTargetDistanceInput() {
       return measureTargetDistanceInput()
     },
+    get calibrationPointsCount() {
+      return calibrationPoints().length
+    },
+    get calibrationPendingDistancePt() {
+      return pendingCalibrationDistancePt()
+    },
+    get calibrationDistanceInput() {
+      return calibrationDistanceInput()
+    },
+    get calibrationInputError() {
+      return calibrationInputError()
+    },
     get currentScaleInfo() {
       return currentScaleInfo()
     },
@@ -3155,6 +3380,7 @@ function App() {
     onLoadProject: handleLoadProjectUi,
     onExportImage: handleExportImageUi,
     onExportPdf: handleExportPdfUi,
+    onOpenReportDialog: handleOpenReportDialog,
     onSelectTool: handleSelectTool,
     onSetLineContinuous: setLineContinuous,
     onSetCurveContinuous: setCurveContinuous,
@@ -3197,6 +3423,9 @@ function App() {
     onSetManualScaleInchesInput: setManualScaleInchesInput,
     onSetManualScaleFeetInput: setManualScaleFeetInput,
     onSetMeasureTargetDistanceInput: handleSetMeasureTargetDistanceInput,
+    onSetCalibrationDistanceInput: handleSetCalibrationDistanceInput,
+    onApplyCalibration: applyCalibrationFromPendingSpan,
+    onCancelCalibration: cancelPendingCalibration,
     onApplyManualScale: applyManualScale,
     onBringSelectedToFront: handleBringSelectedToFront,
     onSendSelectedToBack: handleSendSelectedToBack,
@@ -3215,6 +3444,8 @@ function App() {
           tool={tool()}
           activeSymbol={activeSymbol()}
           colorOptions={COLOR_OPTIONS}
+          scaleIsSet={project().scale.isSet}
+          scaleRealUnitsPerPoint={project().scale.realUnitsPerPoint}
           selectedKind={selected()?.kind ?? null}
           historyPastCount={history().past.length}
           historyFutureCount={history().future.length}
@@ -3232,6 +3463,8 @@ function App() {
           selectionDebugEnabled={selectionDebugEnabled()}
           onSetSelectionDebugEnabled={setSelectionDebugEnabled}
           calibrationPreview={calibrationPreview()}
+          lineSegmentDistanceLabel={lineSegmentDistanceLabel()}
+          linePathTotalDistanceLabel={linePathTotalDistanceLabel()}
           measureDistanceLabel={measureDistanceLabel()}
           markSpanDistanceLabel={markSpanDistanceLabel()}
           linearAutoSpacingPathDistanceLabel={linearAutoSpacingPathDistanceLabel()}
@@ -3343,7 +3576,6 @@ function App() {
           {(editor) => (
             <LegendLabelDialog
               editor={editor()}
-              project={project()}
               scope={project().settings.legendDataScope}
               setDialogRef={(element) => bindLegendLabelDialogRef(element, editor().screen)}
               onTitlePointerDown={handleLegendLabelDialogPointerDown}
@@ -3377,6 +3609,22 @@ function App() {
               onCancel={closeGeneralNotesDialog}
             />
           )}
+        </Show>
+
+        <Show when={reportDialogOpen()}>
+          <ReportDialog
+            draft={reportDraft()}
+            submitting={reportSubmitting()}
+            errorMessage={reportDialogError()}
+            onSetType={handleSetReportType}
+            onSetTitle={handleSetReportTitle}
+            onSetDetails={handleSetReportDetails}
+            onSetReproSteps={handleSetReportReproSteps}
+            onSubmit={() => {
+              void handleSubmitReport()
+            }}
+            onCancel={handleCloseReportDialog}
+          />
         </Show>
       </AppControllerProvider>
     </div>
