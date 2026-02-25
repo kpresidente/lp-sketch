@@ -100,6 +100,7 @@ import {
   conductorLayer,
   symbolLayer,
 } from './lib/layers'
+import { filterProjectByViewport, viewportDocRect } from './lib/viewportCulling'
 import {
   isToolSelectionAllowed,
   symbolDisabledReasons,
@@ -311,7 +312,9 @@ function App() {
   const [errorMessage, setErrorMessage] = createSignal('')
   const [selectionDebugEnabled, setSelectionDebugEnabled] = createSignal(false)
 
+  const [stageDimensions, setStageDimensions] = createSignal({ width: 0, height: 0 })
   let stageRef: HTMLDivElement | undefined
+  let stageResizeObserver: ResizeObserver | undefined
   let pdfCanvasRef: HTMLCanvasElement | undefined
   let touchSpacingTimer: number | null = null
   let targetDistanceSnapLock: TargetDistanceSnapLock | null = null
@@ -335,6 +338,15 @@ function App() {
         notes: resolvedGeneralNotesForPage(current, page),
       },
     }
+  })
+  const viewportVisibleProject = createMemo(() => {
+    const vp = visibleProject()
+    const dims = stageDimensions()
+    if (dims.width === 0 || dims.height === 0) {
+      return vp
+    }
+    const viewport = viewportDocRect(vp.view, dims.width, dims.height)
+    return filterProjectByViewport(vp, viewport, annotationScaleFactor(project().settings.designScale))
   })
   const effectivePdfBrightness = createMemo(() => clampPdfBrightness(pdfBrightnessPreview()))
   const activeColor = createMemo(() => project().settings.activeColor)
@@ -645,12 +657,12 @@ function App() {
     return formatDistance(distancePt * scale.realUnitsPerPoint, scale.displayUnits)
   })
 
+  const layerFilteredProject = createMemo(() => filterProjectByVisibleLayers(project()))
   const legendEntriesForPlacement = (
     _items: LegendItem[],
     placement: LegendPlacement,
   ): LegendDisplayEntry[] => {
-    const legendProject = filterProjectByVisibleLayers(project())
-    return buildLegendDisplayEntries(legendProject, placement)
+    return buildLegendDisplayEntries(layerFilteredProject(), placement)
   }
 
   const legendCustomSuffixInput = createMemo(() => {
@@ -3498,6 +3510,17 @@ function App() {
           onCommitPdfBrightness={handleCommitPdfBrightness}
           setStageRef={(element) => {
             stageRef = element
+            stageResizeObserver?.disconnect()
+            if (typeof ResizeObserver !== 'undefined') {
+              stageResizeObserver = new ResizeObserver((entries) => {
+                const entry = entries[0]
+                if (entry) {
+                  setStageDimensions({ width: entry.contentRect.width, height: entry.contentRect.height })
+                }
+              })
+              stageResizeObserver.observe(element)
+            }
+            setStageDimensions({ width: element.clientWidth, height: element.clientHeight })
           }}
           setPdfCanvasRef={(element) => {
             pdfCanvasRef = element
@@ -3511,7 +3534,7 @@ function App() {
           onDoubleClick={handleDoubleClick}
         >
           <OverlayLayer
-            project={visibleProject()}
+            project={viewportVisibleProject()}
             annotationScale={annotationScale()}
             selected={overlaySelected()}
             multiSelectedKeys={overlayMultiSelectedKeys()}

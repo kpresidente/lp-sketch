@@ -1,4 +1,4 @@
-import { For, Show } from 'solid-js'
+import { createMemo, For, Show } from 'solid-js'
 import {
   dimensionBarLineSegments,
   dimensionLabelWidthPx,
@@ -46,11 +46,12 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
             },
           )
           : null
-        const extensionSegments = () =>
+        const extensionSegments = createMemo(() =>
           geometry
             ? dimensionExtensionLineSegments(geometry, 3 * designScale())
-            : null
-        const barSegments = () =>
+            : null,
+        )
+        const barSegments = createMemo(() =>
           geometry
             ? dimensionBarLineSegments(
               geometry,
@@ -59,7 +60,8 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
               props.textLineHeightPx,
               4 * designScale(),
             )
-            : []
+            : [],
+        )
 
         return (
           <g>
