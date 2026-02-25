@@ -10,6 +10,7 @@ const { getDocumentMock } = vi.hoisted(() => ({
 }))
 
 vi.mock('pdfjs-dist', () => ({
+  PDFWorker: class { destroy = vi.fn() },
   getDocument: getDocumentMock,
 }))
 

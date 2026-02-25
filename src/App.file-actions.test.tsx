@@ -24,6 +24,7 @@ const {
 
 vi.mock('pdfjs-dist', () => ({
   GlobalWorkerOptions: { workerSrc: '' },
+  PDFWorker: class { destroy = vi.fn() },
   getDocument: getDocumentMock,
 }))
 

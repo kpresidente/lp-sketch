@@ -1,4 +1,4 @@
-import { getDocument } from 'pdfjs-dist'
+import { getDocument, PDFWorker } from 'pdfjs-dist'
 import { createEffect, on, onCleanup, type Accessor } from 'solid-js'
 import { base64ToBytes } from '../lib/files'
 
@@ -19,6 +19,7 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
   let pdfCanvasRef: HTMLCanvasElement | undefined
   let pdfRenderRequestVersion = 0
   let activePdfRenderTask: { cancel: () => void; promise: Promise<unknown> } | null = null
+  const sharedPdfWorker = new PDFWorker({ name: 'lp-sketch-pdf-worker' })
 
   function isPdfRenderCancellation(error: unknown): boolean {
     if (!(error instanceof Error)) {
@@ -78,50 +79,53 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
     }
 
     const bytes = base64ToBytes(dataBase64)
-    const pdfDocumentTask = getDocument({ data: bytes })
+    const pdfDocumentTask = getDocument({ data: bytes, worker: sharedPdfWorker })
     const pdf = await pdfDocumentTask.promise
 
-    if (requestVersion !== pdfRenderRequestVersion) {
-      await pdf.destroy()
-      return
-    }
-
-    if (pdf.numPages < 1) {
-      throw new Error('Unable to render PDF: no pages available.')
-    }
-
-    const requestedPage = options.currentPage()
-    const safePage = Number.isFinite(requestedPage)
-      ? Math.min(Math.max(1, Math.trunc(requestedPage)), pdf.numPages)
-      : 1
-
-    const page = await pdf.getPage(safePage)
-    const viewport = page.getViewport({ scale: 1 })
-
-    canvas.width = Math.max(1, Math.round(viewport.width))
-    canvas.height = Math.max(1, Math.round(viewport.height))
-
-    context.clearRect(0, 0, canvas.width, canvas.height)
-
-    const renderTask = page.render({
-      canvas,
-      canvasContext: context,
-      viewport,
-    }) as { cancel: () => void; promise: Promise<unknown> }
-    activePdfRenderTask = renderTask
-
     try {
-      await renderTask.promise
-    } catch (error) {
-      if (requestVersion !== pdfRenderRequestVersion || isPdfRenderCancellation(error)) {
+      if (requestVersion !== pdfRenderRequestVersion) {
         return
       }
 
-      throw error
-    } finally {
-      if (activePdfRenderTask === renderTask) {
-        activePdfRenderTask = null
+      if (pdf.numPages < 1) {
+        throw new Error('Unable to render PDF: no pages available.')
       }
+
+      const requestedPage = options.currentPage()
+      const safePage = Number.isFinite(requestedPage)
+        ? Math.min(Math.max(1, Math.trunc(requestedPage)), pdf.numPages)
+        : 1
+
+      const page = await pdf.getPage(safePage)
+      const viewport = page.getViewport({ scale: 1 })
+
+      canvas.width = Math.max(1, Math.round(viewport.width))
+      canvas.height = Math.max(1, Math.round(viewport.height))
+
+      context.clearRect(0, 0, canvas.width, canvas.height)
+
+      const renderTask = page.render({
+        canvas,
+        canvasContext: context,
+        viewport,
+      }) as { cancel: () => void; promise: Promise<unknown> }
+      activePdfRenderTask = renderTask
+
+      try {
+        await renderTask.promise
+      } catch (error) {
+        if (requestVersion !== pdfRenderRequestVersion || isPdfRenderCancellation(error)) {
+          return
+        }
+
+        throw error
+      } finally {
+        if (activePdfRenderTask === renderTask) {
+          activePdfRenderTask = null
+        }
+      }
+    } finally {
+      await pdf.destroy()
     }
   }
 
@@ -155,6 +159,7 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
         // Ignore cancellation failures when task is already complete.
       }
     }
+    sharedPdfWorker.destroy()
   })
 
   return {
