@@ -111,6 +111,7 @@ export default function LegendLabelDialog(props: LegendLabelDialogProps) {
           Cancel
         </button>
       </div>
+      <div class="hint-line">Enter to apply. Escape to cancel.</div>
     </div>
   )
 }

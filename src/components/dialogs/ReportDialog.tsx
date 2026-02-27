@@ -1,3 +1,4 @@
+import { Show } from 'solid-js'
 import type { ReportDraft, ReportType } from '../../lib/reporting'
 import {
   REPORT_DETAILS_MAX_LENGTH,
@@ -22,11 +23,6 @@ export default function ReportDialog(props: ReportDialogProps) {
     <div
       class="dialog-backdrop"
       role="presentation"
-      onClick={() => {
-        if (!props.submitting) {
-          props.onCancel()
-        }
-      }}
     >
       <div
         class="floating-input-dialog report-dialog"
@@ -91,7 +87,9 @@ export default function ReportDialog(props: ReportDialogProps) {
         <div class="tb-field">
           <span class="tb-field-label">Details</span>
           <textarea
-            class="input-field report-textarea"
+            class={`input-field report-textarea report-details-textarea ${
+              props.draft.type === 'feature' ? 'report-details-textarea-feature' : ''
+            }`}
             maxlength={REPORT_DETAILS_MAX_LENGTH}
             value={props.draft.details}
             placeholder="Describe what happened, or what you want to add."
@@ -101,20 +99,22 @@ export default function ReportDialog(props: ReportDialogProps) {
           />
         </div>
 
-        <div class="tb-field">
-          <span class="tb-field-label">Repro Steps (optional)</span>
-          <textarea
-            class="input-field report-textarea"
-            maxlength={REPORT_REPRO_MAX_LENGTH}
-            value={props.draft.reproSteps}
-            placeholder="Step-by-step reproduction details"
-            aria-label="Report reproduction steps"
-            disabled={props.submitting}
-            onInput={(event) => props.onSetReproSteps(event.currentTarget.value)}
-          />
-        </div>
+        <Show when={props.draft.type === 'bug'}>
+          <div class="tb-field">
+            <span class="tb-field-label">Repro Steps (optional)</span>
+            <textarea
+              class="input-field report-textarea"
+              maxlength={REPORT_REPRO_MAX_LENGTH}
+              value={props.draft.reproSteps}
+              placeholder="Step-by-step reproduction details"
+              aria-label="Report reproduction steps"
+              disabled={props.submitting}
+              onInput={(event) => props.onSetReproSteps(event.currentTarget.value)}
+            />
+          </div>
+        </Show>
 
-        <div class="hint-line">Ctrl/Cmd + Enter to submit</div>
+        <div class="hint-line">Ctrl/Cmd + Enter to submit. Escape to cancel.</div>
 
         {props.errorMessage && <span class="tb-error">{props.errorMessage}</span>}
 

@@ -155,6 +155,7 @@ export default function GeneralNotesDialog(props: GeneralNotesDialogProps) {
       <div class="hint-line">
         Up to {props.maxNotes} notes. Empty rows are ignored.
       </div>
+      <div class="hint-line">Ctrl/Cmd + Enter to apply. Escape to cancel.</div>
     </div>
   )
 }

@@ -6,14 +6,29 @@ import { DIRECTIONAL_SYMBOLS } from '../model/defaultProject'
 const LETTER_OPTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 type PropertiesController = ReturnType<typeof useAppController>
 
+const CLICK_FINISH_CANCEL_HINT = 'Click to place. Escape to cancel.'
+const ENTER_FINISH_CANCEL_HINT = 'Press Enter to finish, Escape to cancel.'
+
+function withFinishCancelHint(
+  base: string,
+  pending: boolean,
+  mode: 'click' | 'enter',
+): string {
+  if (!pending) {
+    return base
+  }
+  const suffix = mode === 'enter' ? ENTER_FINISH_CANCEL_HINT : CLICK_FINISH_CANCEL_HINT
+  return `${base}. ${suffix}`
+}
+
 function arcHint(props: PropertiesController): string {
   if (!props.arcStart) {
     return 'Click endpoint 1'
   }
   if (!props.arcEnd) {
-    return 'Click endpoint 2'
+    return withFinishCancelHint('Click endpoint 2', true, 'click')
   }
-  return 'Move cursor to set arc bulge, then click to finish'
+  return withFinishCancelHint('Move cursor to set arc bulge', true, 'click')
 }
 
 function curveHint(props: PropertiesController): string {
@@ -21,9 +36,9 @@ function curveHint(props: PropertiesController): string {
     return 'Click point 1'
   }
   if (!props.arcEnd) {
-    return 'Click point 2 on the curve'
+    return withFinishCancelHint('Click point 2 on the curve', true, 'click')
   }
-  return 'Click point 3 to finish the curve'
+  return withFinishCancelHint('Click point 3 on the curve', true, 'click')
 }
 
 function dimensionHint(props: PropertiesController): string {
@@ -31,26 +46,46 @@ function dimensionHint(props: PropertiesController): string {
     return 'Click start point'
   }
   if (!props.dimensionEnd) {
-    return 'Click end point'
+    return withFinishCancelHint('Click end point', true, 'click')
   }
-  return props.dimensionShowLinework
-    ? 'Click to place dimension text and linework direction'
-    : 'Click to place dimension text'
+  return withFinishCancelHint(
+    props.dimensionShowLinework
+      ? 'Click to place dimension text and linework direction'
+      : 'Click to place dimension text',
+    true,
+    'click',
+  )
 }
 
 function arrowHint(props: PropertiesController): string {
-  return props.arrowStart ? 'Click head point' : 'Click tail point'
+  if (!props.arrowStart) {
+    return 'Click tail point'
+  }
+  return withFinishCancelHint('Click head point', true, 'click')
 }
 
 function lineHint(props: PropertiesController): string {
-  return props.lineStart ? 'Click endpoint 2' : 'Click endpoint 1'
+  if (!props.lineStart) {
+    return 'Click endpoint 1'
+  }
+  if (props.lineContinuous) {
+    return withFinishCancelHint('Click endpoint 2', true, 'enter')
+  }
+  return 'Click endpoint 2. Escape to cancel.'
 }
 
 function linearAutoSpacingHint(props: PropertiesController): string {
   if (props.linearAutoSpacingVerticesCount === 0) {
     return 'Click point 1 to start trace'
   }
-  return 'Click to add vertices, then finish open/closed'
+  return withFinishCancelHint('Click to add vertices', true, 'enter')
+}
+
+function arcAutoSpacingHint(props: PropertiesController): string {
+  if (!props.arcAutoSpacingTargetSet) {
+    return 'Click an arc conductor to select target'
+  }
+  return withFinishCancelHint('Target selected', true, 'enter')
 }
 
 function measureHint(props: PropertiesController): string {
@@ -84,6 +119,16 @@ function symbolHint(props: PropertiesController): string {
 
 export default function PropertiesToolOptions() {
   const props = useAppController()
+  const handleEnterBlur = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
+    if (event.key !== 'Enter') {
+      return
+    }
+
+    event.preventDefault()
+    event.currentTarget.blur()
+    props.onRefocusCanvasFromInputCommit()
+  }
+
   const markToolActive = () => props.tool === 'measure_mark'
   const markSelectedInSelectMode = () => props.tool === 'select' && props.selectedKind === 'mark'
   const legendSelected = () => !!props.selectedLegendPlacement
@@ -106,7 +151,7 @@ export default function PropertiesToolOptions() {
         onClick={props.onSendSelectedToBack}
         disabled={!props.canSendSelectedToBack}
       >
-        Send to Back
+        Send Back
       </button>
       <button
         class="tb-btn"
@@ -114,7 +159,7 @@ export default function PropertiesToolOptions() {
         onClick={props.onBringSelectedToFront}
         disabled={!props.canBringSelectedToFront}
       >
-        Bring to Front
+        Bring Forward
       </button>
     </>
   )
@@ -190,6 +235,7 @@ export default function PropertiesToolOptions() {
               value={props.linearAutoSpacingMaxInput}
               aria-label="Linear auto-spacing max interval"
               onInput={(event) => props.onSetLinearAutoSpacingMaxInput(event.currentTarget.value)}
+              onKeyDown={handleEnterBlur}
             />
             <span class="tb-unit">ft</span>
           </div>
@@ -283,6 +329,7 @@ export default function PropertiesToolOptions() {
               value={props.arcAutoSpacingMaxInput}
               aria-label="Arc auto-spacing max interval"
               onInput={(event) => props.onSetArcAutoSpacingMaxInput(event.currentTarget.value)}
+              onKeyDown={handleEnterBlur}
             />
             <span class="tb-unit">ft</span>
           </div>
@@ -323,6 +370,8 @@ export default function PropertiesToolOptions() {
           <span class="tb-status">
             Target: <span class="tb-status-val">{props.arcAutoSpacingTargetSet ? 'selected' : 'none'}</span>
           </span>
+          <div class="tb-sep" />
+          <span class="tb-hint">{arcAutoSpacingHint(props)}</span>
           {!props.project.scale.isSet && (
             <>
               <div class="tb-sep" />
@@ -348,6 +397,7 @@ export default function PropertiesToolOptions() {
               value={props.measureTargetDistanceInput}
               aria-label="Target distance feet"
               onInput={(event) => props.onSetMeasureTargetDistanceInput(event.currentTarget.value)}
+              onKeyDown={handleEnterBlur}
             />
             <span class="tb-unit">ft</span>
           </div>
@@ -376,6 +426,7 @@ export default function PropertiesToolOptions() {
               value={props.measureTargetDistanceInput}
               aria-label="Target distance feet"
               onInput={(event) => props.onSetMeasureTargetDistanceInput(event.currentTarget.value)}
+              onKeyDown={handleEnterBlur}
             />
             <span class="tb-unit">ft</span>
           </div>
@@ -445,18 +496,18 @@ export default function PropertiesToolOptions() {
     if (props.tool === 'text') {
       return (
         <div class="properties-tool-options-inline">
-          <div class="tb-field">
+          <div class="tb-field tb-field-multiline">
             <span class="tb-field-label">Text</span>
-            <input
-              class="tb-input tb-input-wide"
-              type="text"
+            <textarea
+              class="tb-input tb-input-wide tb-input-multiline"
               aria-label="Text"
+              rows={3}
               value={props.textDraftInput}
               onInput={(event) => props.onSetTextDraftInput(event.currentTarget.value)}
             />
           </div>
           <div class="tb-sep" />
-          <span class="tb-hint">Click to place. Double-click in Select mode to edit.</span>
+          <span class="tb-hint">Click to place. Supports multiline text. Double-click in Select mode to edit.</span>
         </div>
       )
     }
@@ -601,6 +652,7 @@ export default function PropertiesToolOptions() {
               aria-label="Default downlead vertical feet"
               value={props.downleadVerticalFootagePlacementInput}
               onInput={(event) => props.onSetDownleadVerticalFootagePlacementInput(event.currentTarget.value)}
+              onKeyDown={handleEnterBlur}
             />
             <span class="tb-unit">ft</span>
           </div>
@@ -638,6 +690,7 @@ export default function PropertiesToolOptions() {
               maxLength={24}
               value={props.legendCustomSuffixInput}
               onInput={(event) => props.onSetLegendCustomSuffixInput(event.currentTarget.value)}
+              onKeyDown={handleEnterBlur}
               placeholder="Optional"
             />
             <button class="tb-btn" type="button" onClick={props.onClearLegendCustomSuffix}>
@@ -707,6 +760,14 @@ export default function PropertiesToolOptions() {
     }
 
     if (props.tool === 'select' && props.selectedKind) {
+      return (
+        <div class="properties-tool-options-inline">
+          {zOrderControls()}
+        </div>
+      )
+    }
+
+    if (props.tool === 'multi_select' && props.multiSelectionCount > 0) {
       return (
         <div class="properties-tool-options-inline">
           {zOrderControls()}

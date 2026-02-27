@@ -14,7 +14,7 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
   default: 'mock-worker-url',
 }))
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@solidjs/testing-library'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { distanceToQuadratic } from './lib/geometry'
@@ -399,6 +399,7 @@ describe('App interaction integration', () => {
   it('supports inside-corner measure-mark input via Alt+click fallback', async () => {
     const { container } = render(() => <App />)
 
+    await applyManualScale('1', '1')
     await fireEvent.click(screen.getByRole('button', { name: 'Mark' }))
 
     const stage = container.querySelector('.drawing-stage') as HTMLDivElement | null
@@ -479,6 +480,7 @@ describe('App interaction integration', () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
 
+    await applyManualScale('1', '1')
     await fireEvent.click(screen.getByRole('button', { name: 'Mark' }))
 
     await fireEvent.pointerDown(stage, {
@@ -516,7 +518,7 @@ describe('App interaction integration', () => {
     const clearButton = screen.getByRole('button', { name: 'Clear All Marks' })
     expect(clearButton).toBeTruthy()
     await fireEvent.click(clearButton)
-    expect(screen.getByText('Cleared all marks.')).toBeTruthy()
+    expect(screen.getByText('Cleared marks on this page.')).toBeTruthy()
   })
 
   it('uses touch corner-mode toggle fallback for auto-spacing taps', async () => {
@@ -929,6 +931,123 @@ describe('App interaction integration', () => {
     expect(screen.queryByText('Roof Note Updated')).toBeNull()
   })
 
+  it('does not delete a selected text annotation when Backspace/Delete is pressed inside the text editor input', async () => {
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Text' }))
+    const textInput = screen.getByLabelText('Text') as HTMLInputElement
+    await fireEvent.input(textInput, { target: { value: 'Guarded Note' } })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 360,
+      clientY: 210,
+      pointerId: 452,
+      pointerType: 'mouse',
+    })
+    expect(screen.getByText('Guarded Note')).toBeTruthy()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.doubleClick(stage, {
+      clientX: 360,
+      clientY: 210,
+    })
+
+    const dialogInput = screen.getByDisplayValue('Guarded Note') as HTMLTextAreaElement
+    await fireEvent.keyDown(dialogInput, { key: 'Backspace' })
+    await fireEvent.keyDown(dialogInput, { key: 'Delete' })
+
+    expect(screen.getByRole('dialog', { name: 'Text editor' })).toBeTruthy()
+    expect(screen.getByText('Guarded Note')).toBeTruthy()
+    expect(container.querySelector('svg.overlay-layer text')).not.toBeNull()
+  })
+
+  it('does not delete a selected line when typing in sidebar project name input', async () => {
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 220,
+      clientY: 200,
+      pointerId: 453,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 420,
+      clientY: 200,
+      pointerId: 453,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 320,
+      clientY: 200,
+      pointerId: 454,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 320,
+      clientY: 200,
+      pointerId: 454,
+      pointerType: 'mouse',
+    })
+
+    const projectNameInput = screen.getByPlaceholderText('Project name...') as HTMLInputElement
+    await fireEvent.keyDown(projectNameInput, { key: 'Backspace' })
+    await fireEvent.keyDown(projectNameInput, { key: 'Delete' })
+
+    expect(container.querySelector('svg.overlay-layer line[stroke="#2e8b57"][stroke-dasharray]')).not.toBeNull()
+  })
+
+  it('does not delete a selected downlead symbol when editing its vertical-footage input', async () => {
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Conduit to Ground' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+      pointerId: 455,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 320,
+      pointerId: 455,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+      pointerId: 456,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+      pointerId: 456,
+      pointerType: 'mouse',
+    })
+
+    const verticalInput = screen.getByLabelText('Selected downlead vertical feet') as HTMLInputElement
+    await fireEvent.keyDown(verticalInput, { key: 'Backspace' })
+    await fireEvent.keyDown(verticalInput, { key: 'Delete' })
+
+    expect(container.querySelector('svg.overlay-layer g[data-symbol-type="conduit_downlead_ground"]')).not.toBeNull()
+  })
+
   it('supports dimension linework toggle with preview and placed output', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -1060,7 +1179,7 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
     expect(screen.getByText('Arrow tail set. Click head point.')).toBeTruthy()
-    expect(screen.getByText('Click head point')).toBeTruthy()
+    expect(screen.getByText('Click head point. Click to place. Escape to cancel.')).toBeTruthy()
 
     await fireEvent.pointerMove(stage, {
       button: 0,
@@ -1147,13 +1266,8 @@ describe('App interaction integration', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Edit Labels' }))
     const roofAirInput = screen.getByDisplayValue('Air terminal A') as HTMLInputElement
     await fireEvent.input(roofAirInput, { target: { value: 'Roof Air' } })
-    const legendApplyButton = container.querySelector(
-      '.legend-label-dialog .btn-row .btn',
-    ) as HTMLButtonElement | null
-    expect(legendApplyButton).not.toBeNull()
-    if (!legendApplyButton) {
-      return
-    }
+    const legendDialog = screen.getByRole('dialog', { name: 'Legend labels editor' })
+    const legendApplyButton = within(legendDialog).getByRole('button', { name: 'Apply' })
     await fireEvent.click(legendApplyButton)
     expect(screen.getByText('Legend labels updated.')).toBeTruthy()
     expect(screen.getByText('Roof Air')).toBeTruthy()
@@ -1798,7 +1912,7 @@ describe('App interaction integration', () => {
     await fireEvent.input(distanceInput, { target: { value: '0' } })
     await fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
 
-    expect(screen.getByText('Calibration distance must be a positive number.')).toBeTruthy()
+    expect(screen.getAllByText('Calibration distance must be a positive number.').length).toBeGreaterThan(0)
     expect(screen.getByText('Scale: unset')).toBeTruthy()
   })
 
@@ -1806,6 +1920,7 @@ describe('App interaction integration', () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
 
+    await applyManualScale('1', '1')
     await fireEvent.click(screen.getByRole('button', { name: 'Mark' }))
 
     const contextEvent = new MouseEvent('contextmenu', {
@@ -1973,6 +2088,7 @@ describe('App interaction integration', () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
 
+    await applyManualScale('1', '1')
     await fireEvent.click(screen.getByRole('button', { name: 'Mark' }))
     await fireEvent.pointerDown(stage, {
       button: 0,
@@ -2450,6 +2566,7 @@ describe('App interaction integration', () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
 
+    await applyManualScale('1', '1')
     await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
     await fireEvent.pointerDown(stage, {
       button: 0,

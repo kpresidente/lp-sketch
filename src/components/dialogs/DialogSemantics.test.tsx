@@ -27,6 +27,7 @@ describe('dialog accessibility semantics', () => {
     ))
 
     expect(screen.getByRole('dialog', { name: 'Text editor' })).toBeTruthy()
+    expect(screen.getByText('Ctrl/Cmd + Enter to apply. Escape to cancel.')).toBeTruthy()
   })
 
   it('renders legend label editor as a labeled dialog with table caption', () => {
@@ -61,6 +62,7 @@ describe('dialog accessibility semantics', () => {
 
     expect(screen.getByRole('dialog', { name: 'Legend labels editor' })).toBeTruthy()
     expect(screen.getByText('Legend labels and counts')).toBeTruthy()
+    expect(screen.getByText('Enter to apply. Escape to cancel.')).toBeTruthy()
   })
 
   it('renders general notes editor as a labeled dialog with table caption', () => {
@@ -92,6 +94,7 @@ describe('dialog accessibility semantics', () => {
 
     expect(screen.getByRole('dialog', { name: 'General Notes editor' })).toBeTruthy()
     expect(screen.getByText('General notes list')).toBeTruthy()
+    expect(screen.getByText('Ctrl/Cmd + Enter to apply. Escape to cancel.')).toBeTruthy()
   })
 
   it('renders report dialog as a labeled dialog', () => {
@@ -115,5 +118,6 @@ describe('dialog accessibility semantics', () => {
     ))
 
     expect(screen.getByRole('dialog', { name: 'Report issue' })).toBeTruthy()
+    expect(screen.getByText('Ctrl/Cmd + Enter to submit. Escape to cancel.')).toBeTruthy()
   })
 })

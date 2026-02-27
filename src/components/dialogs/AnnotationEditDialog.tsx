@@ -24,6 +24,9 @@ function dialogTitle(mode: AnnotationEditState['mode']): string {
 }
 
 export default function AnnotationEditDialog(props: AnnotationEditDialogProps) {
+  const isTextMode = () => props.editor.mode === 'text'
+  const isDimensionTextMode = () => props.editor.mode === 'dimension_text'
+
   return (
     <div
       class="floating-input-dialog"
@@ -36,7 +39,31 @@ export default function AnnotationEditDialog(props: AnnotationEditDialogProps) {
       }}
     >
       <div class="floating-input-title">{dialogTitle(props.editor.mode)}</div>
-      <Show when={props.editor.mode !== 'arrow'}>
+      <Show when={isTextMode()}>
+        <>
+          <textarea
+            class="input-field floating-input-field annotation-textarea"
+            value={props.editor.input}
+            onInput={(event) => props.onSetInput(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                props.onCancel()
+                return
+              }
+
+              if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault()
+                props.onApply()
+              }
+            }}
+            autofocus
+          />
+          <div class="hint-line">Ctrl/Cmd + Enter to apply. Escape to cancel.</div>
+          <div class="hint-line">Enter inserts a new line.</div>
+        </>
+      </Show>
+      <Show when={isDimensionTextMode()}>
         <>
           <input
             class="input-field floating-input-field"
@@ -54,9 +81,8 @@ export default function AnnotationEditDialog(props: AnnotationEditDialogProps) {
             }}
             autofocus
           />
-          <Show when={props.editor.mode === 'dimension_text'}>
-            <div class="hint-line">Blank text uses measured value.</div>
-          </Show>
+          <div class="hint-line">Enter to apply. Escape to cancel.</div>
+          <div class="hint-line">Blank text uses measured value.</div>
         </>
       </Show>
       <div class="section-label">Layer</div>
