@@ -937,6 +937,18 @@ select.select-field:focus {
   flex: 0 1 auto;
 }
 
+.properties-help-btn {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.properties-help-btn i {
+  font-size: 17px;
+}
+
 .properties-tool-options-inline {
   display: inline-flex;
   flex-wrap: wrap;

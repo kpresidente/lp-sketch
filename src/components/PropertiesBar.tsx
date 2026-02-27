@@ -188,6 +188,19 @@ export default function PropertiesBar(props: PropertiesBarProps) {
               <span class="tb-check-label">Debug</span>
             </label>
           </Show>
+
+          <div class="tb-sep" />
+          <button
+            class="section-help-btn properties-help-btn"
+            type="button"
+            title="Open help"
+            onClick={(e) => {
+              e.stopPropagation()
+              help.openHelp('help-top')
+            }}
+          >
+            <i class={tablerIconClass('help')} />
+          </button>
         </div>
       </div>
     </div>
