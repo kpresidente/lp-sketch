@@ -1,6 +1,7 @@
 import { For } from 'solid-js'
 import Panel from './Panel'
 import { useAppController } from '../../context/AppControllerContext'
+import { SectionHelp } from './SectionHelp'
 import type { MaterialColor } from '../../types/project'
 
 const COLOR_MATERIAL_LABEL: Record<
@@ -29,7 +30,7 @@ export default function StylePanel() {
   const props = useAppController()
   return (
     <Panel label="Material">
-      <div class="section-label">Class</div>
+      <div class="section-label">Class <SectionHelp anchor="help-material-class" /></div>
       <div class="class-selector">
         <button
           class={`btn ${props.project.settings.activeClass === 'class1' ? 'active' : ''}`}
@@ -51,7 +52,7 @@ export default function StylePanel() {
         </button>
       </div>
 
-      <div class="section-label">Material</div>
+      <div class="section-label">Material <SectionHelp anchor="help-material-material" /></div>
       <div class="material-list" role="radiogroup" aria-label="Material">
         <For each={props.colorOptions}>
           {(color) => (

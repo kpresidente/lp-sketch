@@ -7,7 +7,37 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+export async function disableNativeFileDialogs(page: Page) {
+  await page.addInitScript(() => {
+    const win = window as Window & {
+      showOpenFilePicker?: unknown
+      showSaveFilePicker?: unknown
+    }
+
+    try {
+      Object.defineProperty(win, 'showOpenFilePicker', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      })
+    } catch {
+      win.showOpenFilePicker = undefined
+    }
+
+    try {
+      Object.defineProperty(win, 'showSaveFilePicker', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      })
+    } catch {
+      win.showSaveFilePicker = undefined
+    }
+  })
+}
+
 export async function gotoApp(page: Page): Promise<Locator> {
+  await disableNativeFileDialogs(page)
   await page.goto('/')
   const drawingStage = page.locator('.drawing-stage')
   await expect(drawingStage).toBeVisible()
@@ -95,7 +125,7 @@ export async function createSamplePdfPayload(name = 'e2e-sample.pdf'): Promise<F
 
 export async function importPdfFromProjectPanel(page: Page, fileName = 'e2e-import.pdf') {
   const chooserPromise = page.waitForEvent('filechooser')
-  await panelRegion(page, 'Project').locator('button[title="Import PDF"]').click()
+  await panelRegion(page, 'Project').getByRole('button', { name: /Import PDF$/ }).click()
   const chooser = await chooserPromise
   await chooser.setFiles(await createSamplePdfPayload(fileName))
   await expectStatus(page, new RegExp(`Imported ${escapeRegExp(fileName)}`))
@@ -221,12 +251,39 @@ export function createProjectJsonPayload(options?: {
   }
 }
 
-export function createMultiPageProjectJsonPayload(options?: {
+async function createMultiPagePdfBase64(): Promise<string> {
+  const pdfDoc = await PDFDocument.create()
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+
+  const page1 = pdfDoc.addPage([1200, 900])
+  page1.drawText('LP Sketch E2E Multi-page Fixture: Page 1', {
+    x: 48,
+    y: 848,
+    size: 18,
+    font,
+    color: rgb(0.1, 0.1, 0.1),
+  })
+
+  const page2 = pdfDoc.addPage([1200, 900])
+  page2.drawText('LP Sketch E2E Multi-page Fixture: Page 2', {
+    x: 48,
+    y: 848,
+    size: 18,
+    font,
+    color: rgb(0.1, 0.1, 0.1),
+  })
+
+  const bytes = await pdfDoc.save()
+  return Buffer.from(bytes).toString('base64')
+}
+
+export async function createMultiPageProjectJsonPayload(options?: {
   fileName?: string
   notesScope?: 'page' | 'global'
-}): FilePayload {
+}): Promise<FilePayload> {
   const now = new Date().toISOString()
   const notesScope = options?.notesScope ?? 'page'
+  const embeddedPdfBase64 = await createMultiPagePdfBase64()
   const defaultScale = {
     isSet: false,
     method: null,
@@ -243,7 +300,7 @@ export function createMultiPageProjectJsonPayload(options?: {
       updatedAt: now,
     },
     pdf: {
-      sourceType: 'referenced',
+      sourceType: 'embedded',
       name: 'multi-source.pdf',
       sha256: '0'.repeat(64),
       page: 1,
@@ -254,8 +311,8 @@ export function createMultiPageProjectJsonPayload(options?: {
       ],
       widthPt: 1200,
       heightPt: 900,
-      dataBase64: null,
-      path: 'multi-source.pdf',
+      dataBase64: embeddedPdfBase64,
+      path: null,
     },
     scale: {
       ...defaultScale,
@@ -357,7 +414,7 @@ export function createMultiPageProjectJsonPayload(options?: {
 
 export async function loadProjectFromProjectPanel(page: Page, payload: FilePayload) {
   const chooserPromise = page.waitForEvent('filechooser')
-  await panelRegion(page, 'Project').locator('button[title="Load Project"]').click()
+  await panelRegion(page, 'Project').getByRole('button', { name: /Load$/ }).click()
   const chooser = await chooserPromise
   await chooser.setFiles(payload)
   await expectStatus(page, /Loaded .*\.lpsketch\.json/)

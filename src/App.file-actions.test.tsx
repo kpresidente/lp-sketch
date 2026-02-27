@@ -4,8 +4,9 @@ import { vi } from 'vitest'
 
 const {
   getDocumentMock,
-  exportProjectImageMock,
-  exportProjectPdfMock,
+  renderProjectImageBlobMock,
+  renderProjectPdfBlobMock,
+  downloadBlobMock,
   downloadTextFileMock,
   sha256HexMock,
   arrayBufferToBase64Mock,
@@ -13,8 +14,9 @@ const {
   validateProjectMock,
 } = vi.hoisted(() => ({
   getDocumentMock: vi.fn(),
-  exportProjectImageMock: vi.fn(),
-  exportProjectPdfMock: vi.fn(),
+  renderProjectImageBlobMock: vi.fn(),
+  renderProjectPdfBlobMock: vi.fn(),
+  downloadBlobMock: vi.fn(),
   downloadTextFileMock: vi.fn(),
   sha256HexMock: vi.fn(),
   arrayBufferToBase64Mock: vi.fn(),
@@ -33,14 +35,15 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
 }))
 
 vi.mock('./lib/export', () => ({
-  exportProjectImage: exportProjectImageMock,
-  exportProjectPdf: exportProjectPdfMock,
+  renderProjectImageBlob: renderProjectImageBlobMock,
+  renderProjectPdfBlob: renderProjectPdfBlobMock,
 }))
 
 vi.mock('./lib/files', async () => {
   const actual = await vi.importActual<typeof import('./lib/files')>('./lib/files')
   return {
     ...actual,
+    downloadBlob: downloadBlobMock,
     downloadTextFile: downloadTextFileMock,
     sha256Hex: sha256HexMock,
     arrayBufferToBase64: arrayBufferToBase64Mock,
@@ -96,8 +99,9 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
-  exportProjectImageMock.mockReset()
-  exportProjectPdfMock.mockReset()
+  renderProjectImageBlobMock.mockReset()
+  renderProjectPdfBlobMock.mockReset()
+  downloadBlobMock.mockReset()
   downloadTextFileMock.mockReset()
   sha256HexMock.mockReset()
   arrayBufferToBase64Mock.mockReset()
@@ -105,8 +109,9 @@ beforeEach(() => {
   migrateProjectForLoadMock.mockReset()
   validateProjectMock.mockReset()
 
-  exportProjectImageMock.mockResolvedValue(undefined)
-  exportProjectPdfMock.mockResolvedValue(undefined)
+  renderProjectImageBlobMock.mockResolvedValue(new Blob(['image'], { type: 'image/png' }))
+  renderProjectPdfBlobMock.mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }))
+  downloadBlobMock.mockImplementation(() => undefined)
   downloadTextFileMock.mockImplementation(() => undefined)
   sha256HexMock.mockResolvedValue('f'.repeat(64))
   arrayBufferToBase64Mock.mockReturnValue('BASE64PDFDATA')
@@ -209,12 +214,14 @@ describe('App file actions integration', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'JPG' }))
     await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
 
-    expect(exportProjectImageMock).toHaveBeenCalledTimes(2)
-    expect(exportProjectImageMock.mock.calls[0][1]).toBe('png')
-    expect(exportProjectImageMock.mock.calls[1][1]).toBe('jpg')
-    expect(exportProjectImageMock.mock.calls[0][2]).toBe('Untitled-LP-Sketch')
-    expect(exportProjectPdfMock).toHaveBeenCalledTimes(1)
-    expect(exportProjectPdfMock.mock.calls[0][1]).toBe('Untitled-LP-Sketch')
+    expect(renderProjectImageBlobMock).toHaveBeenCalledTimes(2)
+    expect(renderProjectImageBlobMock.mock.calls[0][1]).toBe('png')
+    expect(renderProjectImageBlobMock.mock.calls[1][1]).toBe('jpg')
+    expect(renderProjectPdfBlobMock).toHaveBeenCalledTimes(1)
+    expect(downloadBlobMock).toHaveBeenCalledTimes(3)
+    expect(downloadBlobMock.mock.calls[0][0]).toBe('Untitled-LP-Sketch.png')
+    expect(downloadBlobMock.mock.calls[1][0]).toBe('Untitled-LP-Sketch.jpg')
+    expect(downloadBlobMock.mock.calls[2][0]).toBe('Untitled-LP-Sketch.pdf')
   })
 
   it('passes the rendered PDF canvas into PDF export after importing a source PDF', async () => {
@@ -231,19 +238,18 @@ describe('App file actions integration', () => {
 
     await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
 
-    expect(exportProjectPdfMock).toHaveBeenCalledTimes(1)
-    expect(exportProjectPdfMock.mock.calls[0][1]).toBe('Untitled-LP-Sketch')
-    expect(exportProjectPdfMock.mock.calls[0][2]).toBeInstanceOf(HTMLCanvasElement)
+    expect(renderProjectPdfBlobMock).toHaveBeenCalledTimes(1)
+    expect(renderProjectPdfBlobMock.mock.calls[0][1]).toBeInstanceOf(HTMLCanvasElement)
   })
 
   it('shows export error messages for both explicit errors and fallback paths', async () => {
     render(() => <App />)
 
-    exportProjectImageMock.mockRejectedValueOnce(new Error('Image export failed.'))
+    renderProjectImageBlobMock.mockRejectedValueOnce(new Error('Image export failed.'))
     await fireEvent.click(screen.getByRole('button', { name: 'PNG' }))
     expect(screen.getByText('Image export failed.')).toBeTruthy()
 
-    exportProjectPdfMock.mockRejectedValueOnce('boom')
+    renderProjectPdfBlobMock.mockRejectedValueOnce('boom')
     await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
     expect(screen.getByText('Unable to export PDF.')).toBeTruthy()
   })

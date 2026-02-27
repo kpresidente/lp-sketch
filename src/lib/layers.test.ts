@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createDefaultProject } from '../model/defaultProject'
-import { filterProjectByCurrentPage, filterProjectByVisibleLayers, symbolLayer } from './layers'
+import { filterProjectByCurrentPage, filterProjectByVisibleLayers, symbolLayer, symbolSublayer } from './layers'
 
 describe('layers helpers', () => {
   it('maps symbol families to expected automatic layers', () => {
@@ -8,6 +8,9 @@ describe('layers helpers', () => {
     expect(symbolLayer('conduit_downlead_ground')).toBe('downleads')
     expect(symbolLayer('ground_rod')).toBe('grounding')
     expect(symbolLayer('continued')).toBe('annotation')
+    expect(symbolSublayer('bond')).toBe('connections')
+    expect(symbolSublayer('connect_existing')).toBe('connections')
+    expect(symbolSublayer('air_terminal')).toBeNull()
   })
 
   it('filters project render content by layer visibility', () => {
@@ -58,6 +61,13 @@ describe('layers helpers', () => {
         color: 'green',
         class: 'none',
       },
+      {
+        id: 'sym-connection',
+        symbolType: 'bond',
+        position: { x: 16, y: 16 },
+        color: 'green',
+        class: 'class1',
+      },
     )
     project.elements.texts.push({
       id: 'text-1',
@@ -97,6 +107,38 @@ describe('layers helpers', () => {
     const project = createDefaultProject('Layer Fast Path')
     const filtered = filterProjectByVisibleLayers(project)
     expect(filtered).toBe(project)
+  })
+
+  it('filters connection symbols by rooftop connections sublayer visibility', () => {
+    const project = createDefaultProject('Connections Sublayer Filtering')
+    project.elements.lines.push({
+      id: 'line-1',
+      start: { x: 0, y: 0 },
+      end: { x: 100, y: 0 },
+      color: 'green',
+      class: 'class1',
+    })
+    project.elements.symbols.push(
+      {
+        id: 'sym-connection',
+        symbolType: 'bond',
+        position: { x: 30, y: 12 },
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'sym-rooftop',
+        symbolType: 'air_terminal',
+        position: { x: 40, y: 12 },
+        color: 'green',
+        class: 'class1',
+      },
+    )
+
+    project.layers.sublayers.connections = false
+    const filtered = filterProjectByVisibleLayers(project)
+    expect(filtered.elements.lines.map((entry) => entry.id)).toEqual(['line-1'])
+    expect(filtered.elements.symbols.map((entry) => entry.id)).toEqual(['sym-rooftop'])
   })
 
   it('filters annotation and component working sets to the current page', () => {

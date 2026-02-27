@@ -16,6 +16,7 @@ import {
 } from '../../lib/componentAvailability'
 import { CustomIcon } from '../icons/CustomIcon'
 import { useAppController } from '../../context/AppControllerContext'
+import { SectionHelp } from './SectionHelp'
 
 export default function ComponentsPanel() {
   const props = useAppController()
@@ -78,14 +79,14 @@ export default function ComponentsPanel() {
 
   return (
     <Panel label="Components">
-      <div class="section-label">Conductors</div>
+      <div class="section-label">Conductors <SectionHelp anchor="help-components-conductors" /></div>
       <div class="btn-grid-3">
         {toolBtn('line', 'Linear', '', '', 'Linear Conductor')}
         {toolBtn('arc', 'Arc', '', '', 'Arc Conductor')}
         {toolBtn('curve', 'Curve', '', '', 'Curve Conductor')}
       </div>
 
-      <div class="section-label">Air Terminals</div>
+      <div class="section-label">Air Terminals <SectionHelp anchor="help-components-air-terminals" /></div>
       <div class="btn-grid-3">
         {symbolBtn('air_terminal', 'AT', '', '', 'Air Terminal')}
         {symbolBtn('bonded_air_terminal', 'Bonded AT', '', '', 'Bonded Air Terminal')}
@@ -93,19 +94,19 @@ export default function ComponentsPanel() {
         {toolBtn('arc_auto_spacing', 'Arc AT', '', '', 'Arc Auto-Spacing')}
       </div>
 
-      <div class="section-label">Connections</div>
+      <div class="section-label">Connections <SectionHelp anchor="help-components-connections" /></div>
       <div class="btn-grid-3" style={{ "margin-bottom": "5px" }}>
         {symbolBtn('bond', 'Bond')}
         {symbolBtn('cable_to_cable_connection', 'Mechanical')}
         {symbolBtn('cadweld_connection', 'Cadweld')}
       </div>
       <div class="btn-grid-3">
-        {symbolBtn('connect_existing', 'Conn\nExisting', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Connect Existing')}
-        {symbolBtn('mechanical_crossrun_connection', 'Mech\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Mechanical Crossrun')}
-        {symbolBtn('cadweld_crossrun_connection', 'Cad\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Cadweld Crossrun')}
+        {symbolBtn('connect_existing', 'Connect\nExisting', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Connect Existing')}
+        {symbolBtn('mechanical_crossrun_connection', 'Mechanical\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Mechanical Crossrun')}
+        {symbolBtn('cadweld_crossrun_connection', 'Cadweld\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Cadweld Crossrun')}
       </div>
 
-      <div class="section-label">Downleads</div>
+      <div class="section-label">Downleads <SectionHelp anchor="help-components-downleads" /></div>
       <div class="btn-grid-3" style={{ "margin-bottom": "5px" }}>
         {symbolBtn('conduit_downlead_ground', 'Conduit to Ground', 'btn-multiline')}
         {symbolBtn('conduit_downlead_roof', 'Conduit to Roof', 'btn-multiline')}
@@ -115,13 +116,13 @@ export default function ComponentsPanel() {
         {symbolBtn('surface_downlead_roof', 'Surface to Roof', 'btn-multiline')}
       </div>
 
-      <div class="section-label">Penetrations</div>
+      <div class="section-label">Penetrations <SectionHelp anchor="help-components-penetrations" /></div>
       <div class="btn-grid-3">
         {symbolBtn('through_roof_to_steel', 'Thru-Roof', '', '', 'Through-Roof')}
         {symbolBtn('through_wall_connector', 'Thru-Wall', '', '', 'Through-Wall')}
       </div>
 
-      <div class="section-label">Grounding</div>
+      <div class="section-label">Grounding <SectionHelp anchor="help-components-grounding" /></div>
       <div class="btn-grid-3">
         {symbolBtn('ground_rod', 'Ground Rod')}
         {symbolBtn('steel_bond', 'Steel Bond')}

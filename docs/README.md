@@ -8,6 +8,6 @@ This repository keeps a compact documentation set:
    - Architecture, schema/migration, quality gates, and reliability/performance guarantees.
 3. `docs/OPERATIONS.md`
    - CI policy, branch protection, release/rollback process, smoke checks, security, and telemetry.
-4. `vision/project-schema-v1.json`
+4. `src/model/project-schema-v1.json`
    - Canonical JSON schema for project file validation.
 

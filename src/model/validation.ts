@@ -1,7 +1,7 @@
 import { type ErrorObject } from 'ajv'
 import Ajv2020 from 'ajv/dist/2020'
 import addFormats from 'ajv-formats'
-import projectSchema from '../../vision/project-schema-v1.json'
+import projectSchema from './project-schema-v1.json'
 import type { LpProject } from '../types/project'
 
 const ajv = new Ajv2020({ allErrors: true, strict: false })

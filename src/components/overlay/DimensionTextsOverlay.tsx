@@ -48,7 +48,7 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
           : null
         const extensionSegments = createMemo(() =>
           geometry
-            ? dimensionExtensionLineSegments(geometry, 3 * designScale())
+            ? dimensionExtensionLineSegments(geometry, 6 * designScale())
             : null,
         )
         const barSegments = createMemo(() =>
@@ -100,7 +100,7 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
             <Show when={isSelected() || isHovered()}>
               <rect
                 x={dimensionText.position.x - selectedWidth() / 2 - 4 * designScale()}
-                y={dimensionText.position.y - 3 * designScale()}
+                y={dimensionText.position.y - props.textLineHeightPx / 2 - 3 * designScale()}
                 width={selectedWidth() + 8 * designScale()}
                 height={props.textLineHeightPx + 6 * designScale()}
                 fill="none"
@@ -118,7 +118,7 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
               font-size={`${props.textFontSizePx}px`}
               font-family="Segoe UI, Arial, sans-serif"
               text-anchor="middle"
-              dominant-baseline="hanging"
+              dominant-baseline="central"
             >
               {label()}
             </text>

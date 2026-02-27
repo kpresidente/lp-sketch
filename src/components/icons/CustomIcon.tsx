@@ -109,6 +109,21 @@ function CadweldConnectionIcon(): JSX.Element {
   )
 }
 
+function ConnectExistingIcon(): JSX.Element {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M5 16c4 0 5-8 9-8"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="2" fill="none" />
+    </svg>
+  )
+}
+
 function MechanicalCrossrunConnectionIcon(): JSX.Element {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -134,6 +149,8 @@ export function CustomIcon(props: CustomIconProps): JSX.Element {
         return <AtArcIcon />
       case 'cadweld-connection':
         return <CadweldConnectionIcon />
+      case 'connect-existing':
+        return <ConnectExistingIcon />
       case 'mechanical-crossrun-connection':
         return <MechanicalCrossrunConnectionIcon />
       case 'cadweld-crossrun-connection':

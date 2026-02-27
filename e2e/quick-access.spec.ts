@@ -6,11 +6,13 @@ test.describe('quick-access toolbar', () => {
     await gotoApp(page)
 
     await page.getByRole('button', { name: 'Customize quick-access toolbar' }).click()
-    await expect(page.getByRole('dialog', { name: 'Customize quick-access toolbar' })).toBeVisible()
+    const customizer = page.getByRole('dialog', { name: 'Customize quick-access toolbar' })
+    await expect(customizer).toBeVisible()
 
-    await page.getByLabel('All quick-access tools').selectOption({ label: 'Curve' })
-    await page.getByRole('button', { name: 'Add >>', exact: true }).click()
-    const curveQuickButton = page.getByRole('button', { name: 'Curve', exact: true })
+    await customizer.getByLabel('Search quick-access tools').fill('Curve')
+    await customizer.locator('.quick-access-available-item', { hasText: /Curve$/ }).first().click()
+    await customizer.getByRole('button', { name: 'Add >>', exact: true }).click()
+    const curveQuickButton = page.locator('.quick-access-rail').getByRole('button', { name: /Curve$/ }).first()
     await expect(curveQuickButton).toBeVisible()
 
     await page.getByRole('button', { name: 'Customize quick-access toolbar' }).click()
@@ -18,7 +20,6 @@ test.describe('quick-access toolbar', () => {
     await expect(page.locator('.toolbar-active-tool')).toContainText('Curve')
 
     await page.reload()
-    await expect(page.getByRole('button', { name: 'Curve', exact: true })).toBeVisible()
+    await expect(page.locator('.quick-access-rail').getByRole('button', { name: /Curve$/ }).first()).toBeVisible()
   })
 })
-

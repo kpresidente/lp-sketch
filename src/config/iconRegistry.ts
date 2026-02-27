@@ -6,6 +6,7 @@ export type CustomIconName =
   | 'steel-bond-filled'
   | 'multi-select-hand-plus'
   | 'cadweld-connection'
+  | 'connect-existing'
   | 'mechanical-crossrun-connection'
   | 'cadweld-crossrun-connection'
 
@@ -94,6 +95,7 @@ export const SYMBOL_CLASS2_CUSTOM_ICON: Partial<Record<SymbolType, CustomIconNam
 
 export const SYMBOL_CUSTOM_ICON: Partial<Record<SymbolType, CustomIconName>> = {
   cadweld_connection: 'cadweld-connection',
+  connect_existing: 'connect-existing',
   mechanical_crossrun_connection: 'mechanical-crossrun-connection',
   cadweld_crossrun_connection: 'cadweld-crossrun-connection',
 }

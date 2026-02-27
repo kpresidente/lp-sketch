@@ -9,6 +9,7 @@ import {
 } from '../../config/iconRegistry'
 import { CustomIcon } from '../icons/CustomIcon'
 import { useAppController } from '../../context/AppControllerContext'
+import { SectionHelp } from './SectionHelp'
 import {
   formatDisabledTooltip,
   symbolDisabledReasons,
@@ -42,7 +43,7 @@ export default function ToolsPanel() {
 
   return (
     <Panel label="Tools">
-      <div class="section-label">Mode</div>
+      <div class="section-label">Mode <SectionHelp anchor="help-tools-mode" /></div>
       <div class="btn-row" style={{ "margin-bottom": "10px" }}>
         <button
           class={`btn ${props.tool === 'select' ? 'active' : ''}`}
@@ -97,10 +98,12 @@ export default function ToolsPanel() {
         <span class="history-counter">
           Past: {props.historyPastCount} | Future: {props.historyFutureCount}
         </span>
+        <SectionHelp anchor="help-tools-undo-redo" />
       </div>
 
       <div class="toggle-row">
         <span class="toggle-label">Snap to Points</span>
+        <SectionHelp anchor="help-tools-snap-to-points" />
         <button
           type="button"
           role="switch"
@@ -113,6 +116,7 @@ export default function ToolsPanel() {
       </div>
       <div class="toggle-row">
         <span class="toggle-label">Angle Snap (15°)</span>
+        <SectionHelp anchor="help-tools-angle-snap" />
         <button
           type="button"
           role="switch"
@@ -125,6 +129,7 @@ export default function ToolsPanel() {
       </div>
       <div class="toggle-row">
         <span class="toggle-label">Auto-Connectors</span>
+        <SectionHelp anchor="help-tools-auto-connectors" />
         <button
           type="button"
           role="switch"
@@ -159,7 +164,7 @@ export default function ToolsPanel() {
         </button>
       </div>
 
-      <div class="section-label">Annotation</div>
+      <div class="section-label">Annotation <SectionHelp anchor="help-tools-annotation" /></div>
       <div class="btn-grid-3">
         <button
           class={`btn ${props.tool === 'text' ? 'active' : ''}`}

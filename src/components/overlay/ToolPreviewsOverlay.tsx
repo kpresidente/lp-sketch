@@ -472,7 +472,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
               )
               : 54
           const lineworkExtensions = linework
-            ? dimensionExtensionLineSegments(linework, 3)
+            ? dimensionExtensionLineSegments(linework, 6)
             : null
           const lineworkBars = linework
             ? dimensionBarLineSegments(
@@ -553,7 +553,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
                     />
                     <rect
                       x={placement().position.x - previewLabelWidth / 2 - 4}
-                      y={placement().position.y - 3}
+                      y={placement().position.y - 9}
                       width={previewLabelWidth + 8}
                       height={18}
                       fill="rgba(255,255,255,0.92)"
@@ -568,7 +568,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
                       font-size="12px"
                       font-family="Segoe UI, Arial, sans-serif"
                       text-anchor="middle"
-                      dominant-baseline="hanging"
+                      dominant-baseline="central"
                     >
                       {placement().label}
                     </text>

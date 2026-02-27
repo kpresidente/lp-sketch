@@ -2,21 +2,32 @@ import { Show } from 'solid-js'
 import Panel from './Panel'
 import { PROJECT_ACTION_ICON, tablerIconClass } from '../../config/iconRegistry'
 import { useAppController } from '../../context/AppControllerContext'
+import { SectionHelp } from './SectionHelp'
 
 export default function ProjectPanel() {
   const props = useAppController()
   let importPdfInput: HTMLInputElement | undefined
   let loadProjectInput: HTMLInputElement | undefined
   const brightnessPercent = () => `${Math.round(props.pdfBrightness * 100)}%`
+  const handleEnterBlur = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
+    if (event.key !== 'Enter') {
+      return
+    }
+
+    event.preventDefault()
+    event.currentTarget.blur()
+    props.onRefocusCanvasFromInputCommit()
+  }
 
   return (
     <Panel label="Project">
-      <div class="section-label">Name</div>
+      <div class="section-label">Name <SectionHelp anchor="help-project-name" /></div>
       <input
         class="input-field"
         value={props.project.projectMeta.name}
         placeholder="Project name..."
         onInput={(event) => props.onSetProjectName(event.currentTarget.value)}
+        onKeyDown={handleEnterBlur}
       />
 
       <Show when={props.hasPdf}>
@@ -26,34 +37,60 @@ export default function ProjectPanel() {
         </div>
       </Show>
 
-      <div class="section-label">File</div>
+      <div class="section-label">File <SectionHelp anchor="help-project-file" /></div>
       <div class="btn-grid-3" style={{ "margin-bottom": "10px" }}>
-        <button class="btn" type="button" title="Import PDF" onClick={() => importPdfInput?.click()}>
+        <button
+          class="btn"
+          type="button"
+          title="Import PDF"
+          onClick={() => {
+            if (props.supportsNativeFileDialogs) {
+              props.onImportPdfPicker()
+              return
+            }
+            importPdfInput?.click()
+          }}
+        >
           <i class={tablerIconClass(PROJECT_ACTION_ICON.importPdf)} /> Import PDF
         </button>
-        <input
-          ref={importPdfInput}
-          type="file"
-          accept="application/pdf"
-          onChange={props.onImportPdf}
-          hidden
-        />
+        <Show when={!props.supportsNativeFileDialogs}>
+          <input
+            ref={importPdfInput}
+            type="file"
+            accept="application/pdf"
+            onChange={props.onImportPdf}
+            hidden
+          />
+        </Show>
         <button class="btn" type="button" title="Save Project" onClick={props.onSaveProject}>
           <i class={tablerIconClass(PROJECT_ACTION_ICON.saveProject)} /> Save
         </button>
-        <button class="btn" type="button" title="Load Project" onClick={() => loadProjectInput?.click()}>
+        <button
+          class="btn"
+          type="button"
+          title="Load Project"
+          onClick={() => {
+            if (props.supportsNativeFileDialogs) {
+              props.onLoadProjectPicker()
+              return
+            }
+            loadProjectInput?.click()
+          }}
+        >
           <i class={tablerIconClass(PROJECT_ACTION_ICON.loadProject)} /> Load
         </button>
-        <input
-          ref={loadProjectInput}
-          type="file"
-          accept="application/json,.json"
-          onChange={props.onLoadProject}
-          hidden
-        />
+        <Show when={!props.supportsNativeFileDialogs}>
+          <input
+            ref={loadProjectInput}
+            type="file"
+            accept="application/json,.json"
+            onChange={props.onLoadProject}
+            hidden
+          />
+        </Show>
       </div>
 
-      <div class="section-label">Export</div>
+      <div class="section-label">Export <SectionHelp anchor="help-project-export" /></div>
       <div class="btn-grid-3">
         <button class="btn" type="button" title="Export PNG" onClick={() => props.onExportImage('png')}>
           <i class={tablerIconClass(PROJECT_ACTION_ICON.exportPng)} /> PNG
@@ -66,7 +103,7 @@ export default function ProjectPanel() {
         </button>
       </div>
 
-      <div class="section-label" style={{ "margin-top": "10px" }}>Report</div>
+      <div class="section-label" style={{ "margin-top": "10px" }}>Report <SectionHelp anchor="help-project-report" /></div>
       <div class="btn-grid-3">
         <button
           class="btn"
@@ -86,7 +123,7 @@ export default function ProjectPanel() {
         </button>
       </div>
 
-      <div class="section-label" style={{ "margin-top": "10px" }}>Pages</div>
+      <div class="section-label" style={{ "margin-top": "10px" }}>Pages <SectionHelp anchor="help-project-pages" /></div>
       <div class="page-nav-row">
         <button
           class="btn page-nav-button"
@@ -111,7 +148,7 @@ export default function ProjectPanel() {
         </span>
       </div>
 
-      <div class="section-label" style={{ "margin-top": "10px" }}>PDF Background</div>
+      <div class="section-label" style={{ "margin-top": "10px" }}>PDF Background <SectionHelp anchor="help-project-pdf-background" /></div>
       <div class="brightness-row">
         <span class="brightness-label">Brightness</span>
         <input

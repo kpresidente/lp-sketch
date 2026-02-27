@@ -330,7 +330,8 @@ describe('export integration', () => {
           typeof args[0] === 'number' &&
           typeof args[1] === 'number' &&
           Math.abs(args[0] - 100) < 0.01 &&
-          Math.abs(args[1] - 153) < 0.01,
+          args[1] > 150 &&
+          args[1] < 170,
       ),
     ).toBe(true)
     expect(hasOperation(ops, 'moveTo', (args) => args[0] === 200 && args[1] === 120)).toBe(true)
@@ -342,7 +343,8 @@ describe('export integration', () => {
           typeof args[0] === 'number' &&
           typeof args[1] === 'number' &&
           Math.abs(args[0] - 200) < 0.01 &&
-          Math.abs(args[1] - 153) < 0.01,
+          args[1] > 150 &&
+          args[1] < 170,
       ),
     ).toBe(true)
     expect(

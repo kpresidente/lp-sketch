@@ -1,5 +1,6 @@
 import type {
   LayerId,
+  LayerSublayerId,
   LpProject,
   MaterialColor,
   SymbolClass,
@@ -54,7 +55,6 @@ export const DOWNLEAD_SYMBOLS = new Set<SymbolType>([
 
 export const NO_CLASS_SYMBOLS = new Set<SymbolType>([
   'continued',
-  'connect_existing',
 ])
 
 const ANNOTATION_STYLE_SYMBOLS = new Set<SymbolType>([
@@ -66,6 +66,10 @@ export const DEFAULT_LAYER_VISIBILITY: Record<LayerId, boolean> = {
   downleads: true,
   grounding: true,
   annotation: true,
+}
+
+export const DEFAULT_SUBLAYER_VISIBILITY: Record<LayerSublayerId, boolean> = {
+  connections: true,
 }
 
 function createId() {
@@ -145,7 +149,10 @@ export function createDefaultProject(name = 'Untitled LP Sketch'): LpProject {
       angleIncrementDeg: 15,
     },
     view: { currentPage: 1, ...defaultViewState, byPage: { 1: { ...defaultViewState } } },
-    layers: { ...DEFAULT_LAYER_VISIBILITY },
+    layers: {
+      ...DEFAULT_LAYER_VISIBILITY,
+      sublayers: { ...DEFAULT_SUBLAYER_VISIBILITY },
+    },
     elements: {
       lines: [],
       arcs: [],

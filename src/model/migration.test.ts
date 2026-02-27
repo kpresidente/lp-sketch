@@ -103,6 +103,9 @@ describe('project migration', () => {
       downleads: true,
       grounding: true,
       annotation: true,
+      sublayers: {
+        connections: true,
+      },
     })
 
     const validation = validateProject(result)
@@ -204,6 +207,9 @@ describe('project migration', () => {
       downleads: false,
       grounding: true,
       annotation: true,
+      sublayers: {
+        connections: true,
+      },
     })
     expect(result.elements.texts[0].layer).toBe('annotation')
     expect(result.elements.arrows[0].layer).toBe('annotation')
@@ -222,6 +228,26 @@ describe('project migration', () => {
     const result = migration.project as LpProject
 
     expect(result.settings.autoConnectorType).toBe('mechanical')
+    expect(migration.migrated).toBe(true)
+  })
+
+  it('normalizes connections sublayer visibility when rooftop layer is disabled', () => {
+    const legacyProject = createSchemaValidProject('Legacy Sublayers')
+    legacyProject.schemaVersion = '1.8.4'
+    ;(legacyProject as unknown as Record<string, unknown>).layers = {
+      rooftop: false,
+      downleads: true,
+      grounding: true,
+      annotation: true,
+      sublayers: {
+        connections: true,
+      },
+    }
+
+    const migration = migrateProjectForLoad(legacyProject)
+    const result = migration.project as LpProject
+    expect(result.layers.rooftop).toBe(false)
+    expect(result.layers.sublayers.connections).toBe(false)
     expect(migration.migrated).toBe(true)
   })
 

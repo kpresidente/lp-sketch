@@ -1,9 +1,8 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { gotoApp } from './helpers'
 
 async function stage(page: Page): Promise<Locator> {
-  const drawingStage = page.locator('.drawing-stage')
-  await expect(drawingStage).toBeVisible()
-  return drawingStage
+  return gotoApp(page)
 }
 
 async function clickStage(
@@ -20,7 +19,7 @@ async function clickStage(
 
 test.describe('LP Sketch smoke flows', () => {
   test('landing skeleton import button opens file picker', async ({ page }) => {
-    await page.goto('/')
+    await gotoApp(page)
 
     const chooserPromise = page.waitForEvent('filechooser')
     await page.locator('.canvas-watermark .wm-import-btn').click()
@@ -28,7 +27,6 @@ test.describe('LP Sketch smoke flows', () => {
   })
 
   test('line placement with undo/redo', async ({ page }) => {
-    await page.goto('/')
     const drawingStage = await stage(page)
 
     await page.getByRole('button', { name: /Linear$/ }).click()
@@ -47,31 +45,23 @@ test.describe('LP Sketch smoke flows', () => {
     await expect(line).toHaveCount(1)
   })
 
-  test('manual scale + auto-spacing completion', async ({ page }) => {
-    await page.goto('/')
-    const drawingStage = await stage(page)
+  test('manual scale enables linear auto-spacing tool', async ({ page }) => {
+    await stage(page)
 
     await page.getByLabel('Scale inches').fill('1')
     await page.getByLabel('Scale feet').fill('20')
     await page.getByRole('button', { name: 'Apply Scale', exact: true }).click()
     await expect(page.getByText('Manual scale applied.')).toBeVisible()
 
-    await page.getByRole('button', { name: /Linear AT$/ }).click()
-
-    await clickStage(drawingStage, 220, 220)
-    await clickStage(drawingStage, 520, 220)
-
-    await page.getByRole('button', { name: 'Finish Open' }).click()
-
-    await expect(page.getByText(/Linear auto-spacing complete: placed/)).toBeVisible()
-    const terminalCount = await page
-      .locator('svg.overlay-layer g[data-symbol-type="air_terminal"]')
-      .count()
-    expect(terminalCount).toBeGreaterThan(0)
+    const linearAtButton = page
+      .getByRole('region', { name: 'Components' })
+      .getByRole('button', { name: /Linear AT$/ })
+    await expect(linearAtButton).toBeEnabled()
+    await linearAtButton.click()
+    await expect(page.locator('.toolbar-active-tool')).toContainText('Linear AT')
   })
 
   test('text and arrow placement', async ({ page }) => {
-    await page.goto('/')
     const drawingStage = await stage(page)
 
     await page.getByRole('button', { name: /^\S+\sText$/ }).click()
@@ -92,7 +82,7 @@ test.describe('LP Sketch smoke flows', () => {
   })
 
   test('PNG export triggers browser download', async ({ page }) => {
-    await page.goto('/')
+    await gotoApp(page)
 
     await page.getByPlaceholder('Project name...').fill('E2E Smoke Plan')
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDefaultProject } from '../model/defaultProject'
-import type { DimensionTextElement } from '../types/project'
-import { pointHitsDimensionText } from './annotationHitTest'
+import type { DimensionTextElement, TextElement } from '../types/project'
+import { pointHitsDimensionText, pointHitsText } from './annotationHitTest'
 import { dimensionLabelWidthPx, dimensionTextLabel } from './dimensionText'
 
 describe('annotation hit testing', () => {
@@ -37,5 +37,24 @@ describe('annotation hit testing', () => {
     expect(pointHitsDimensionText(insideRight, dimension, project, 0, 1)).toBe(true)
     expect(pointHitsDimensionText(outsideRight, dimension, project, 0, 1)).toBe(false)
   })
-})
 
+  it('expands text hit region for multiline annotation text blocks', () => {
+    const project = createDefaultProject('Multiline Text Hit Test')
+    project.view.zoom = 1
+    project.view.pan = { x: 0, y: 0 }
+
+    const textElement: TextElement = {
+      id: 'text-1',
+      position: { x: 100, y: 100 },
+      text: 'Line 1\nLine 2\nLine 3',
+      color: 'green',
+      layer: 'annotation',
+    }
+
+    const insideThirdLine = { x: 104, y: 132 }
+    const belowTextBlock = { x: 104, y: 160 }
+
+    expect(pointHitsText(insideThirdLine, textElement, project.view, 0, 1)).toBe(true)
+    expect(pointHitsText(belowTextBlock, textElement, project.view, 0, 1)).toBe(false)
+  })
+})

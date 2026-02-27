@@ -129,6 +129,26 @@ interface QuickAddableItem {
   choiceId?: QuickChoiceId
 }
 
+type QuickItemGroupId = QuickAddableItem['kind']
+
+const QUICK_ITEM_GROUP_ORDER: readonly QuickItemGroupId[] = [
+  'tool',
+  'symbol',
+  'setting',
+  'action',
+  'toggle',
+  'choice',
+]
+
+const QUICK_ITEM_GROUP_LABEL: Record<QuickItemGroupId, string> = {
+  tool: 'Tools',
+  symbol: 'Symbols',
+  setting: 'Settings',
+  action: 'Project Actions',
+  toggle: 'Toggles',
+  choice: 'Choices',
+}
+
 type QuickEntry =
   | {
       id: string
@@ -142,6 +162,7 @@ type QuickEntry =
 
 interface QuickAccessBarProps {
   hasPdf: boolean
+  supportsNativeFileDialogs: boolean
   tool: Tool
   activeSymbol: SymbolType
   colorOptions: readonly MaterialColor[]
@@ -159,12 +180,15 @@ interface QuickAccessBarProps {
   layers: Readonly<Record<LayerId, boolean>>
   manualScaleInchesInput: string
   manualScaleFeetInput: string
+  manualScaleDirty: boolean
   currentScaleInfo: string
   pdfBrightness: number
   onSelectTool: (tool: Tool) => void
   onSetActiveSymbol: (symbol: SymbolType) => void
   onImportPdf: (event: Event) => void
+  onImportPdfPicker: () => void
   onLoadProject: (event: Event) => void
+  onLoadProjectPicker: () => void
   onSaveProject: () => void
   onExportImage: (format: 'png' | 'jpg') => void
   onExportPdf: () => void
@@ -183,6 +207,8 @@ interface QuickAccessBarProps {
   onSetDesignScale: (value: DesignScale) => void
   onPreviewPdfBrightness: (value: number) => void
   onCommitPdfBrightness: (value: number) => void
+  onEditingContextChange?: (active: boolean) => void
+  onRefocusCanvasFromInputCommit?: () => void
 }
 
 const TOOL_LABELS: Record<Tool, string> = {
@@ -211,6 +237,17 @@ function createQuickEntryId(prefix: string): string {
   }
 
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function defaultAvailableGroupExpanded(): Record<QuickItemGroupId, boolean> {
+  return {
+    tool: true,
+    symbol: true,
+    setting: true,
+    action: true,
+    toggle: true,
+    choice: true,
+  }
 }
 
 function decodeQuickEntries(
@@ -260,6 +297,17 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
   const [openFlyoutItemId, setOpenFlyoutItemId] = createSignal<string | null>(null)
   const [selectedAvailableItemId, setSelectedAvailableItemId] = createSignal<string | null>(null)
   const [selectedQuickEntryId, setSelectedQuickEntryId] = createSignal<string | null>(null)
+  const [availableSearchInput, setAvailableSearchInput] = createSignal('')
+  const [availableGroupExpanded, setAvailableGroupExpanded] = createSignal(defaultAvailableGroupExpanded())
+  const handleEnterBlur = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
+    if (event.key !== 'Enter') {
+      return
+    }
+
+    event.preventDefault()
+    event.currentTarget.blur()
+    props.onRefocusCanvasFromInputCommit?.()
+  }
 
   const addableItems = createMemo<QuickAddableItem[]>(() => {
     const toolItems: QuickAddableItem[] = TOOL_QUICK_OPTIONS.map((toolId) => ({
@@ -458,6 +506,24 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
     return map
   })
 
+  const availableSearch = createMemo(() => availableSearchInput().trim().toLowerCase())
+
+  const groupedAddableItems = createMemo(() => {
+    const search = availableSearch()
+    return QUICK_ITEM_GROUP_ORDER
+      .map((groupId) => {
+        const items = addableItems().filter(
+          (item) => item.kind === groupId && (search.length === 0 || item.label.toLowerCase().includes(search)),
+        )
+        return {
+          id: groupId,
+          label: QUICK_ITEM_GROUP_LABEL[groupId],
+          items,
+        }
+      })
+      .filter((group) => group.items.length > 0)
+  })
+
   const currentFlyoutItem = createMemo(() => {
     const itemId = openFlyoutItemId()
     return itemId ? addableItemById().get(itemId) ?? null : null
@@ -508,6 +574,28 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
   function selectQuickEntry(entryId: string) {
     setSelectedQuickEntryId(entryId)
     setSelectedAvailableItemId(null)
+  }
+
+  function toggleAvailableGroup(groupId: QuickItemGroupId) {
+    setAvailableGroupExpanded((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }))
+  }
+
+  function toggleCustomizerOpen() {
+    setCustomizerOpen((open) => {
+      const next = !open
+      if (next) {
+        setAvailableSearchInput('')
+        setAvailableGroupExpanded(defaultAvailableGroupExpanded())
+      } else {
+        setSelectedAvailableItemId(null)
+        setSelectedQuickEntryId(null)
+      }
+      return next
+    })
+    setOpenFlyoutItemId(null)
   }
 
   function addSelectedAvailableItem() {
@@ -662,13 +750,21 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
   function runAction(actionId: QuickActionId) {
     switch (actionId) {
       case 'import_pdf':
-        importPdfInput?.click()
+        if (props.supportsNativeFileDialogs) {
+          props.onImportPdfPicker()
+        } else {
+          importPdfInput?.click()
+        }
         break
       case 'save_project':
         props.onSaveProject()
         break
       case 'load_project':
-        loadProjectInput?.click()
+        if (props.supportsNativeFileDialogs) {
+          props.onLoadProjectPicker()
+        } else {
+          loadProjectInput?.click()
+        }
         break
       case 'export_png':
         props.onExportImage('png')
@@ -800,6 +896,13 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
 
     const keyDownListener = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        const hasOpenQuickAccessUi = customizerOpen() || openFlyoutItemId() !== null
+        if (!hasOpenQuickAccessUi) {
+          return
+        }
+
+        event.preventDefault()
+        event.stopPropagation()
         setCustomizerOpen(false)
         setOpenFlyoutItemId(null)
       }
@@ -822,22 +925,34 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
     window.localStorage.setItem(QUICK_ACCESS_STORAGE_KEY, serialized)
   })
 
+  createEffect(() => {
+    props.onEditingContextChange?.(customizerOpen() || openFlyoutItemId() !== null)
+  })
+
+  onCleanup(() => {
+    props.onEditingContextChange?.(false)
+  })
+
   return (
     <div ref={railRef} class="quick-access-rail" data-toolbar-quick-tools="active">
-      <input
-        ref={importPdfInput}
-        type="file"
-        accept="application/pdf"
-        onChange={props.onImportPdf}
-        hidden
-      />
-      <input
-        ref={loadProjectInput}
-        type="file"
-        accept="application/json,.json"
-        onChange={props.onLoadProject}
-        hidden
-      />
+      <Show when={!props.supportsNativeFileDialogs}>
+        <input
+          ref={importPdfInput}
+          type="file"
+          accept="application/pdf"
+          onChange={props.onImportPdf}
+          hidden
+        />
+      </Show>
+      <Show when={!props.supportsNativeFileDialogs}>
+        <input
+          ref={loadProjectInput}
+          type="file"
+          accept="application/json,.json"
+          onChange={props.onLoadProject}
+          hidden
+        />
+      </Show>
 
       <button
         type="button"
@@ -845,10 +960,7 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
         aria-label="Customize quick-access toolbar"
         aria-pressed={customizerOpen()}
         title="Customize quick-access toolbar"
-        onClick={() => {
-          setCustomizerOpen((open) => !open)
-          setOpenFlyoutItemId(null)
-        }}
+        onClick={toggleCustomizerOpen}
       >
         <i class={tablerIconClass('settings')} />
       </button>
@@ -956,6 +1068,7 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
                       placeholder="X"
                       value={props.manualScaleInchesInput}
                       onInput={(event) => props.onSetManualScaleInchesInput(event.currentTarget.value)}
+                      onKeyDown={handleEnterBlur}
                       aria-label="Scale inches"
                     />
                     <span class="scale-input-unit">in</span>
@@ -973,13 +1086,18 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
                       placeholder="Y"
                       value={props.manualScaleFeetInput}
                       onInput={(event) => props.onSetManualScaleFeetInput(event.currentTarget.value)}
+                      onKeyDown={handleEnterBlur}
                       aria-label="Scale feet"
                     />
                     <span class="scale-input-unit">ft</span>
                   </div>
                 </div>
                 <div class="btn-row">
-                  <button class="btn btn-sm" type="button" onClick={props.onApplyManualScale}>
+                  <button
+                    class={`btn btn-sm ${props.manualScaleDirty ? 'btn-primary' : ''}`}
+                    type="button"
+                    onClick={props.onApplyManualScale}
+                  >
                     Apply Scale
                   </button>
                 </div>
@@ -1055,19 +1173,61 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
           <div class="quick-access-customizer-grid">
             <div class="quick-access-customizer-col">
               <div class="tb-field-label">All Tools</div>
-              <select
-                class="quick-access-listbox"
-                size={12}
-                aria-label="All quick-access tools"
-                value={selectedAvailableItemId() ?? ''}
-                onChange={(event) => selectAvailableItem(event.currentTarget.value)}
-              >
-                <For each={addableItems()}>
-                  {(item) => (
-                    <option value={item.id}>{item.label}</option>
+              <input
+                class="input-field quick-access-search-input"
+                type="search"
+                placeholder="Search tools..."
+                value={availableSearchInput()}
+                aria-label="Search quick-access tools"
+                onInput={(event) => setAvailableSearchInput(event.currentTarget.value)}
+                onKeyDown={handleEnterBlur}
+              />
+              <div class="quick-access-available-list" role="listbox" aria-label="All quick-access tools">
+                <For each={groupedAddableItems()}>
+                  {(group) => (
+                    <div class="quick-access-available-group">
+                      <button
+                        type="button"
+                        class="quick-access-group-header"
+                        aria-expanded={availableGroupExpanded()[group.id]}
+                        onClick={() => toggleAvailableGroup(group.id)}
+                      >
+                        <i class={tablerIconClass(availableGroupExpanded()[group.id] ? 'chevron-down' : 'chevron-right')} />
+                        <span>{group.label}</span>
+                        <span class="quick-access-group-count">{group.items.length}</span>
+                      </button>
+                      <Show when={availableGroupExpanded()[group.id]}>
+                        <div class="quick-access-group-items">
+                          <For each={group.items}>
+                            {(item) => {
+                              const isSelected = () => selectedAvailableItemId() === item.id
+                              const alreadyAdded = () =>
+                                entries().some((entry) => entry.kind === 'item' && entry.itemId === item.id)
+                              return (
+                                <button
+                                  type="button"
+                                  class={`quick-access-available-item ${isSelected() ? 'selected' : ''}`}
+                                  title={quickItemTitle(item)}
+                                  onClick={() => selectAvailableItem(item.id)}
+                                >
+                                  <span class="quick-access-available-item-icon">{renderIcon(item.icon, item.customIcon)}</span>
+                                  <span class="quick-access-available-item-label">{item.label}</span>
+                                  <Show when={alreadyAdded()}>
+                                    <span class="quick-access-available-item-added">Added</span>
+                                  </Show>
+                                </button>
+                              )
+                            }}
+                          </For>
+                        </div>
+                      </Show>
+                    </div>
                   )}
                 </For>
-              </select>
+                <Show when={groupedAddableItems().length === 0}>
+                  <div class="quick-access-available-empty">No tools match your search.</div>
+                </Show>
+              </div>
             </div>
 
             <div class="quick-access-customizer-actions">

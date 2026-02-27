@@ -30,6 +30,7 @@ import { buildLegendDisplayEntries, type LegendDisplayEntry } from './legendDisp
 import { GENERAL_NOTES_TITLE, generalNotesBoxSize, generalNotesDisplayLines, scaledGeneralNotesMetrics } from './generalNotes'
 import { filterProjectByCurrentPage, filterProjectByVisibleLayers } from './layers'
 import { resolvedSymbolClass } from './symbolClass'
+import { splitTextIntoLines } from './textLayout'
 
 const LEGEND_TITLE = 'Legend'
 const ANNOTATION_SYMBOL_COLOR = '#111827'
@@ -443,30 +444,20 @@ function drawSymbol(
       ctx.lineJoin = 'round'
 
       ctx.beginPath()
-      ctx.moveTo(-6 * designScale, 6 * designScale)
+      ctx.moveTo(-6 * designScale, 5.333 * designScale)
       ctx.bezierCurveTo(
-        -6 * designScale,
-        6 * designScale,
+        -0.667 * designScale,
+        5.333 * designScale,
         0.667 * designScale,
-        -4.667 * designScale,
+        -5.334 * designScale,
         6 * designScale,
-        -4.667 * designScale,
+        -5.334 * designScale,
       )
       ctx.stroke()
 
-      const controlPoint = new Path2D()
-      controlPoint.arc(-4.667 * designScale, -4.667 * designScale, 1.333 * designScale, 0, Math.PI * 2)
-      fillAndStroke(ctx, controlPoint, null, color, 1.55 * designScale)
-
-      ctx.beginPath()
-      ctx.moveTo(-3.333 * designScale, -4.667 * designScale)
-      ctx.lineTo(-2 * designScale, -4.667 * designScale)
-      ctx.stroke()
-
-      ctx.beginPath()
-      ctx.moveTo(1.333 * designScale, -4.667 * designScale)
-      ctx.lineTo(0, -4.667 * designScale)
-      ctx.stroke()
+      const connectorCircle = new Path2D()
+      connectorCircle.arc(0, 0, 3.2 * designScale, 0, Math.PI * 2)
+      fillAndStroke(ctx, connectorCircle, fill, color, strokeWidth)
       break
     }
 
@@ -804,7 +795,14 @@ function drawProjectElements(
     ctx.fillStyle = colorFor(text.color)
     ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
     ctx.textBaseline = 'top'
-    ctx.fillText(text.text, text.position.x, text.position.y)
+    const lines = splitTextIntoLines(text.text)
+    for (let i = 0; i < lines.length; i += 1) {
+      ctx.fillText(
+        lines[i] && lines[i].length > 0 ? lines[i] : ' ',
+        text.position.x,
+        text.position.y + i * textLineHeightPxForScale(designScale),
+      )
+    }
   }
 
   for (const dimensionText of project.elements.dimensionTexts) {
@@ -824,7 +822,7 @@ function drawProjectElements(
         },
       )
       if (geometry) {
-        const extensionSegments = dimensionExtensionLineSegments(geometry, 3 * designScale)
+        const extensionSegments = dimensionExtensionLineSegments(geometry, 6 * designScale)
         const barSegments = dimensionBarLineSegments(
           geometry,
           dimensionText.position,
@@ -857,7 +855,7 @@ function drawProjectElements(
     ctx.fillStyle = '#111827'
     ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
     ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
+    ctx.textBaseline = 'middle'
     ctx.fillText(
       label,
       dimensionText.position.x,
@@ -964,6 +962,15 @@ export async function exportProjectImage(
   filenameBase: string,
   backgroundCanvas?: HTMLCanvasElement | null,
 ) {
+  const blob = await renderProjectImageBlob(project, format, backgroundCanvas)
+  downloadBlob(`${filenameBase}.${format}`, blob)
+}
+
+export async function renderProjectImageBlob(
+  project: LpProject,
+  format: 'png' | 'jpg',
+  backgroundCanvas?: HTMLCanvasElement | null,
+) {
   const canvas = await renderProjectCanvas(project, {
     includeBackground: true,
     includeMarks: false,
@@ -972,15 +979,13 @@ export async function exportProjectImage(
   })
 
   const mime = format === 'png' ? 'image/png' : 'image/jpeg'
-  const blob = await canvasToBlob(canvas, mime, format === 'jpg' ? 0.92 : undefined)
-  downloadBlob(`${filenameBase}.${format}`, blob)
+  return canvasToBlob(canvas, mime, format === 'jpg' ? 0.92 : undefined)
 }
 
-export async function exportProjectPdf(
+export async function renderProjectPdfBlob(
   project: LpProject,
-  filenameBase: string,
   backgroundCanvas?: HTMLCanvasElement | null,
-): Promise<void> {
+): Promise<Blob> {
   const visibleProject = filterProjectByVisibleLayers(project)
   const pdfBrightness = normalizedPdfBrightness(visibleProject)
   const hasSourcePdf = Boolean(visibleProject.pdf.dataBase64)
@@ -1050,8 +1055,7 @@ export async function exportProjectPdf(
       const bytes = await flattenedPdf.save()
       const byteCopy = new Uint8Array(bytes.length)
       byteCopy.set(bytes)
-      downloadBlob(`${filenameBase}.pdf`, new Blob([byteCopy], { type: 'application/pdf' }))
-      return
+      return new Blob([byteCopy], { type: 'application/pdf' })
     }
 
     pdfDocument = await PDFDocument.create()
@@ -1116,5 +1120,14 @@ export async function exportProjectPdf(
   const bytes = await pdfDocument.save()
   const byteCopy = new Uint8Array(bytes.length)
   byteCopy.set(bytes)
-  downloadBlob(`${filenameBase}.pdf`, new Blob([byteCopy], { type: 'application/pdf' }))
+  return new Blob([byteCopy], { type: 'application/pdf' })
+}
+
+export async function exportProjectPdf(
+  project: LpProject,
+  filenameBase: string,
+  backgroundCanvas?: HTMLCanvasElement | null,
+): Promise<void> {
+  const blob = await renderProjectPdfBlob(project, backgroundCanvas)
+  downloadBlob(`${filenameBase}.pdf`, blob)
 }

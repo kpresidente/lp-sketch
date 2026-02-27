@@ -70,6 +70,7 @@ describe('icon registry coverage', () => {
     expect(TOOL_CUSTOM_ICON.multi_select).toBe('multi-select-hand-plus')
     expect(SYMBOL_CLASS2_CUSTOM_ICON.steel_bond).toBe('steel-bond-filled')
     expect(SYMBOL_CUSTOM_ICON.cadweld_connection).toBe('cadweld-connection')
+    expect(SYMBOL_CUSTOM_ICON.connect_existing).toBe('connect-existing')
     expect(SYMBOL_CUSTOM_ICON.mechanical_crossrun_connection).toBe('mechanical-crossrun-connection')
     expect(SYMBOL_CUSTOM_ICON.cadweld_crossrun_connection).toBe('cadweld-crossrun-connection')
   })

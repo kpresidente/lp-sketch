@@ -424,8 +424,8 @@ export function handlePlacementPointerDown(
   }
 
   if (currentTool === 'text') {
-    const nextText = context.textDraftInput().trim()
-    if (nextText.length === 0) {
+    const nextTextRaw = context.textDraftInput()
+    if (nextTextRaw.trim().length === 0) {
       context.setError('Enter text in the Text tool before placing.')
       return true
     }
@@ -434,7 +434,7 @@ export function handlePlacementPointerDown(
       draft.elements.texts.push({
         id: context.createElementId('text'),
         position: resolvedPoint,
-        text: nextText,
+        text: nextTextRaw,
         page: draft.view.currentPage,
         color: draft.settings.activeColor,
         layer: 'annotation',

@@ -105,6 +105,7 @@ function createPdfMocks() {
   const getPage = vi.fn(() => page)
   const getPages = vi.fn(() => [page])
   const embedPng = vi.fn(async () => ({ id: 'overlay-image' }))
+  const copyPages = vi.fn(async () => [page])
   const save = vi.fn(async () => new Uint8Array([1, 2, 3, 4]))
 
   return {
@@ -115,12 +116,14 @@ function createPdfMocks() {
     getPage,
     getPages,
     embedPng,
+    copyPages,
     save,
     document: {
       addPage,
       getPage,
       getPages,
       embedPng,
+      copyPages,
       save,
     },
   }
@@ -211,16 +214,20 @@ describe('export wrapper integration', () => {
     const project = createDefaultProject('Wrapper PDF Existing')
     project.pdf.dataBase64 = 'QQ=='
 
-    const pdf = createPdfMocks()
-    pdfLoadMock.mockResolvedValue(pdf.document)
+    const source = createPdfMocks()
+    const output = createPdfMocks()
+    pdfLoadMock.mockResolvedValue(source.document)
+    pdfCreateMock.mockResolvedValue(output.document)
 
     await exportProjectPdf(project, 'wrapper-existing')
 
     expect(pdfLoadMock).toHaveBeenCalledTimes(1)
-    expect(pdfCreateMock).not.toHaveBeenCalled()
-    expect(pdf.embedPng).toHaveBeenCalledTimes(1)
-    expect(pdf.drawImage).toHaveBeenCalledTimes(1)
-    expect(pdf.drawRectangle).not.toHaveBeenCalled()
+    expect(pdfCreateMock).toHaveBeenCalledTimes(1)
+    expect(source.embedPng).not.toHaveBeenCalled()
+    expect(output.copyPages).toHaveBeenCalledWith(source.document, [0])
+    expect(output.embedPng).toHaveBeenCalledTimes(1)
+    expect(output.drawImage).toHaveBeenCalledTimes(1)
+    expect(output.drawRectangle).not.toHaveBeenCalled()
     expect(downloadBlobMock).toHaveBeenCalledTimes(1)
     expect(downloadBlobMock.mock.calls[0][0]).toBe('wrapper-existing.pdf')
     expect((downloadBlobMock.mock.calls[0][1] as Blob).type).toBe('application/pdf')
@@ -333,14 +340,18 @@ describe('export wrapper integration', () => {
     project.pdf.dataBase64 = 'QQ=='
     project.settings.pdfBrightness = 0.6
 
-    const pdf = createPdfMocks()
-    pdfLoadMock.mockResolvedValue(pdf.document)
+    const source = createPdfMocks()
+    const output = createPdfMocks()
+    pdfLoadMock.mockResolvedValue(source.document)
+    pdfCreateMock.mockResolvedValue(output.document)
 
     await exportProjectPdf(project, 'wrapper-brightness')
 
     expect(pdfLoadMock).toHaveBeenCalledTimes(1)
-    expect(pdf.drawRectangle).toHaveBeenCalledTimes(1)
-    expect(pdf.drawRectangle).toHaveBeenCalledWith(
+    expect(pdfCreateMock).toHaveBeenCalledTimes(1)
+    expect(output.copyPages).toHaveBeenCalledWith(source.document, [0])
+    expect(output.drawRectangle).toHaveBeenCalledTimes(1)
+    expect(output.drawRectangle).toHaveBeenCalledWith(
       expect.objectContaining({
         x: 0,
         y: 0,
@@ -349,42 +360,28 @@ describe('export wrapper integration', () => {
         opacity: 0.4,
       }),
     )
-    expect(pdf.drawImage).toHaveBeenCalledTimes(1)
+    expect(output.drawImage).toHaveBeenCalledTimes(1)
   })
 
   it('adds a page when loaded source PDF has zero pages', async () => {
     const project = createDefaultProject('Wrapper PDF Empty Pages')
     project.pdf.dataBase64 = 'QQ=='
 
-    const drawImage = vi.fn()
-    const drawRectangle = vi.fn()
-    const page = {
-      drawImage,
-      drawRectangle,
-      getWidth: () => 1000,
-      getHeight: () => 800,
-    }
-    const addPage = vi.fn(() => page)
-    const getPages = vi.fn(() => [])
-    const getPage = vi.fn(() => page)
-    const embedPng = vi.fn(async () => ({ id: 'overlay-image' }))
-    const save = vi.fn(async () => new Uint8Array([9, 8, 7]))
-
+    const output = createPdfMocks()
     pdfLoadMock.mockResolvedValue({
-      addPage,
-      getPages,
-      getPage,
-      embedPng,
-      save,
+      getPages: vi.fn(() => []),
+      getPage: vi.fn(),
     })
+    pdfCreateMock.mockResolvedValue(output.document)
 
     await exportProjectPdf(project, 'wrapper-empty-pages')
 
     expect(pdfLoadMock).toHaveBeenCalledTimes(1)
-    expect(addPage).toHaveBeenCalledTimes(1)
-    expect(getPage).toHaveBeenCalledWith(0)
-    expect(drawRectangle).not.toHaveBeenCalled()
-    expect(drawImage).toHaveBeenCalledTimes(1)
+    expect(pdfCreateMock).toHaveBeenCalledTimes(1)
+    expect(output.addPage).toHaveBeenCalledTimes(1)
+    expect(output.addPage).toHaveBeenCalledWith([project.pdf.widthPt, project.pdf.heightPt])
+    expect(output.drawRectangle).not.toHaveBeenCalled()
+    expect(output.drawImage).toHaveBeenCalledTimes(1)
     expect(downloadBlobMock).toHaveBeenCalledTimes(1)
     expect(downloadBlobMock.mock.calls[0][0]).toBe('wrapper-empty-pages.pdf')
   })

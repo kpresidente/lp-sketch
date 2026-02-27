@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 playwright-report/
 test-results/
+
+# Generated help files (built from src/help/USER_MANUAL.md)
+public/help.html
+public/help-glossary.json

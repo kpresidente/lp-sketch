@@ -568,7 +568,8 @@
         "rooftop",
         "downleads",
         "grounding",
-        "annotation"
+        "annotation",
+        "sublayers"
       ],
       "properties": {
         "rooftop": {
@@ -582,6 +583,18 @@
         },
         "annotation": {
           "type": "boolean"
+        },
+        "sublayers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "connections"
+          ],
+          "properties": {
+            "connections": {
+              "type": "boolean"
+            }
+          }
         }
       }
     },

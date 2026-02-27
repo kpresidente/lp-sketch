@@ -2,7 +2,6 @@ import type { SymbolElement } from '../types/project'
 
 const CLASS_OPTIONAL_SYMBOLS = new Set<SymbolElement['symbolType']>([
   'continued',
-  'connect_existing',
 ])
 
 export function resolvedSymbolClass(

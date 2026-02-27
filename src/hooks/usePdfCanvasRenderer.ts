@@ -19,7 +19,7 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
   let pdfCanvasRef: HTMLCanvasElement | undefined
   let pdfRenderRequestVersion = 0
   let activePdfRenderTask: { cancel: () => void; promise: Promise<unknown> } | null = null
-  const sharedPdfWorker = new PDFWorker({ name: 'lp-sketch-pdf-worker' })
+  const sharedPdfWorker = new PDFWorker()
 
   function isPdfRenderCancellation(error: unknown): boolean {
     if (!(error instanceof Error)) {

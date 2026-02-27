@@ -1,5 +1,6 @@
 import { For, Show } from 'solid-js'
 import { COLOR_HEX } from '../../model/defaultProject'
+import { splitTextIntoLines } from '../../lib/textLayout'
 import type { OverlayLayerProps } from './types'
 
 type TextsOverlayProps = Pick<
@@ -27,7 +28,12 @@ export default function TextsOverlay(props: TextsOverlayProps) {
           props.hovered?.kind === 'text' &&
           props.hovered?.id === textElement.id &&
           !isSelected()
-        const selectedWidth = props.approximateTextWidth(textElement.text)
+        const lines = splitTextIntoLines(textElement.text)
+        const selectedWidth = lines.reduce(
+          (max, line) => Math.max(max, props.approximateTextWidth(line)),
+          0,
+        )
+        const selectedHeight = Math.max(props.textLineHeightPx, lines.length * props.textLineHeightPx)
 
         return (
           <g>
@@ -36,7 +42,7 @@ export default function TextsOverlay(props: TextsOverlayProps) {
                 x={textElement.position.x - 4 * designScale()}
                 y={textElement.position.y - 3 * designScale()}
                 width={selectedWidth + 8 * designScale()}
-                height={props.textLineHeightPx + 6 * designScale()}
+                height={selectedHeight + 6 * designScale()}
                 fill="none"
                 stroke={isSelected() ? '#111827' : '#0369a1'}
                 stroke-width={1.2 * designScale()}
@@ -53,7 +59,16 @@ export default function TextsOverlay(props: TextsOverlayProps) {
               font-family="Segoe UI, Arial, sans-serif"
               dominant-baseline="hanging"
             >
-              {textElement.text}
+              <For each={lines}>
+                {(line, lineIndex) => (
+                  <tspan
+                    x={textElement.position.x}
+                    y={textElement.position.y + lineIndex() * props.textLineHeightPx}
+                  >
+                    {line.length > 0 ? line : ' '}
+                  </tspan>
+                )}
+              </For>
             </text>
           </g>
         )

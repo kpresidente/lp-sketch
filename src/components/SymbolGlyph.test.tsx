@@ -110,6 +110,18 @@ describe('SymbolGlyph', () => {
     expect(none?.getAttribute('fill')).toBe('#ffffff')
   })
 
+  it('renders connect-existing with class-aware circle variants', () => {
+    const class1 = renderSymbol(makeSymbol('connect_existing', 'class1')).container.querySelector(
+      'circle[r="3.2"]',
+    )
+    expect(class1?.getAttribute('fill')).toBe('#ffffff')
+
+    const class2 = renderSymbol(makeSymbol('connect_existing', 'class2')).container.querySelector(
+      'circle[r="3.2"]',
+    )
+    expect(class2?.getAttribute('fill')).toBe('#2e8b57')
+  })
+
   it('renders each symbol variant with its expected shape signature', () => {
     const cases: Array<{
       symbolType: SymbolType
@@ -126,7 +138,7 @@ describe('SymbolGlyph', () => {
         selector: 'rect[width="11"][height="11"]',
       },
       { symbolType: 'continued', selector: 'path' },
-      { symbolType: 'connect_existing', selector: 'circle[r="1.333"]' },
+      { symbolType: 'connect_existing', selector: 'circle[r="3.2"]' },
       { symbolType: 'mechanical_crossrun_connection', selector: 'circle[r="6"]' },
       { symbolType: 'conduit_downlead_ground', selector: 'rect[width="10.8"][height="10.8"]' },
       { symbolType: 'conduit_downlead_roof', selector: 'rect[width="10.8"][height="10.8"]' },

@@ -37,13 +37,13 @@ test.describe('selection and symbols', () => {
     const components = panelRegion(page, 'Components')
     const tools = panelRegion(page, 'Tools')
 
-    await components.locator('button[title="Arc Conductor"]').click()
+    await components.getByRole('button', { name: /Arc$/ }).click()
     await clickStage(page, { x: 400, y: 300 })
     await clickStage(page, { x: 350, y: 386 })
     await clickStage(page, { x: 350, y: 214 })
     await expectStatus(page, 'Arc added.')
 
-    await tools.locator('button[title="Select"]').click()
+    await tools.getByRole('button', { name: /Select$/ }).click()
     await clickStage(page, { x: 400, y: 300 })
 
     await expect(page.locator('circle[data-selection-handle="arc-start"]')).toHaveCount(1)
@@ -56,7 +56,7 @@ test.describe('selection and symbols', () => {
     const components = panelRegion(page, 'Components')
     const tools = panelRegion(page, 'Tools')
 
-    await components.locator('button[title="Conduit to Ground"]').click()
+    await components.getByRole('button', { name: /Conduit to Ground$/ }).click()
     await clickStage(page, { x: 300, y: 260 })
     await clickStage(page, { x: 300, y: 360 })
     await expectStatus(page, 'Directional symbol placed.')
@@ -65,7 +65,7 @@ test.describe('selection and symbols', () => {
     await expect(verticalIndicator).toHaveCount(1)
     await expect(verticalIndicator).toContainText('0')
 
-    await tools.locator('button[title="Select"]').click()
+    await tools.getByRole('button', { name: /Select$/ }).click()
     await clickStage(page, { x: 300, y: 260 })
 
     await expect(page.locator('circle[data-selection-handle="symbol-direction"]')).toHaveCount(1)

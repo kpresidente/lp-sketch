@@ -337,7 +337,7 @@ function symbolShape(
       return (
         <>
           <path
-            d={`M${-6 * scale} ${6 * scale}s${6.667 * scale} ${-10.667 * scale} ${12 * scale} ${-10.667 * scale}`}
+            d={`M${-6 * scale} ${5.333 * scale}c${5.333 * scale} 0 ${6.667 * scale} ${-10.667 * scale} ${12 * scale} ${-10.667 * scale}`}
             fill="none"
             stroke={style.color}
             stroke-width={1.55 * scale}
@@ -345,30 +345,12 @@ function symbolShape(
             stroke-linejoin="round"
           />
           <circle
-            cx={-4.667 * scale}
-            cy={-4.667 * scale}
-            r={1.333 * scale}
-            fill="none"
+            cx={0}
+            cy={0}
+            r={3.2 * scale}
+            fill={style.fill}
             stroke={style.color}
-            stroke-width={1.55 * scale}
-          />
-          <line
-            x1={-3.333 * scale}
-            y1={-4.667 * scale}
-            x2={-2 * scale}
-            y2={-4.667 * scale}
-            stroke={style.color}
-            stroke-width={1.55 * scale}
-            stroke-linecap="round"
-          />
-          <line
-            x1={1.333 * scale}
-            y1={-4.667 * scale}
-            x2={0}
-            y2={-4.667 * scale}
-            stroke={style.color}
-            stroke-width={1.55 * scale}
-            stroke-linecap="round"
+            stroke-width={style.strokeWidth}
           />
         </>
       )

@@ -3,6 +3,7 @@ import type {
   DesignScale,
   GeneralNotePlacement,
   LayerId,
+  LayerSublayerId,
   LegendPlacement,
   LpProject,
   MaterialColor,
@@ -17,8 +18,10 @@ export type CornerKind = 'outside' | 'inside'
 export interface AppSidebarProps {
   project: LpProject
   hasPdf: boolean
+  supportsNativeFileDialogs: boolean
   tool: Tool
   selectedKind: Selection['kind'] | null
+  multiSelectionCount: number
   toolOptions: Array<{ id: Tool; label: string }>
   lineStart: { x: number; y: number } | null
   lineContinuous: boolean
@@ -55,6 +58,7 @@ export interface AppSidebarProps {
   canGoToNextPage: boolean
   manualScaleInchesInput: string
   manualScaleFeetInput: string
+  manualScaleDirty: boolean
   measureTargetDistanceInput: string
   calibrationPointsCount: number
   calibrationPendingDistancePt: number | null
@@ -67,10 +71,13 @@ export interface AppSidebarProps {
   canSendSelectedToBack: boolean
   statusMessage: string
   errorMessage: string
+  onRefocusCanvasFromInputCommit: () => void
   onSetProjectName: (value: string) => void
   onImportPdf: (event: Event) => void
+  onImportPdfPicker: () => void
   onSaveProject: () => void
   onLoadProject: (event: Event) => void
+  onLoadProjectPicker: () => void
   onExportImage: (format: 'png' | 'jpg') => void
   onExportPdf: () => void
   onOpenReportDialog: (type: ReportType) => void
@@ -113,6 +120,7 @@ export interface AppSidebarProps {
   onSetAutoConnectorType: (value: AutoConnectorType) => void
   onSetAngleSnapEnabled: (value: boolean) => void
   onSetLayerVisible: (layer: LayerId, value: boolean) => void
+  onSetLayerSublayerVisible: (sublayer: LayerSublayerId, value: boolean) => void
   onSetManualScaleInchesInput: (value: string) => void
   onSetManualScaleFeetInput: (value: string) => void
   onSetMeasureTargetDistanceInput: (value: string) => void

@@ -18,6 +18,15 @@ describe('symbol class helpers', () => {
     ).toBe('none')
   })
 
+  it('treats connect-existing as class-aware', () => {
+    expect(
+      resolvedSymbolClass({ symbolType: 'connect_existing', class: 'none' }),
+    ).toBe('class1')
+    expect(
+      resolvedSymbolClass({ symbolType: 'connect_existing', class: 'class2' }),
+    ).toBe('class2')
+  })
+
   it('detects when both ground rod classes are present', () => {
     expect(
       hasBothGroundRodClasses([

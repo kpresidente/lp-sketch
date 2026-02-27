@@ -1,4 +1,4 @@
-import type { LayerId, LpProject, MaterialColor, SymbolType } from '../types/project'
+import type { LayerId, LayerSublayerId, LpProject, MaterialColor, SymbolType } from '../types/project'
 
 const DOWNLEAD_SYMBOLS = new Set<SymbolType>([
   'conduit_downlead_ground',
@@ -14,6 +14,15 @@ const GROUNDING_SYMBOLS = new Set<SymbolType>([
 
 const ANNOTATION_SYMBOLS = new Set<SymbolType>([
   'continued',
+])
+
+const CONNECTION_SYMBOLS = new Set<SymbolType>([
+  'bond',
+  'cable_to_cable_connection',
+  'mechanical_crossrun_connection',
+  'cadweld_connection',
+  'cadweld_crossrun_connection',
+  'connect_existing',
 ])
 
 export function symbolLayer(symbolType: SymbolType): LayerId {
@@ -32,6 +41,14 @@ export function symbolLayer(symbolType: SymbolType): LayerId {
   return 'rooftop'
 }
 
+export function symbolSublayer(symbolType: SymbolType): LayerSublayerId | null {
+  if (CONNECTION_SYMBOLS.has(symbolType)) {
+    return 'connections'
+  }
+
+  return null
+}
+
 export function conductorLayer(color: MaterialColor): LayerId {
   return color === 'red' ? 'grounding' : 'rooftop'
 }
@@ -40,8 +57,30 @@ export function isLayerVisible(project: Pick<LpProject, 'layers'>, layer: LayerI
   return project.layers[layer]
 }
 
+export function isSublayerVisible(
+  project: Pick<LpProject, 'layers'>,
+  sublayer: LayerSublayerId,
+): boolean {
+  switch (sublayer) {
+    case 'connections':
+      return project.layers.rooftop && project.layers.sublayers.connections
+    default:
+      return false
+  }
+}
+
 export function isSymbolVisible(project: Pick<LpProject, 'layers'>, symbolType: SymbolType): boolean {
-  return isLayerVisible(project, symbolLayer(symbolType))
+  const layerId = symbolLayer(symbolType)
+  if (!isLayerVisible(project, layerId)) {
+    return false
+  }
+
+  const sublayerId = symbolSublayer(symbolType)
+  if (!sublayerId) {
+    return true
+  }
+
+  return isSublayerVisible(project, sublayerId)
 }
 
 function isOnPage(entry: { page?: number }, page: number): boolean {
@@ -83,15 +122,26 @@ export function filterProjectByVisibleLayers(project: LpProject): LpProject {
   const downleadsVisible = project.layers.downleads
   const groundingVisible = project.layers.grounding
   const annotationVisible = project.layers.annotation
+  const connectionsVisible = isSublayerVisible(project, 'connections')
 
-  if (rooftopVisible && downleadsVisible && groundingVisible && annotationVisible) {
+  if (rooftopVisible && downleadsVisible && groundingVisible && annotationVisible && connectionsVisible) {
     return project
   }
 
   const allowLayer = (layer: LayerId) => project.layers[layer]
 
   const symbolVisible = (symbolType: SymbolType): boolean => {
-    return allowLayer(symbolLayer(symbolType))
+    const layerId = symbolLayer(symbolType)
+    if (!allowLayer(layerId)) {
+      return false
+    }
+
+    const sublayerId = symbolSublayer(symbolType)
+    if (!sublayerId) {
+      return true
+    }
+
+    return isSublayerVisible(project, sublayerId)
   }
 
   return {

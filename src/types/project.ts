@@ -7,6 +7,7 @@ export type AutoConnectorType = 'mechanical' | 'cadweld'
 
 export type DesignScale = 'small' | 'medium' | 'large'
 export type LayerId = 'rooftop' | 'downleads' | 'grounding' | 'annotation'
+export type LayerSublayerId = 'connections'
 
 // UI copy uses "component" terminology. Schema keys remain "symbol" for
 // backward compatibility with saved project files.
@@ -211,7 +212,13 @@ export interface LpProject {
   scale: ScaleState
   settings: SettingsState
   view: ViewState
-  layers: Record<LayerId, boolean>
+  layers: {
+    rooftop: boolean
+    downleads: boolean
+    grounding: boolean
+    annotation: boolean
+    sublayers: Record<LayerSublayerId, boolean>
+  }
   elements: {
     lines: LineElement[]
     arcs: ArcElement[]

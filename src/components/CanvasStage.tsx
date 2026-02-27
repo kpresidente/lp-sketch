@@ -16,6 +16,7 @@ import QuickAccessBar from './QuickAccessBar'
 interface CanvasStageProps {
   project: LpProject
   hasPdf: boolean
+  supportsNativeFileDialogs: boolean
   tool: Tool
   activeSymbol: SymbolType
   colorOptions: readonly MaterialColor[]
@@ -46,13 +47,16 @@ interface CanvasStageProps {
   pdfBrightness: number
   manualScaleInchesInput: string
   manualScaleFeetInput: string
+  manualScaleDirty: boolean
   currentScaleInfo: string
   designScale: DesignScale
   toolOptionsSlot?: JSX.Element
   onSetActiveSymbol: (symbol: SymbolType) => void
   onImportPdf: (event: Event) => void
+  onImportPdfPicker: () => void
   onImportPdfDrop: (file: File) => void
   onLoadProject: (event: Event) => void
+  onLoadProjectPicker: () => void
   onSaveProject: () => void
   onExportImage: (format: 'png' | 'jpg') => void
   onExportPdf: () => void
@@ -69,6 +73,8 @@ interface CanvasStageProps {
   onSetDesignScale: (value: DesignScale) => void
   onPreviewPdfBrightness: (value: number) => void
   onCommitPdfBrightness: (value: number) => void
+  onQuickAccessEditingContextChange?: (active: boolean) => void
+  onRefocusCanvasFromInputCommit: () => void
   setStageRef: (element: HTMLDivElement) => void
   setPdfCanvasRef: (element: HTMLCanvasElement) => void
   onPointerDown: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
@@ -134,6 +140,7 @@ export default function CanvasStage(props: CanvasStageProps) {
           class="drawing-stage"
           role="region"
           aria-label="Drawing canvas"
+          tabIndex={-1}
           style={{ cursor: props.stageCursor }}
           onPointerDown={props.onPointerDown}
           onPointerMove={props.onPointerMove}
@@ -151,6 +158,10 @@ export default function CanvasStage(props: CanvasStageProps) {
                 aria-label="Import PDF by dropping a file or opening file picker"
                 onClick={(event) => {
                   event.stopPropagation()
+                  if (props.supportsNativeFileDialogs) {
+                    props.onImportPdfPicker()
+                    return
+                  }
                   importPdfInput?.click()
                 }}
                 onPointerDown={(event) => event.stopPropagation()}
@@ -176,20 +187,26 @@ export default function CanvasStage(props: CanvasStageProps) {
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={(event) => {
                   event.stopPropagation()
+                  if (props.supportsNativeFileDialogs) {
+                    props.onImportPdfPicker()
+                    return
+                  }
                   importPdfInput?.click()
                 }}
               >
                 Import PDF
               </button>
-              <input
-                ref={importPdfInput}
-                type="file"
-                accept="application/pdf"
-                onChange={props.onImportPdf}
-                tabIndex={-1}
-                aria-hidden="true"
-                hidden
-              />
+              <Show when={!props.supportsNativeFileDialogs}>
+                <input
+                  ref={importPdfInput}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={props.onImportPdf}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  hidden
+                />
+              </Show>
             </div>
           </Show>
 
@@ -225,6 +242,7 @@ export default function CanvasStage(props: CanvasStageProps) {
 
         <QuickAccessBar
           hasPdf={props.hasPdf}
+          supportsNativeFileDialogs={props.supportsNativeFileDialogs}
           tool={props.tool}
           activeSymbol={props.activeSymbol}
           colorOptions={props.colorOptions}
@@ -242,12 +260,15 @@ export default function CanvasStage(props: CanvasStageProps) {
           layers={props.layers}
           manualScaleInchesInput={props.manualScaleInchesInput}
           manualScaleFeetInput={props.manualScaleFeetInput}
+          manualScaleDirty={props.manualScaleDirty}
           currentScaleInfo={props.currentScaleInfo}
           pdfBrightness={props.pdfBrightness}
           onSelectTool={props.onSelectTool}
           onSetActiveSymbol={props.onSetActiveSymbol}
           onImportPdf={props.onImportPdf}
+          onImportPdfPicker={props.onImportPdfPicker}
           onLoadProject={props.onLoadProject}
+          onLoadProjectPicker={props.onLoadProjectPicker}
           onSaveProject={props.onSaveProject}
           onExportImage={props.onExportImage}
           onExportPdf={props.onExportPdf}
@@ -266,6 +287,8 @@ export default function CanvasStage(props: CanvasStageProps) {
           onSetDesignScale={props.onSetDesignScale}
           onPreviewPdfBrightness={props.onPreviewPdfBrightness}
           onCommitPdfBrightness={props.onCommitPdfBrightness}
+          onEditingContextChange={props.onQuickAccessEditingContextChange}
+          onRefocusCanvasFromInputCommit={props.onRefocusCanvasFromInputCommit}
         />
       </div>
     </main>

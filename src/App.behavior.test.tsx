@@ -14,7 +14,7 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
   default: 'mock-worker-url',
 }))
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@solidjs/testing-library'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 
@@ -159,6 +159,48 @@ describe('App behavior integration', () => {
     const units = Array.from(container.querySelectorAll('.scale-input-unit'))
       .map((entry) => entry.textContent?.trim())
     expect(units).toEqual(['in', 'ft'])
+  })
+
+  it('shows and clears report repro steps based on report type', async () => {
+    render(() => <App />)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Bug' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Report issue' })
+    const dialogWithin = within(dialog)
+    const repro = dialogWithin.getByLabelText('Report reproduction steps') as HTMLTextAreaElement
+    await fireEvent.input(repro, { target: { value: 'step 1' } })
+    expect(repro.value).toBe('step 1')
+
+    await fireEvent.click(dialogWithin.getByRole('radio', { name: 'Feature' }))
+    expect(dialogWithin.queryByLabelText('Report reproduction steps')).toBeNull()
+
+    await fireEvent.click(dialogWithin.getByRole('radio', { name: 'Bug' }))
+    const reproAfter = dialogWithin.getByLabelText('Report reproduction steps') as HTMLTextAreaElement
+    expect(reproAfter.value).toBe('')
+  })
+
+  it('highlights apply scale when inputs are dirty and clears when reverted or applied', async () => {
+    render(() => <App />)
+
+    const applyButton = screen.getByRole('button', { name: 'Apply Scale' })
+    const inchesInput = screen.getByLabelText('Scale inches') as HTMLInputElement
+    const feetInput = screen.getByLabelText('Scale feet') as HTMLInputElement
+
+    expect(applyButton.classList.contains('dirty')).toBe(false)
+
+    await fireEvent.input(inchesInput, { target: { value: '1' } })
+    await fireEvent.input(feetInput, { target: { value: '8' } })
+    expect(applyButton.classList.contains('dirty')).toBe(true)
+
+    await fireEvent.click(applyButton)
+    expect(applyButton.classList.contains('dirty')).toBe(false)
+
+    await fireEvent.input(feetInput, { target: { value: '9' } })
+    expect(applyButton.classList.contains('dirty')).toBe(true)
+
+    await fireEvent.input(feetInput, { target: { value: '8' } })
+    expect(applyButton.classList.contains('dirty')).toBe(false)
   })
 
   it('supports pan drag and wheel zoom updates', async () => {
@@ -399,6 +441,7 @@ describe('App behavior integration', () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
 
+    await applyManualScale('1', '1')
     await fireEvent.click(screen.getByRole('button', { name: 'Mark' }))
 
     await fireEvent.pointerDown(stage, {
@@ -602,8 +645,8 @@ describe('App behavior integration', () => {
     expect(byName('Steel Bond').disabled).toBe(true)
     expect(byName('Ground Rod').disabled).toBe(true)
     expect(byName('Cadweld').disabled).toBe(true)
-    expect(byName('Continued').disabled).toBe(true)
-    expect(screen.getByRole('button', { name: /Conn\s+Existing/ }).hasAttribute('disabled')).toBe(false)
+    expect(byName('Continued').disabled).toBe(false)
+    expect(screen.getByRole('button', { name: /Connect\s+Existing/ }).hasAttribute('disabled')).toBe(false)
 
     // Grounding
     await fireEvent.click(requireMaterialItem(container, 'Grounding'))
@@ -627,9 +670,7 @@ describe('App behavior integration', () => {
       expect((screen.getByRole('button', { name: 'Linear' }) as HTMLButtonElement).className).not.toContain('active')
       expect((screen.getByRole('button', { name: 'Select' }) as HTMLButtonElement).className).toContain('active')
     })
-    expect(
-      screen.getByText('Current component is unavailable for the selected material. Switched to Select.'),
-    ).toBeTruthy()
+    expect(screen.getByText(/Switched to Select\.$/)).toBeTruthy()
   })
 
   it('uses custom icons for arc auto-spacing, connector buttons, and class-II steel bond', async () => {
@@ -641,10 +682,10 @@ describe('App behavior integration', () => {
     const cadweldButtonInitial = screen.getByRole('button', { name: 'Cadweld' })
     expect(cadweldButtonInitial.querySelector('[data-custom-icon="cadweld-connection"]')).not.toBeNull()
 
-    const mechanicalCrossrunButtonInitial = screen.getByRole('button', { name: /Mech\s+Crossrun/ })
+    const mechanicalCrossrunButtonInitial = screen.getByRole('button', { name: /Mechanical\s+Crossrun/ })
     expect(mechanicalCrossrunButtonInitial.querySelector('[data-custom-icon="mechanical-crossrun-connection"]')).not.toBeNull()
 
-    const cadweldCrossrunButtonInitial = screen.getByRole('button', { name: /Cad\s+Crossrun/ })
+    const cadweldCrossrunButtonInitial = screen.getByRole('button', { name: /Cadweld\s+Crossrun/ })
     expect(cadweldCrossrunButtonInitial.querySelector('[data-custom-icon="cadweld-crossrun-connection"]')).not.toBeNull()
 
     const steelBondButtonInitial = screen.getByRole('button', { name: 'Steel Bond' })
@@ -746,6 +787,7 @@ describe('App behavior integration', () => {
   it('uses integer spinner steps for spacing/mark inputs and keeps scale inputs decimal-typable', async () => {
     render(() => <App />)
 
+    await applyManualScale('1', '1')
     await fireEvent.click(screen.getByRole('button', { name: 'Linear AT' }))
     const linearIntervalInput = screen.getByLabelText('Linear auto-spacing max interval') as HTMLInputElement
     expect(linearIntervalInput.step).toBe('1')
@@ -758,8 +800,8 @@ describe('App behavior integration', () => {
     const markTargetInput = screen.getByLabelText('Target distance feet') as HTMLInputElement
     expect(markTargetInput.step).toBe('1')
 
-    const scaleInchesInput = screen.getByLabelText('Scale inches') as HTMLInputElement
-    const scaleFeetInput = screen.getByLabelText('Scale feet') as HTMLInputElement
+    const scaleInchesInput = screen.getAllByLabelText('Scale inches')[0] as HTMLInputElement
+    const scaleFeetInput = screen.getAllByLabelText('Scale feet')[0] as HTMLInputElement
     expect(scaleInchesInput.step).toBe('1')
     expect(scaleFeetInput.step).toBe('1')
 

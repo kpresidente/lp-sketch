@@ -18,6 +18,8 @@ import GeneralNotesDialog from './components/dialogs/GeneralNotesDialog'
 import LegendLabelDialog from './components/dialogs/LegendLabelDialog'
 import ReportDialog from './components/dialogs/ReportDialog'
 import { AppControllerProvider } from './context/AppControllerContext'
+import { createHelpState, HelpProvider } from './context/HelpContext'
+import HelpDrawer from './components/help/HelpDrawer'
 import { useGeneralNotesDialog } from './hooks/useGeneralNotesDialog'
 import { useLegendLabelDialog } from './hooks/useLegendLabelDialog'
 import { usePdfCanvasRenderer } from './hooks/usePdfCanvasRenderer'
@@ -40,8 +42,8 @@ import {
 import { hitTest as hitTestEngine } from './lib/selection/hitTest'
 import { moveSelectionsByDelta as moveSelectionsByDeltaEngine } from './lib/selection/moveSelection'
 import {
-  canMoveSelectionToZEdge,
-  moveSelectionToZEdge,
+  canMoveSelectionsByZStep,
+  moveSelectionsByZStep,
 } from './lib/selection/zOrder'
 import { handlePlacementPointerDown } from './controllers/pointer/handlePlacementPointer'
 import {
@@ -99,6 +101,7 @@ import {
   filterProjectByCurrentPage,
   conductorLayer,
   symbolLayer,
+  symbolSublayer,
 } from './lib/layers'
 import { filterProjectByViewport, viewportDocRect } from './lib/viewportCulling'
 import {
@@ -111,6 +114,7 @@ import {
   normalizeVerticalFootageFt,
   symbolVerticalFootageFt,
 } from './lib/conductorFootage'
+import { buildAutoConnectorSymbolsForAddedConductors } from './lib/autoConnectors'
 import {
   dimensionTextLabel,
   normalizeDimensionOverrideText,
@@ -167,6 +171,7 @@ import type {
   LegendItem,
   LegendPlacement,
   LayerId,
+  LayerSublayerId,
   LpProject,
   DimensionTextElement,
   MaterialColor,
@@ -248,12 +253,70 @@ const LEGEND_LABEL_DIALOG_FALLBACK_HEIGHT_PX = 420
 const GENERAL_NOTES_DIALOG_FALLBACK_WIDTH_PX = 720
 const GENERAL_NOTES_DIALOG_FALLBACK_HEIGHT_PX = 420
 
+interface ManualScaleInputSnapshot {
+  inches: string
+  feet: string
+  signature: string
+}
+
+function formatScaleInputNumber(value: number): string {
+  if (!Number.isFinite(value)) {
+    return ''
+  }
+
+  const rounded = Math.round(value * 10_000) / 10_000
+  if (Number.isInteger(rounded)) {
+    return String(rounded)
+  }
+
+  return String(rounded)
+    .replace(/(\.\d*?[1-9])0+$/u, '$1')
+    .replace(/\.0+$/u, '')
+}
+
+function normalizeScaleInputValue(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  const parsed = Number.parseFloat(trimmed)
+  if (!Number.isFinite(parsed)) {
+    return trimmed
+  }
+
+  return formatScaleInputNumber(parsed)
+}
+
+function scaleInputSignature(scale: Pick<LpProject['scale'], 'isSet' | 'realUnitsPerPoint' | 'displayUnits'>): string {
+  return [
+    scale.isSet ? '1' : '0',
+    scale.displayUnits ?? 'unset',
+    scale.realUnitsPerPoint === null ? 'unset' : formatScaleInputNumber(scale.realUnitsPerPoint),
+  ].join('|')
+}
+
+function deriveScaleInputValues(
+  scale: Pick<LpProject['scale'], 'isSet' | 'realUnitsPerPoint' | 'displayUnits'>,
+): { inches: string; feet: string } {
+  if (!scale.isSet || !scale.realUnitsPerPoint || !scale.displayUnits) {
+    return { inches: '', feet: '' }
+  }
+
+  return {
+    inches: '1',
+    feet: formatScaleInputNumber(scaleFeetPerInch(scale.realUnitsPerPoint, scale.displayUnits)),
+  }
+}
+
 function App() {
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
     past: [],
     future: [],
   })
+
+  const helpState = createHelpState()
 
   const [tool, setTool] = createSignal<Tool>('select')
   const [activeSymbol, setActiveSymbol] = createSignal<SymbolType>('air_terminal')
@@ -298,6 +361,8 @@ function App() {
 
   const [manualScaleInchesInput, setManualScaleInchesInput] = createSignal('')
   const [manualScaleFeetInput, setManualScaleFeetInput] = createSignal('')
+  const [manualScaleInputsByPage, setManualScaleInputsByPage] =
+    createSignal<Record<number, ManualScaleInputSnapshot>>({})
   const [measureTargetDistanceInput, setMeasureTargetDistanceInput] = createSignal('')
   const [pdfBrightnessPreview, setPdfBrightnessPreview] = createSignal(1)
   const [downleadVerticalFootagePlacementInput, setDownleadVerticalFootagePlacementInput] = createSignal('0')
@@ -307,6 +372,7 @@ function App() {
   const [reportDraft, setReportDraft] = createSignal(createDefaultReportDraft())
   const [reportSubmitting, setReportSubmitting] = createSignal(false)
   const [reportDialogError, setReportDialogError] = createSignal('')
+  const [quickAccessEditingContextActive, setQuickAccessEditingContextActive] = createSignal(false)
 
   const [statusMessage, setStatusMessage] = createSignal('')
   const [errorMessage, setErrorMessage] = createSignal('')
@@ -455,9 +521,12 @@ function App() {
   })
 
   const {
+    supportsNativeFileDialogs,
     handleImportPdf,
+    handleImportPdfPicker,
     handleImportPdfDrop,
     handleLoadProject,
+    handleLoadProjectPicker,
     handleSaveProject,
     handleExportImage,
     handleExportPdf,
@@ -480,6 +549,17 @@ function App() {
     setError,
   })
 
+  const isDialogEditingContextActive = createMemo(() => (
+    annotationEdit() !== null ||
+    legendLabelEdit() !== null ||
+    generalNotesEdit() !== null ||
+    reportDialogOpen()
+  ))
+
+  const isEditingContextActive = createMemo(
+    () => isDialogEditingContextActive() || quickAccessEditingContextActive(),
+  )
+
   const currentScaleInfo = createMemo(() => {
     const scale = project().scale
 
@@ -489,6 +569,65 @@ function App() {
 
     return `Scale: 1" = ${formatScaleFeet(scaleFeetPerInch(scale.realUnitsPerPoint, scale.displayUnits))}'`
   })
+
+  const currentScaleSignature = createMemo(() => scaleInputSignature(project().scale))
+  const appliedManualScaleInputs = createMemo(() => {
+    const page = project().view.currentPage
+    const signature = currentScaleSignature()
+    const stored = manualScaleInputsByPage()[page]
+    if (stored && stored.signature === signature) {
+      return { inches: stored.inches, feet: stored.feet }
+    }
+
+    return deriveScaleInputValues(project().scale)
+  })
+  const manualScaleDirty = createMemo(() => {
+    const applied = appliedManualScaleInputs()
+    return (
+      normalizeScaleInputValue(manualScaleInchesInput()) !== applied.inches ||
+      normalizeScaleInputValue(manualScaleFeetInput()) !== applied.feet
+    )
+  })
+
+  createEffect(
+    on(
+      () =>
+        [
+          project().view.currentPage,
+          project().scale.isSet,
+          project().scale.realUnitsPerPoint,
+          project().scale.displayUnits,
+        ] as const,
+      () => {
+        const page = project().view.currentPage
+        const signature = currentScaleSignature()
+        const stored = manualScaleInputsByPage()[page]
+        const nextValues =
+          stored && stored.signature === signature
+            ? { inches: stored.inches, feet: stored.feet }
+            : deriveScaleInputValues(project().scale)
+
+        if (manualScaleInchesInput() !== nextValues.inches) {
+          setManualScaleInchesInput(nextValues.inches)
+        }
+        if (manualScaleFeetInput() !== nextValues.feet) {
+          setManualScaleFeetInput(nextValues.feet)
+        }
+
+        if (stored && stored.signature !== signature) {
+          setManualScaleInputsByPage((prev) => {
+            if (!prev[page]) {
+              return prev
+            }
+            const next = { ...prev }
+            delete next[page]
+            return next
+          })
+        }
+      },
+      { defer: false },
+    ),
+  )
 
   const calibrationPreview = createMemo(() => {
     const points = calibrationPoints()
@@ -686,6 +825,84 @@ function App() {
     setStatusMessage('')
   }
 
+  function refocusCanvasFromInputCommit() {
+    if (!stageRef) {
+      return
+    }
+
+    requestAnimationFrame(() => {
+      stageRef?.focus({ preventScroll: true })
+    })
+  }
+
+  function isCanvasKeyboardContext(): boolean {
+    if (!stageRef || typeof document === 'undefined') {
+      return false
+    }
+
+    return document.activeElement === stageRef
+  }
+
+  function tryCommitPendingContinuousLineSegment(): boolean {
+    const start = lineStart()
+    const end = cursorDoc()
+    if (!start || !end || distance(start, end) < 0.01) {
+      return false
+    }
+
+    const lineId = createElementId('line')
+    commitProjectChange((draft) => {
+      draft.elements.lines.push({
+        id: lineId,
+        start,
+        end,
+        page: draft.view.currentPage,
+        color: draft.settings.activeColor,
+        class: draft.settings.activeClass,
+      })
+
+      const autoConnectors = buildAutoConnectorSymbolsForAddedConductors(
+        draft,
+        [{ kind: 'line', id: lineId }],
+      )
+      if (autoConnectors.length > 0) {
+        draft.elements.symbols.push(...autoConnectors)
+      }
+    })
+
+    return true
+  }
+
+  function handleEnterToolFinishShortcut(): boolean {
+    if (tool() === 'line' && lineContinuous()) {
+      const committed = tryCommitPendingContinuousLineSegment()
+      handleSelectTool('select')
+      setStatus(committed ? 'Line segment added. Line drawing finished.' : 'Line drawing finished.')
+      return true
+    }
+
+    if (tool() === 'linear_auto_spacing' && linearAutoSpacingVertices().length >= 2) {
+      finishLinearAutoSpacing(false)
+      return true
+    }
+
+    if (tool() === 'arc_auto_spacing' && arcAutoSpacingTargetId() !== null) {
+      applyArcAutoSpacing()
+      return true
+    }
+
+    return false
+  }
+
+  function requireNoOpenEditor(action: string): boolean {
+    if (!isDialogEditingContextActive()) {
+      return true
+    }
+
+    setStatus(`Finish or cancel the open editor before ${action}.`)
+    return false
+  }
+
   function handleOpenReportDialog(type: ReportType = 'bug') {
     setReportDraft({ ...createDefaultReportDraft(), type })
     setReportDialogError('')
@@ -694,7 +911,11 @@ function App() {
   }
 
   function handleSetReportType(type: ReportType) {
-    setReportDraft((prev) => ({ ...prev, type }))
+    setReportDraft((prev) =>
+      type === 'feature'
+        ? { ...prev, type, reproSteps: '' }
+        : { ...prev, type },
+    )
   }
 
   function handleSetReportTitle(value: string) {
@@ -906,6 +1127,10 @@ function App() {
   }
 
   function handleSetCurrentPage(requestedPage: number) {
+    if (!requireNoOpenEditor('changing pages')) {
+      return
+    }
+
     const totalPages = normalizePageCount(project().pdf.pageCount)
     const nextPage = clampPageNumber(requestedPage, totalPages)
     if (nextPage === project().view.currentPage) {
@@ -1341,6 +1566,10 @@ function App() {
   }
 
   function handleUndo() {
+    if (!requireNoOpenEditor('undoing changes')) {
+      return
+    }
+
     const result = applyUndo(history(), cloneProject(project()), MAX_HISTORY)
     if (!result) {
       return
@@ -1357,6 +1586,10 @@ function App() {
   }
 
   function handleRedo() {
+    if (!requireNoOpenEditor('redoing changes')) {
+      return
+    }
+
     const result = applyRedo(history(), cloneProject(project()), MAX_HISTORY)
     if (!result) {
       return
@@ -1742,19 +1975,31 @@ function App() {
 
     const realUnitsPerPoint = feet / (inches * 72)
 
+    const normalizedInchesInput = normalizeScaleInputValue(manualScaleInchesInput())
+    const normalizedFeetInput = normalizeScaleInputValue(manualScaleFeetInput())
+    const nextScale = {
+      isSet: true,
+      method: 'manual' as const,
+      realUnitsPerPoint,
+      displayUnits: 'ft-in' as const,
+    }
+    const currentPage = project().view.currentPage
+    setManualScaleInputsByPage((prev) => ({
+      ...prev,
+      [currentPage]: {
+        inches: normalizedInchesInput,
+        feet: normalizedFeetInput,
+        signature: scaleInputSignature(nextScale),
+      },
+    }))
+
     commitProjectChange((draft) => {
-      const currentPage = draft.view.currentPage
-      const nextScale = {
-        isSet: true,
-        method: 'manual' as const,
-        realUnitsPerPoint,
-        displayUnits: 'ft-in' as const,
-      }
+      const page = draft.view.currentPage
       draft.scale = {
         ...nextScale,
         byPage: {
           ...draft.scale.byPage,
-          [currentPage]: nextScale,
+          [page]: nextScale,
         },
       }
     })
@@ -1765,16 +2010,15 @@ function App() {
   function handleToolPointerDown(
     incomingEvent: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
+    if (isDialogEditingContextActive()) {
+      return
+    }
+
     const event = normalizePointerEvent(incomingEvent)
-    if (legendLabelEdit()) {
-      closeLegendLabelDialog()
+    if (event.pointerType !== 'touch' && document.activeElement !== event.currentTarget) {
+      event.currentTarget.focus({ preventScroll: true })
     }
-    if (generalNotesEdit()) {
-      closeGeneralNotesDialog()
-    }
-    if (annotationEdit()) {
-      setAnnotationEdit(null)
-    }
+
     const currentTool = tool()
     const isMeasureMarkSecondary =
       currentTool === 'measure_mark' &&
@@ -2197,6 +2441,10 @@ function App() {
   function handleDoubleClick(
     event: MouseEvent & { currentTarget: HTMLDivElement },
   ) {
+    if (isDialogEditingContextActive()) {
+      return
+    }
+
     if (tool() === 'select') {
       const point = docPointFromMouseEvent(event)
       if (point) {
@@ -2289,6 +2537,9 @@ function App() {
 
   useGlobalAppShortcuts({
     tool,
+    isEditingContextActive,
+    isCanvasKeyboardContext,
+    handleEnterToolFinish: handleEnterToolFinishShortcut,
     handleUndo,
     handleRedo,
     deleteSelection,
@@ -2303,6 +2554,7 @@ function App() {
       }
       clearTransientToolState()
     },
+    toggleHelp: helpState.toggleHelp,
     onResize: syncDialogResize,
     onCleanupExtra: () => {
       activeTouchPoints.clear()
@@ -2505,17 +2757,25 @@ function App() {
     return pathPoints
   })
 
+  function selectedTargetsForZOrder(): Selection[] {
+    const currentTool = tool()
+    if (currentTool === 'select') {
+      const current = selected()
+      if (current) {
+        return [current]
+      }
+      return multiSelection()
+    }
+
+    if (currentTool === 'multi_select') {
+      return multiSelection()
+    }
+
+    return []
+  }
+
   function canMoveSelectedToZEdge(direction: 'front' | 'back'): boolean {
-    if (tool() !== 'select') {
-      return false
-    }
-
-    if (multiSelection().length > 0) {
-      return false
-    }
-
-    const current = selected()
-    return canMoveSelectionToZEdge(project(), current, direction)
+    return canMoveSelectionsByZStep(project(), selectedTargetsForZOrder(), direction)
   }
 
   const canBringSelectedToFront = createMemo(() => canMoveSelectedToZEdge('front'))
@@ -2730,6 +2990,10 @@ function App() {
   })
 
   function handleSelectTool(nextTool: Tool) {
+    if (!requireNoOpenEditor('changing tools')) {
+      return
+    }
+
     const activeMaterial = project().settings.activeColor
     const toolReasons = toolDisabledReasons(nextTool, project(), activeMaterial)
     if (toolReasons.length > 0) {
@@ -2752,6 +3016,7 @@ function App() {
 
     setTool(nextTool)
     clearTransientToolState()
+    helpState.closeIfUnpinned()
     if (nextTool === 'multi_select') {
       setSelected(null)
     } else {
@@ -2939,20 +3204,16 @@ function App() {
   }
 
   function moveSelectedToZEdge(direction: 'front' | 'back') {
-    if (!canMoveSelectedToZEdge(direction)) {
-      return
-    }
-
-    const current = selected()
-    if (!current) {
+    const targets = selectedTargetsForZOrder()
+    if (!canMoveSelectionsByZStep(project(), targets, direction)) {
       return
     }
 
     commitProjectChange((draft) => {
-      moveSelectionToZEdge(draft, current, direction)
+      moveSelectionsByZStep(draft, targets, direction)
     })
 
-    setStatus(direction === 'front' ? 'Selection moved to front.' : 'Selection moved to back.')
+    setStatus(direction === 'front' ? 'Selection brought forward.' : 'Selection sent back.')
   }
 
   function handleSetActiveClass(nextClass: 'class1' | 'class2') {
@@ -3094,59 +3355,78 @@ function App() {
     }))
   }
 
-  function layerForSelection(
+  function layerScopeForSelection(
     projectState: LpProject,
     selection: Selection | null,
-  ): LayerId | null {
+  ): { layerId: LayerId; sublayerId: LayerSublayerId | null } | null {
     if (!selection) {
       return null
     }
 
     if (selection.kind === 'line') {
       const line = projectState.elements.lines.find((entry) => entry.id === selection.id)
-      return line ? conductorLayer(line.color) : null
+      return line
+        ? { layerId: conductorLayer(line.color), sublayerId: null }
+        : null
     }
 
     if (selection.kind === 'arc') {
       const arc = projectState.elements.arcs.find((entry) => entry.id === selection.id)
-      return arc ? conductorLayer(arc.color) : null
+      return arc
+        ? { layerId: conductorLayer(arc.color), sublayerId: null }
+        : null
     }
 
     if (selection.kind === 'curve') {
       const curve = projectState.elements.curves.find((entry) => entry.id === selection.id)
-      return curve ? conductorLayer(curve.color) : null
+      return curve
+        ? { layerId: conductorLayer(curve.color), sublayerId: null }
+        : null
     }
 
     if (selection.kind === 'symbol') {
       const symbol = projectState.elements.symbols.find((entry) => entry.id === selection.id)
-      return symbol ? symbolLayer(symbol.symbolType) : null
+      return symbol
+        ? { layerId: symbolLayer(symbol.symbolType), sublayerId: symbolSublayer(symbol.symbolType) }
+        : null
     }
 
     if (selection.kind === 'text') {
       const textElement = projectState.elements.texts.find((entry) => entry.id === selection.id)
-      return textElement?.layer ?? null
+      return textElement ? { layerId: textElement.layer, sublayerId: null } : null
     }
 
     if (selection.kind === 'dimension_text') {
       const dimensionText = projectState.elements.dimensionTexts.find((entry) => entry.id === selection.id)
-      return dimensionText?.layer ?? null
+      return dimensionText ? { layerId: dimensionText.layer, sublayerId: null } : null
     }
 
     if (selection.kind === 'arrow') {
       const arrow = projectState.elements.arrows.find((entry) => entry.id === selection.id)
-      return arrow?.layer ?? null
+      return arrow ? { layerId: arrow.layer, sublayerId: null } : null
     }
 
-    return 'annotation'
+    return { layerId: 'annotation', sublayerId: null }
   }
 
   function handleSetLayerVisible(layerId: LayerId, visible: boolean) {
+    if (!requireNoOpenEditor('changing layer visibility')) {
+      return
+    }
+
     const currentProject = project()
     setProject((prev) => ({
       ...prev,
       layers: {
         ...prev.layers,
         [layerId]: visible,
+        sublayers:
+          layerId === 'rooftop' && !visible
+            ? {
+              ...prev.layers.sublayers,
+              connections: false,
+            }
+            : prev.layers.sublayers,
       },
     }))
 
@@ -3154,18 +3434,18 @@ function App() {
       return
     }
 
-    if (layerForSelection(currentProject, selected()) === layerId) {
+    if (layerScopeForSelection(currentProject, selected())?.layerId === layerId) {
       setSelected(null)
     }
 
     const filteredMultiSelection = multiSelection().filter(
-      (entry) => layerForSelection(currentProject, entry) !== layerId,
+      (entry) => layerScopeForSelection(currentProject, entry)?.layerId !== layerId,
     )
     if (filteredMultiSelection.length !== multiSelection().length) {
       setMultiSelection(filteredMultiSelection)
     }
 
-    if (layerForSelection(currentProject, hoveredSelection()) === layerId) {
+    if (layerScopeForSelection(currentProject, hoveredSelection())?.layerId === layerId) {
       setHoveredSelection(null)
     }
 
@@ -3180,6 +3460,45 @@ function App() {
 
     if (layerId === 'rooftop') {
       setArcAutoSpacingTargetId(null)
+    }
+
+    setSnapPointPreview(null)
+  }
+
+  function handleSetLayerSublayerVisible(sublayerId: LayerSublayerId, visible: boolean) {
+    const currentProject = project()
+    if (sublayerId === 'connections' && !currentProject.layers.rooftop) {
+      return
+    }
+
+    setProject((prev) => ({
+      ...prev,
+      layers: {
+        ...prev.layers,
+        sublayers: {
+          ...prev.layers.sublayers,
+          [sublayerId]: visible,
+        },
+      },
+    }))
+
+    if (visible) {
+      return
+    }
+
+    if (layerScopeForSelection(currentProject, selected())?.sublayerId === sublayerId) {
+      setSelected(null)
+    }
+
+    const filteredMultiSelection = multiSelection().filter(
+      (entry) => layerScopeForSelection(currentProject, entry)?.sublayerId !== sublayerId,
+    )
+    if (filteredMultiSelection.length !== multiSelection().length) {
+      setMultiSelection(filteredMultiSelection)
+    }
+
+    if (layerScopeForSelection(currentProject, hoveredSelection())?.sublayerId === sublayerId) {
+      setHoveredSelection(null)
     }
 
     setSnapPointPreview(null)
@@ -3246,11 +3565,17 @@ function App() {
     get hasPdf() {
       return hasPdf()
     },
+    get supportsNativeFileDialogs() {
+      return supportsNativeFileDialogs
+    },
     get tool() {
       return tool()
     },
     get selectedKind() {
       return selected()?.kind ?? null
+    },
+    get multiSelectionCount() {
+      return multiSelection().length
     },
     toolOptions: TOOL_OPTIONS,
     get lineStart() {
@@ -3350,6 +3675,9 @@ function App() {
     get manualScaleFeetInput() {
       return manualScaleFeetInput()
     },
+    get manualScaleDirty() {
+      return manualScaleDirty()
+    },
     get measureTargetDistanceInput() {
       return measureTargetDistanceInput()
     },
@@ -3386,10 +3714,17 @@ function App() {
     get errorMessage() {
       return errorMessage()
     },
+    onRefocusCanvasFromInputCommit: refocusCanvasFromInputCommit,
     onSetProjectName: handleSetProjectName,
     onImportPdf: handleImportPdfUi,
+    onImportPdfPicker: () => {
+      void handleImportPdfPicker()
+    },
     onSaveProject: handleSaveProject,
     onLoadProject: handleLoadProjectUi,
+    onLoadProjectPicker: () => {
+      void handleLoadProjectPicker()
+    },
     onExportImage: handleExportImageUi,
     onExportPdf: handleExportPdfUi,
     onOpenReportDialog: handleOpenReportDialog,
@@ -3432,6 +3767,7 @@ function App() {
     onSetAutoConnectorType: handleSetAutoConnectorType,
     onSetAngleSnapEnabled: handleSetAngleSnapEnabled,
     onSetLayerVisible: handleSetLayerVisible,
+    onSetLayerSublayerVisible: handleSetLayerSublayerVisible,
     onSetManualScaleInchesInput: setManualScaleInchesInput,
     onSetManualScaleFeetInput: setManualScaleFeetInput,
     onSetMeasureTargetDistanceInput: handleSetMeasureTargetDistanceInput,
@@ -3446,6 +3782,7 @@ function App() {
   })
 
   return (
+    <HelpProvider value={helpState}>
     <div class="app-shell">
       <AppControllerProvider value={sidebarController}>
         <AppSidebar />
@@ -3453,6 +3790,7 @@ function App() {
         <CanvasStage
           project={project()}
           hasPdf={hasPdf()}
+          supportsNativeFileDialogs={supportsNativeFileDialogs}
           tool={tool()}
           activeSymbol={activeSymbol()}
           colorOptions={COLOR_OPTIONS}
@@ -3484,14 +3822,17 @@ function App() {
           manualScaleInchesInput={manualScaleInchesInput()}
           manualScaleFeetInput={manualScaleFeetInput()}
           currentScaleInfo={currentScaleInfo()}
+          manualScaleDirty={manualScaleDirty()}
           designScale={project().settings.designScale}
           toolOptionsSlot={(
             <PropertiesToolOptions />
           )}
           onSetActiveSymbol={handleSetActiveSymbol}
           onImportPdf={(event) => void handleImportPdf(event)}
+          onImportPdfPicker={() => void handleImportPdfPicker()}
           onImportPdfDrop={handleImportPdfDrop}
           onLoadProject={(event) => void handleLoadProject(event)}
+          onLoadProjectPicker={() => void handleLoadProjectPicker()}
           onSaveProject={handleSaveProject}
           onExportImage={handleExportImageUi}
           onExportPdf={handleExportPdfUi}
@@ -3508,6 +3849,8 @@ function App() {
           onSetDesignScale={handleSetDesignScale}
           onPreviewPdfBrightness={handlePreviewPdfBrightness}
           onCommitPdfBrightness={handleCommitPdfBrightness}
+          onQuickAccessEditingContextChange={setQuickAccessEditingContextActive}
+          onRefocusCanvasFromInputCommit={refocusCanvasFromInputCommit}
           setStageRef={(element) => {
             stageRef = element
             stageResizeObserver?.disconnect()
@@ -3650,7 +3993,10 @@ function App() {
           />
         </Show>
       </AppControllerProvider>
+
+      <HelpDrawer />
     </div>
+    </HelpProvider>
   )
 }
 

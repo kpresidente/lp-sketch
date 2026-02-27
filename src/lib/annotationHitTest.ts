@@ -1,9 +1,12 @@
 import {
-  approximateTextWidthForScale,
   textLineHeightPxForScale,
 } from './annotationScale'
 import { dimensionLabelWidthPx, dimensionTextLabel } from './dimensionText'
 import { docToScreen } from './geometry'
+import {
+  textBlockApproxHeightPx,
+  textBlockApproxWidthPx,
+} from './textLayout'
 import type {
   DimensionTextElement,
   LpProject,
@@ -20,8 +23,8 @@ export function pointHitsText(
 ): boolean {
   const pointScreen = docToScreen(point, view)
   const textScreen = docToScreen(textElement.position, view)
-  const width = approximateTextWidthForScale(textElement.text, designScale)
-  const height = textLineHeightPxForScale(designScale)
+  const width = textBlockApproxWidthPx(textElement.text, designScale)
+  const height = textBlockApproxHeightPx(textElement.text, designScale)
 
   return (
     pointScreen.x >= textScreen.x - tolerancePx &&
@@ -47,7 +50,7 @@ export function pointHitsDimensionText(
   return (
     pointScreen.x >= labelScreen.x - width / 2 - tolerancePx &&
     pointScreen.x <= labelScreen.x + width / 2 + tolerancePx &&
-    pointScreen.y >= labelScreen.y - tolerancePx &&
-    pointScreen.y <= labelScreen.y + height + tolerancePx
+    pointScreen.y >= labelScreen.y - height / 2 - tolerancePx &&
+    pointScreen.y <= labelScreen.y + height / 2 + tolerancePx
   )
 }

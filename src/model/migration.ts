@@ -641,6 +641,13 @@ export function migrateProjectForLoad(input: unknown): MigrationResult {
   for (const key of layerKeys) {
     migrated = ensureLiteralBoolean(layersResult.record, key, true) || migrated
   }
+  const sublayersResult = ensureRecord(layersResult.record, 'sublayers')
+  migrated = sublayersResult.changed || migrated
+  migrated = ensureLiteralBoolean(sublayersResult.record, 'connections', true) || migrated
+  if (layersResult.record.rooftop === false && sublayersResult.record.connections !== false) {
+    sublayersResult.record.connections = false
+    migrated = true
+  }
 
   const constructionResult = ensureRecord(project, 'construction')
   migrated = constructionResult.changed || migrated

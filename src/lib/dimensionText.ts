@@ -267,7 +267,7 @@ export function dimensionBarLineSegments(
     return []
   }
 
-  const labelCenter = { x: labelPosition.x, y: labelPosition.y + labelHeightPt / 2 }
+  const labelCenter = { x: labelPosition.x, y: labelPosition.y }
   const toLabel = {
     x: labelCenter.x - geometry.barStart.x,
     y: labelCenter.y - geometry.barStart.y,

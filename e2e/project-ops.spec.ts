@@ -9,7 +9,7 @@ import {
 
 test.describe('project operations', () => {
   test('landing skeleton import button opens file picker', async ({ page }) => {
-    await page.goto('/')
+    await gotoApp(page)
 
     const chooserPromise = page.waitForEvent('filechooser')
     await page.locator('.canvas-watermark .wm-import-btn').click()
@@ -32,13 +32,13 @@ test.describe('project operations', () => {
     await page.getByPlaceholder('Project name...').fill('E2E Save Load')
 
     const downloadPromise = page.waitForEvent('download')
-    await project.locator('button[title="Save Project"]').click()
+    await project.getByRole('button', { name: /Save$/ }).click()
     const download = await downloadPromise
     expect(download.suggestedFilename()).toContain('E2E Save Load.lpsketch.json')
     await expectStatus(page, 'Saved E2E Save Load.lpsketch.json')
 
     const chooserPromise = page.waitForEvent('filechooser')
-    await project.locator('button[title="Load Project"]').click()
+    await project.getByRole('button', { name: /Load$/ }).click()
     const chooser = await chooserPromise
     await chooser.setFiles(createProjectJsonPayload({ withLine: true }))
 
@@ -52,10 +52,10 @@ test.describe('project operations', () => {
     await importPdfFromProjectPanel(page, 'export-check.pdf')
 
     const project = panelRegion(page, 'Project')
-    await project.locator('button[title="Export PNG"]').click()
+    await project.getByRole('button', { name: /PNG$/ }).click()
     await expectStatus(page, 'Exported PNG output.')
 
-    await project.locator('button[title="Export JPG"]').click()
+    await project.getByRole('button', { name: /JPG$/ }).click()
     await expectStatus(page, 'Exported JPG output.')
 
     await project.locator('button[title="Export PDF"]').click()

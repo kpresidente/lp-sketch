@@ -19,6 +19,8 @@ describe('classForSymbol', () => {
     expect(classForSymbol('cable_to_cable_connection', 'class2')).toBe('class2')
     expect(classForSymbol('mechanical_crossrun_connection', 'class1')).toBe('class1')
     expect(classForSymbol('cadweld_crossrun_connection', 'class2')).toBe('class2')
+    expect(classForSymbol('connect_existing', 'class1')).toBe('class1')
+    expect(classForSymbol('connect_existing', 'class2')).toBe('class2')
   })
 
   it('keeps classed symbols class-aware', () => {
