@@ -15,7 +15,6 @@ export function tablerIconClass(icon: TablerIconName): string {
 }
 
 export const MISC_ICON = {
-  appLogo: 'bolt',
   panelChevron: 'chevron-down',
   pdfPlaceholder: 'file-type-pdf',
   scaleBadge: 'ruler-2',
