@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@kobalte/core": "^0.13.11",
-    "@tabler/icons-webfont": "^3.36.1",
+    "@tabler/icons-webfont": "^3.37.1",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "pdf-lib": "^1.17.1",
