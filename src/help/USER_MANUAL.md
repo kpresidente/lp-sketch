@@ -951,13 +951,13 @@ Distances in LP Sketch are displayed in feet and inches format (e.g., 12' 6"). T
 |-----------|--------|-------|-------------|-------|-------|
 | Air Terminal | Circle (hollow Class I, filled Class II) | Rooftop | No | I or II | Letter A-Z |
 | Bonded Air Terminal | Hexagon | Rooftop | No | I or II | Letter A-Z |
-| Bond | Diamond (rotated square) | Rooftop | No | None | |
-| Mechanical Connection | Small circle | Rooftop | No | None | Also auto-placed |
+| Bond | Diamond (rotated square) | Rooftop | No | I or II | |
+| Mechanical Connection | Small circle | Rooftop | No | I or II | Also auto-placed |
 | Cadweld Connection | Small square (outlined Class I, filled Class II) | Rooftop | No | I or II | Also auto-placed |
-| Mechanical Crossrun | Small circle inside larger circle | Rooftop | No | None | Also auto-placed at + intersections |
+| Mechanical Crossrun | Small circle inside larger circle | Rooftop | No | I or II | Also auto-placed at + intersections |
 | Cadweld Crossrun | Small square inside larger square | Rooftop | No | I or II | Also auto-placed at + intersections |
 | Continued | S-curve | Annotation | Yes | None | Always black; not in legend |
-| Connect Existing | S-curve with junction | Rooftop | Yes | None | |
+| Connect Existing | S-curve with junction | Rooftop | Yes | I or II | |
 | Conduit Downlead to Ground | Square with double down-chevrons | Downleads | Yes | I or II | Vertical footage |
 | Conduit Downlead to Roof | Square with single up-chevron | Downleads | Yes | I or II | Vertical footage |
 | Surface Downlead to Ground | Circle with double down-chevrons | Downleads | Yes | I or II | Vertical footage |

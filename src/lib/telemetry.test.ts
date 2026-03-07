@@ -10,6 +10,7 @@ import {
   sendClientTelemetryPayload,
   type ClientErrorTelemetryPayload,
 } from './telemetry'
+import * as telemetry from './telemetry'
 
 function mockPayload(): ClientErrorTelemetryPayload {
   return {
@@ -79,6 +80,57 @@ describe('telemetry', () => {
     expect(payload.context.source).toBe('https://app.test/path')
   })
 
+  it('builds handled operation payloads with redacted message and context', () => {
+    const buildHandledOperationTelemetryPayload = (
+      telemetry as typeof telemetry & {
+        buildHandledOperationTelemetryPayload?: (
+          event: string,
+          message: string,
+          context?: Record<string, unknown>,
+          config?: unknown,
+          now?: Date,
+        ) => {
+          event: string
+          message: string
+          page: string | null
+          context: Record<string, unknown>
+        }
+      }
+    ).buildHandledOperationTelemetryPayload
+
+    expect(typeof buildHandledOperationTelemetryPayload).toBe('function')
+    if (!buildHandledOperationTelemetryPayload) {
+      return
+    }
+
+    window.history.replaceState({}, '', '/load-project?secret=abcdef')
+
+    const payload = buildHandledOperationTelemetryPayload(
+      'project_load_failed',
+      'User john@example.com hit token 1234567890',
+      {
+        source: 'https://app.test/load?secret=abc',
+        file_name: 'broken.lpsketch.json',
+        file_size: 1234,
+      },
+      {
+        enabled: true,
+        endpoint: 'https://telemetry.example.test/client-errors',
+        release: '1.0.0',
+        environment: 'production',
+      },
+      new Date('2026-03-06T12:00:00.000Z'),
+    )
+
+    expect(payload.event).toBe('project_load_failed')
+    expect(payload.message).not.toContain('john@example.com')
+    expect(payload.message).not.toContain('1234567890')
+    expect(payload.page).toMatch(/^http:\/\/localhost(?::\d+)?\/load-project$/)
+    expect(payload.context.source).toBe('https://app.test/load')
+    expect(payload.context.file_name).toBe('broken.lpsketch.json')
+    expect(payload.context.file_size).toBe(1234)
+  })
+
   it('sends payload via sendBeacon when available', () => {
     const sendBeacon = vi.fn(() => true)
     Object.defineProperty(window.navigator, 'sendBeacon', {
@@ -94,6 +146,48 @@ describe('telemetry', () => {
       release: '1.0.0',
       environment: 'production',
     })
+
+    expect(sent).toBe(true)
+    expect(sendBeacon).toHaveBeenCalledTimes(1)
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('reports handled operation telemetry via sendBeacon when enabled', () => {
+    const reportHandledOperationTelemetry = (
+      telemetry as typeof telemetry & {
+        reportHandledOperationTelemetry?: (
+          event: string,
+          message: string,
+          context?: Record<string, unknown>,
+          config?: unknown,
+        ) => boolean
+      }
+    ).reportHandledOperationTelemetry
+
+    expect(typeof reportHandledOperationTelemetry).toBe('function')
+    if (!reportHandledOperationTelemetry) {
+      return
+    }
+
+    const sendBeacon = vi.fn(() => true)
+    Object.defineProperty(window.navigator, 'sendBeacon', {
+      configurable: true,
+      value: sendBeacon,
+    })
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const sent = reportHandledOperationTelemetry(
+      'project_export_failed',
+      'Export failed.',
+      { format: 'pdf', current_page: 1 },
+      {
+        enabled: true,
+        endpoint: 'https://telemetry.example.test/client-errors',
+        release: '1.0.0',
+        environment: 'production',
+      },
+    )
 
     expect(sent).toBe(true)
     expect(sendBeacon).toHaveBeenCalledTimes(1)

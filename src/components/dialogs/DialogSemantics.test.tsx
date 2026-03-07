@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@solidjs/testing-library'
-import { describe, expect, it } from 'vitest'
+import { cleanup, render, screen } from '@solidjs/testing-library'
+import { afterEach, describe, expect, it } from 'vitest'
 import AnnotationEditDialog from './AnnotationEditDialog'
 import GeneralNotesDialog from './GeneralNotesDialog'
 import LegendLabelDialog from './LegendLabelDialog'
@@ -9,6 +9,10 @@ import ReportDialog from './ReportDialog'
 import type { GeneralNotesEditState, LegendLabelEditState } from '../../types/appRuntime'
 
 describe('dialog accessibility semantics', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('renders annotation edit dialog as a labeled dialog', () => {
     render(() => (
       <AnnotationEditDialog

@@ -11,6 +11,7 @@ import { cloneProject } from '../lib/projectState'
 import { arrayBufferToBase64, downloadBlob, downloadTextFile, sha256Hex } from '../lib/files'
 import { renderProjectImageBlob, renderProjectPdfBlob } from '../lib/export'
 import { projectElementCount } from '../lib/projectLimits'
+import { reportHandledOperationTelemetry } from '../lib/telemetry'
 import { migrateProjectForLoad } from '../model/migration'
 import { asProject, validateProject } from '../model/validation'
 import type { LpProject, Selection } from '../types/project'
@@ -160,6 +161,56 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
     return `${Math.round(bytes / (1024 * 1024))} MB`
   }
 
+  function asRecord(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null
+  }
+
+  function arrayLength(value: unknown): number {
+    return Array.isArray(value) ? value.length : 0
+  }
+
+  function summarizeProjectCandidate(candidate: unknown) {
+    const record = asRecord(candidate)
+    const elements = asRecord(record?.elements)
+    const construction = asRecord(record?.construction)
+    const legend = asRecord(record?.legend)
+    const generalNotes = asRecord(record?.generalNotes)
+    const pdf = asRecord(record?.pdf)
+
+    return {
+      schema_version: typeof record?.schemaVersion === 'string' ? record.schemaVersion : null,
+      pdf_source_type:
+        pdf?.sourceType === 'embedded' || pdf?.sourceType === 'referenced'
+          ? pdf.sourceType
+          : null,
+      symbol_count: arrayLength(elements?.symbols),
+      element_count:
+        arrayLength(elements?.lines) +
+        arrayLength(elements?.arcs) +
+        arrayLength(elements?.curves) +
+        arrayLength(elements?.symbols) +
+        arrayLength(elements?.texts) +
+        arrayLength(elements?.arrows) +
+        arrayLength(elements?.dimensionTexts) +
+        arrayLength(construction?.marks) +
+        arrayLength(legend?.placements) +
+        arrayLength(generalNotes?.placements) +
+        arrayLength(generalNotes?.notes),
+    }
+  }
+
+  function exportTelemetryContext(format: 'png' | 'jpg' | 'pdf') {
+    const project = options.visibleProject()
+    return {
+      format,
+      has_background_canvas: Boolean(options.getPdfCanvas()),
+      current_page: project.view.currentPage,
+      page_count: project.pdf.pageCount,
+    }
+  }
+
   function normalizedFilenameBase() {
     const raw = (options.project().projectMeta.name || 'lp-sketch').trim()
     const cleaned = raw
@@ -280,6 +331,10 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
       options.setStatus(`Imported ${file.name}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to import PDF.'
+      reportHandledOperationTelemetry('project_import_pdf_failed', message, {
+        file_name: file.name,
+        file_size: file.size,
+      })
       options.setError(message)
     } finally {
       if (loadedPdf) {
@@ -318,10 +373,14 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
       return
     }
 
+    let projectCandidate: unknown = null
+
     try {
       const text = await file.text()
       const parsed = JSON.parse(text) as unknown
+      projectCandidate = parsed
       const migration = migrateProjectForLoad(parsed)
+      projectCandidate = migration.project
       const validation = validateProject(migration.project)
 
       if (!validation.valid) {
@@ -346,6 +405,11 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to load project file.'
+      reportHandledOperationTelemetry('project_load_failed', message, {
+        file_name: file.name,
+        file_size: file.size,
+        ...summarizeProjectCandidate(projectCandidate),
+      })
       options.setError(message)
     }
   }
@@ -382,6 +446,7 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         return
       }
       const message = error instanceof Error ? error.message : 'Unable to import PDF.'
+      reportHandledOperationTelemetry('project_import_pdf_failed', message)
       options.setError(message)
     }
   }
@@ -407,6 +472,7 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         return
       }
       const message = error instanceof Error ? error.message : 'Unable to load project file.'
+      reportHandledOperationTelemetry('project_load_failed', message)
       options.setError(message)
     }
   }
@@ -482,6 +548,7 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         return
       }
       const message = error instanceof Error ? error.message : `Unable to export ${format.toUpperCase()}.`
+      reportHandledOperationTelemetry('project_export_failed', message, exportTelemetryContext(format))
       options.setError(message)
     }
   }
@@ -518,6 +585,7 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         return
       }
       const message = error instanceof Error ? error.message : 'Unable to export PDF.'
+      reportHandledOperationTelemetry('project_export_failed', message, exportTelemetryContext('pdf'))
       options.setError(message)
     }
   }

@@ -1,5 +1,6 @@
 import { createEffect, onCleanup, onMount, type Accessor } from 'solid-js'
 import {
+  AUTOSAVE_STORAGE_KEY,
   AUTOSAVE_WRITE_DEBOUNCE_MS,
 } from '../config/runtimeLimits'
 import {
@@ -7,8 +8,9 @@ import {
   loadAutosaveDraft,
   persistAutosaveDraft,
 } from '../lib/autosave'
-import { projectHasRecoverableContent } from '../lib/projectLimits'
+import { projectElementCount, projectHasRecoverableContent } from '../lib/projectLimits'
 import { cloneProject } from '../lib/projectState'
+import { reportHandledOperationTelemetry } from '../lib/telemetry'
 import { migrateProjectForLoad } from '../model/migration'
 import { asProject, validateProject } from '../model/validation'
 import type { LpProject } from '../types/project'
@@ -27,6 +29,17 @@ function savedAtLabel(savedAtIso: string): string {
   }
 
   return parsed.toLocaleString()
+}
+
+function hasStoredAutosaveDraft(): boolean {
+  return typeof window !== 'undefined' && window.localStorage.getItem(AUTOSAVE_STORAGE_KEY) !== null
+}
+
+function autosaveProjectContext(project: LpProject) {
+  return {
+    schema_version: project.schemaVersion,
+    element_count: projectElementCount(project),
+  }
 }
 
 export function useProjectAutosave(options: UseProjectAutosaveOptions) {
@@ -64,6 +77,14 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
     if (result.status === 'skipped') {
       if (result.reason === 'storage-unavailable' && !warnedStorageUnavailable) {
         warnedStorageUnavailable = true
+        reportHandledOperationTelemetry(
+          'autosave_persist_failed',
+          'Autosave unavailable: local draft storage is not accessible in this session.',
+          {
+            reason: 'storage-unavailable',
+            ...autosaveProjectContext(snapshot),
+          },
+        )
         if (notify) {
           options.setError('Autosave unavailable: local draft storage is not accessible in this session.')
         }
@@ -71,6 +92,14 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
 
       if (result.reason === 'too-large' && !warnedTooLarge) {
         warnedTooLarge = true
+        reportHandledOperationTelemetry(
+          'autosave_persist_failed',
+          'Autosave skipped: project is too large for local draft storage.',
+          {
+            reason: 'too-large',
+            ...autosaveProjectContext(snapshot),
+          },
+        )
         if (notify) {
           options.setError('Autosave skipped: project is too large for local draft storage.')
         }
@@ -80,6 +109,14 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
 
     if (!warnedPersistError) {
       warnedPersistError = true
+      reportHandledOperationTelemetry(
+        'autosave_persist_failed',
+        'Autosave failed due to a local storage error.',
+        {
+          reason: 'error',
+          ...autosaveProjectContext(snapshot),
+        },
+      )
       if (notify) {
         options.setError('Autosave failed due to a local storage error.')
       }
@@ -94,9 +131,20 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
         const migration = migrateProjectForLoad(loaded.envelope.project)
         const validation = validateProject(migration.project)
         if (!validation.valid) {
-          clearAutosaveDraft()
           const details = validation.errors.slice(0, 2).join('; ')
-          options.setError(`Discarded invalid autosave draft. ${details}`)
+          const message = `Discarded invalid autosave draft. ${details}`
+          const storageKeyPresent = hasStoredAutosaveDraft()
+          reportHandledOperationTelemetry('autosave_restore_discarded', message, {
+            reason: 'validation-failed',
+            degraded: loaded.envelope.degraded,
+            storage_key_present: storageKeyPresent,
+            schema_version:
+              typeof (migration.project as { schemaVersion?: unknown }).schemaVersion === 'string'
+                ? (migration.project as { schemaVersion: string }).schemaVersion
+                : null,
+          })
+          clearAutosaveDraft()
+          options.setError(message)
         } else {
           const draft = asProject(migration.project)
           if (projectHasRecoverableContent(draft)) {
@@ -111,15 +159,35 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
               `Recovered autosaved draft from ${savedAtLabel(loaded.envelope.savedAt)}${migratedSuffix}.${degradedSuffix}`,
             )
           } else {
+            reportHandledOperationTelemetry(
+              'autosave_restore_discarded',
+              'Discarded autosave draft with no recoverable content.',
+              {
+                reason: 'no-recoverable-content',
+                degraded: loaded.envelope.degraded,
+                storage_key_present: hasStoredAutosaveDraft(),
+                ...autosaveProjectContext(draft),
+              },
+            )
             clearAutosaveDraft()
           }
         }
       } catch (error) {
-        clearAutosaveDraft()
         const message = error instanceof Error ? error.message : 'Discarded unreadable autosave draft.'
+        const storageKeyPresent = hasStoredAutosaveDraft()
+        reportHandledOperationTelemetry('autosave_restore_discarded', message, {
+          reason: 'unreadable',
+          storage_key_present: storageKeyPresent,
+        })
+        clearAutosaveDraft()
         options.setError(message)
       }
     } else if (loaded.status === 'invalid') {
+      const storageKeyPresent = hasStoredAutosaveDraft()
+      reportHandledOperationTelemetry('autosave_restore_discarded', 'Discarded unreadable autosave draft.', {
+        reason: 'invalid-payload',
+        storage_key_present: storageKeyPresent,
+      })
       clearAutosaveDraft()
       options.setError('Discarded unreadable autosave draft.')
     }
@@ -152,4 +220,3 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
     clearPersistTimer()
   })
 }
-

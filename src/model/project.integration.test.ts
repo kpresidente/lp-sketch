@@ -90,7 +90,7 @@ describe('project integration', () => {
         symbolType: 'bond',
         position: { x: 220, y: 160 },
         color: 'red',
-        class: 'none',
+        class: 'class1',
       },
     )
 
@@ -163,6 +163,67 @@ describe('project integration', () => {
 
     expect(project.legend.items).toHaveLength(1)
     expect(project.legend.items[0].count).toBe(spacingPoints.length)
+
+    const validation = validateProject(project)
+    expect(validation.valid).toBe(true)
+  })
+
+  it('accepts class-aware connection and grounding symbols in saved projects', () => {
+    const project = createSchemaValidProject('Connection Classes')
+
+    project.elements.symbols.push(
+      {
+        id: 'bond-1',
+        symbolType: 'bond',
+        position: { x: 80, y: 80 },
+        color: 'green',
+        class: 'class1',
+      },
+      {
+        id: 'mechanical-1',
+        symbolType: 'cable_to_cable_connection',
+        position: { x: 120, y: 80 },
+        color: 'blue',
+        class: 'class2',
+      },
+      {
+        id: 'cadweld-1',
+        symbolType: 'cadweld_connection',
+        position: { x: 160, y: 80 },
+        color: 'red',
+        class: 'class1',
+      },
+      {
+        id: 'existing-1',
+        symbolType: 'connect_existing',
+        position: { x: 200, y: 80 },
+        directionDeg: 45,
+        color: 'green',
+        class: 'class2',
+      },
+      {
+        id: 'crossrun-mechanical-1',
+        symbolType: 'mechanical_crossrun_connection',
+        position: { x: 240, y: 80 },
+        color: 'purple',
+        class: 'class1',
+      },
+      {
+        id: 'crossrun-cadweld-1',
+        symbolType: 'cadweld_crossrun_connection',
+        position: { x: 280, y: 80 },
+        color: 'red',
+        class: 'class2',
+      },
+      {
+        id: 'ground-rod-1',
+        symbolType: 'ground_rod',
+        position: { x: 320, y: 80 },
+        directionDeg: 180,
+        color: 'red',
+        class: 'class2',
+      },
+    )
 
     const validation = validateProject(project)
     expect(validation.valid).toBe(true)

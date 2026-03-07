@@ -91,6 +91,7 @@ Rules:
 - Client telemetry events are redacted (emails, tokens, long numbers, URLs).
 - Transport: `navigator.sendBeacon()` with `fetch` keepalive fallback.
 - Release/version metadata attached to all production events.
+- Telemetry covers both uncaught runtime failures and selected handled operational failures such as project load/import, autosave, and export errors.
 
 ## User Reporting
 

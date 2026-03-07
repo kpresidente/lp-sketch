@@ -12,6 +12,7 @@ const {
   arrayBufferToBase64Mock,
   migrateProjectForLoadMock,
   validateProjectMock,
+  reportHandledOperationTelemetryMock,
 } = vi.hoisted(() => ({
   getDocumentMock: vi.fn(),
   renderProjectImageBlobMock: vi.fn(),
@@ -22,6 +23,7 @@ const {
   arrayBufferToBase64Mock: vi.fn(),
   migrateProjectForLoadMock: vi.fn(),
   validateProjectMock: vi.fn(),
+  reportHandledOperationTelemetryMock: vi.fn(),
 }))
 
 vi.mock('pdfjs-dist', () => ({
@@ -66,6 +68,10 @@ vi.mock('./model/validation', async () => {
   }
 })
 
+vi.mock('./lib/telemetry', () => ({
+  reportHandledOperationTelemetry: reportHandledOperationTelemetryMock,
+}))
+
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
@@ -108,6 +114,7 @@ beforeEach(() => {
   getDocumentMock.mockReset()
   migrateProjectForLoadMock.mockReset()
   validateProjectMock.mockReset()
+  reportHandledOperationTelemetryMock.mockReset()
 
   renderProjectImageBlobMock.mockResolvedValue(new Blob(['image'], { type: 'image/png' }))
   renderProjectPdfBlobMock.mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' }))
@@ -248,10 +255,31 @@ describe('App file actions integration', () => {
     renderProjectImageBlobMock.mockRejectedValueOnce(new Error('Image export failed.'))
     await fireEvent.click(screen.getByRole('button', { name: 'PNG' }))
     expect(screen.getByText('Image export failed.')).toBeTruthy()
+    expect(reportHandledOperationTelemetryMock).toHaveBeenCalledWith(
+      'project_export_failed',
+      'Image export failed.',
+      expect.objectContaining({
+        format: 'png',
+        has_background_canvas: false,
+        current_page: 1,
+        page_count: 1,
+      }),
+    )
 
+    reportHandledOperationTelemetryMock.mockClear()
     renderProjectPdfBlobMock.mockRejectedValueOnce('boom')
     await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
     expect(screen.getByText('Unable to export PDF.')).toBeTruthy()
+    expect(reportHandledOperationTelemetryMock).toHaveBeenCalledWith(
+      'project_export_failed',
+      'Unable to export PDF.',
+      expect.objectContaining({
+        format: 'pdf',
+        has_background_canvas: false,
+        current_page: 1,
+        page_count: 1,
+      }),
+    )
   })
 
   it('loads projects with migrated status and reports validation and fallback load errors', async () => {
@@ -294,7 +322,16 @@ describe('App file actions integration', () => {
 
     await fireEvent.change(loadInput, { target: { files: [invalidFile] } })
     expect(screen.getByText(/Project file failed schema validation\./)).toBeTruthy()
+    expect(reportHandledOperationTelemetryMock).toHaveBeenCalledWith(
+      'project_load_failed',
+      expect.stringContaining('Project file failed schema validation.'),
+      expect.objectContaining({
+        file_name: 'invalid.lpsketch.json',
+        file_size: 2,
+      }),
+    )
 
+    reportHandledOperationTelemetryMock.mockClear()
     migrateProjectForLoadMock.mockImplementationOnce(() => {
       throw 'bad-load'
     })
@@ -308,6 +345,14 @@ describe('App file actions integration', () => {
 
     await fireEvent.change(loadInput, { target: { files: [fallbackFile] } })
     expect(screen.getByText('Unable to load project file.')).toBeTruthy()
+    expect(reportHandledOperationTelemetryMock).toHaveBeenCalledWith(
+      'project_load_failed',
+      'Unable to load project file.',
+      expect.objectContaining({
+        file_name: 'fallback.lpsketch.json',
+        file_size: 25,
+      }),
+    )
   })
 
   it('imports PDFs across invalid, success, and fallback error paths', async () => {
@@ -341,8 +386,17 @@ describe('App file actions integration', () => {
       value: async () => pdfBytes.buffer.slice(0),
     })
 
+    reportHandledOperationTelemetryMock.mockClear()
     await fireEvent.change(pdfInput, { target: { files: [badPdf] } })
     expect(await screen.findByText('Unable to import PDF.')).toBeTruthy()
+    expect(reportHandledOperationTelemetryMock).toHaveBeenCalledWith(
+      'project_import_pdf_failed',
+      'Unable to import PDF.',
+      expect.objectContaining({
+        file_name: 'broken.pdf',
+        file_size: 4,
+      }),
+    )
   })
 
   it('rejects oversized PDF imports before parsing', async () => {

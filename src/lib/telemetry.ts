@@ -1,4 +1,10 @@
 export type TelemetryErrorKind = 'window-error' | 'unhandled-rejection' | 'error-boundary'
+export type HandledOperationTelemetryEvent =
+  | 'project_load_failed'
+  | 'project_import_pdf_failed'
+  | 'autosave_restore_discarded'
+  | 'autosave_persist_failed'
+  | 'project_export_failed'
 
 export interface ClientTelemetryConfig {
   enabled: boolean
@@ -31,6 +37,18 @@ export interface ClientErrorTelemetryPayload {
   }
   context: Record<string, TelemetryPrimitive>
 }
+
+export interface HandledOperationTelemetryPayload {
+  event: HandledOperationTelemetryEvent
+  occurredAt: string
+  release: string
+  environment: string
+  page: string | null
+  message: string
+  context: Record<string, TelemetryPrimitive>
+}
+
+export type ClientTelemetryPayload = ClientErrorTelemetryPayload | HandledOperationTelemetryPayload
 
 const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
 const TOKEN_PATTERN = /\b[A-Za-z0-9_-]{32,}\b/g
@@ -192,8 +210,31 @@ export function buildClientErrorTelemetryPayload(
   }
 }
 
+export function buildHandledOperationTelemetryPayload(
+  event: HandledOperationTelemetryEvent,
+  message: string,
+  context: ClientTelemetryContext = {},
+  config: ClientTelemetryConfig = readClientTelemetryConfig(),
+  now: Date = new Date(),
+): HandledOperationTelemetryPayload {
+  const page =
+    typeof window !== 'undefined' && typeof window.location?.href === 'string'
+      ? redactUrl(window.location.href)
+      : null
+
+  return {
+    event,
+    occurredAt: now.toISOString(),
+    release: config.release,
+    environment: config.environment,
+    page,
+    message: redactText(message, 180),
+    context: normalizeContext(context),
+  }
+}
+
 export function sendClientTelemetryPayload(
-  payload: ClientErrorTelemetryPayload,
+  payload: ClientTelemetryPayload,
   config: ClientTelemetryConfig = readClientTelemetryConfig(),
 ): boolean {
   if (!config.enabled || !config.endpoint) {
@@ -236,6 +277,16 @@ export function reportClientError(
   config: ClientTelemetryConfig = readClientTelemetryConfig(),
 ): boolean {
   const payload = buildClientErrorTelemetryPayload(kind, error, context, config)
+  return sendClientTelemetryPayload(payload, config)
+}
+
+export function reportHandledOperationTelemetry(
+  event: HandledOperationTelemetryEvent,
+  message: string,
+  context: ClientTelemetryContext = {},
+  config: ClientTelemetryConfig = readClientTelemetryConfig(),
+): boolean {
+  const payload = buildHandledOperationTelemetryPayload(event, message, context, config)
   return sendClientTelemetryPayload(payload, config)
 }
 

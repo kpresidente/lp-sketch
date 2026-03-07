@@ -762,13 +762,9 @@
             "properties": {
               "symbolType": {
                 "enum": [
-                  "bond",
                   "continued",
-                  "connect_existing",
                   "through_wall_connector",
-                  "ground_rod",
-                  "steel_bond",
-                  "cable_to_cable_connection"
+                  "steel_bond"
                 ]
               }
             }
@@ -788,10 +784,14 @@
                 "enum": [
                   "air_terminal",
                   "bonded_air_terminal",
+                  "bond",
+                  "cable_to_cable_connection",
                   "cadweld_connection",
                   "cadweld_crossrun_connection",
+                  "connect_existing",
                   "conduit_downlead_ground",
                   "conduit_downlead_roof",
+                  "ground_rod",
                   "mechanical_crossrun_connection",
                   "surface_downlead_ground",
                   "surface_downlead_roof",
