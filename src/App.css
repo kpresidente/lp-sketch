@@ -1903,6 +1903,13 @@ select.select-field:focus {
   pointer-events: none;
 }
 
+.workspace-canvas-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
 .app-error-boundary {
   min-height: 100vh;
   display: flex;

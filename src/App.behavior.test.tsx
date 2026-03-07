@@ -17,6 +17,7 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import * as workspaceRenderer from './config/workspaceRenderer'
 
 vi.setConfig({ testTimeout: 15000 })
 
@@ -25,6 +26,30 @@ const fakeCanvasContext = {
   fillRect: vi.fn(),
   scale: vi.fn(),
   drawImage: vi.fn(),
+  setLineDash: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  quadraticCurveTo: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  stroke: vi.fn(),
+  fill: vi.fn(),
+  fillText: vi.fn(),
+  closePath: vi.fn(),
+  arc: vi.fn(),
+  rect: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  strokeStyle: '',
+  fillStyle: '',
+  lineWidth: 1,
+  lineCap: 'butt' as CanvasLineCap,
+  lineJoin: 'miter' as CanvasLineJoin,
+  font: '',
+  textBaseline: 'alphabetic' as CanvasTextBaseline,
+  textAlign: 'left' as CanvasTextAlign,
 }
 
 const originalRequestAnimationFrame = globalThis.requestAnimationFrame
@@ -222,6 +247,15 @@ describe('App behavior integration', () => {
     const units = Array.from(container.querySelectorAll('.scale-input-unit'))
       .map((entry) => entry.textContent?.trim())
     expect(units).toEqual(['in', 'ft'])
+  })
+
+  it('mounts the workspace canvas instead of the persisted SVG overlay when the spike flag is enabled', () => {
+    vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
+
+    const { container } = render(() => <App />)
+
+    expect(container.querySelector('.workspace-canvas-layer')).toBeTruthy()
+    expect(container.querySelector('.overlay-layer')).toBeNull()
   })
 
   it('shows and clears report repro steps based on report type', async () => {

@@ -12,6 +12,7 @@ import AppSidebar from './components/AppSidebar'
 import CanvasStage from './components/CanvasStage'
 import OverlayLayer from './components/OverlayLayer'
 import PropertiesToolOptions from './components/PropertiesToolOptions'
+import WorkspaceCanvas from './workspace/WorkspaceCanvas'
 import { createSidebarController } from './components/sidebar/createSidebarController'
 import AnnotationEditDialog from './components/dialogs/AnnotationEditDialog'
 import GeneralNotesDialog from './components/dialogs/GeneralNotesDialog'
@@ -27,6 +28,7 @@ import { useProjectFileActions } from './hooks/useProjectFileActions'
 import { useProjectAutosave } from './hooks/useProjectAutosave'
 import { useDialogResizeSync } from './hooks/useDialogResizeSync'
 import { useGlobalAppShortcuts } from './hooks/useGlobalAppShortcuts'
+import { workspaceCanvasSpikeEnabled } from './config/workspaceRenderer'
 import {
   resolveInputPoint as resolveInputPointEngine,
   snapReferencePointForTool as snapReferencePointForToolEngine,
@@ -323,6 +325,7 @@ interface QueuedToolPointerMoveEvent {
 }
 
 function App() {
+  const workspaceCanvasSpike = workspaceCanvasSpikeEnabled()
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
     past: [],
@@ -4010,36 +4013,43 @@ function App() {
           onWheel={handleWheel}
           onDoubleClick={handleDoubleClick}
         >
-          <OverlayLayer
-            project={viewportVisibleProject()}
-            annotationScale={annotationScale()}
-            selected={overlaySelected()}
-            multiSelectedKeys={overlayMultiSelectedKeys()}
-            hovered={hoveredSelection()}
-            legendUi={legendUi()}
-            textFontSizePx={textFontSizePx()}
-            textLineHeightPx={textLineHeightPx()}
-            approximateTextWidth={approximateTextWidthWithScale}
-            legendEntriesForPlacement={legendEntriesForPlacement}
-            legendBoxSize={legendBoxSizeWithScale}
-            legendLineText={legendLineText}
-            measurePathPreview={measurePathPreview()}
-            markPathPreview={markPathPreview()}
-            linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
-            linearAutoSpacingVertices={linearAutoSpacingVertices()}
-            linearAutoSpacingCorners={linearAutoSpacingCorners()}
-            arcChordPreview={arcChordPreview()}
-            arcCurvePreview={arcCurvePreview()}
-            linePreview={linePreview()}
-            dimensionTextPreview={dimensionTextPreview()}
-            directionPreview={directionPreview()}
-            arrowPreview={arrowPreview()}
-            calibrationLinePreview={calibrationLinePreview()}
-            dimensionTextLabel={dimensionTextLabelWithScale}
-            snapPointPreview={snapPointPreview()}
-            selectionHandlePreview={selectionHandlePreview()}
-            selectionDebugLabel={selectionDebugLabel()}
-          />
+          <Show
+            when={workspaceCanvasSpike}
+            fallback={(
+              <OverlayLayer
+                project={viewportVisibleProject()}
+                annotationScale={annotationScale()}
+                selected={overlaySelected()}
+                multiSelectedKeys={overlayMultiSelectedKeys()}
+                hovered={hoveredSelection()}
+                legendUi={legendUi()}
+                textFontSizePx={textFontSizePx()}
+                textLineHeightPx={textLineHeightPx()}
+                approximateTextWidth={approximateTextWidthWithScale}
+                legendEntriesForPlacement={legendEntriesForPlacement}
+                legendBoxSize={legendBoxSizeWithScale}
+                legendLineText={legendLineText}
+                measurePathPreview={measurePathPreview()}
+                markPathPreview={markPathPreview()}
+                linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
+                linearAutoSpacingVertices={linearAutoSpacingVertices()}
+                linearAutoSpacingCorners={linearAutoSpacingCorners()}
+                arcChordPreview={arcChordPreview()}
+                arcCurvePreview={arcCurvePreview()}
+                linePreview={linePreview()}
+                dimensionTextPreview={dimensionTextPreview()}
+                directionPreview={directionPreview()}
+                arrowPreview={arrowPreview()}
+                calibrationLinePreview={calibrationLinePreview()}
+                dimensionTextLabel={dimensionTextLabelWithScale}
+                snapPointPreview={snapPointPreview()}
+                selectionHandlePreview={selectionHandlePreview()}
+                selectionDebugLabel={selectionDebugLabel()}
+              />
+            )}
+          >
+            <WorkspaceCanvas project={visibleProject()} />
+          </Show>
         </CanvasStage>
 
         <Show when={annotationEdit()}>
