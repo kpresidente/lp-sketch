@@ -309,6 +309,19 @@ function deriveScaleInputValues(
   }
 }
 
+interface QueuedToolPointerMoveEvent {
+  currentTarget: HTMLDivElement
+  clientX: number
+  clientY: number
+  pointerId: number
+  pointerType: PointerEvent['pointerType']
+  ctrlKey: boolean
+  shiftKey: boolean
+  altKey: boolean
+  metaKey: boolean
+  preventDefault: () => void
+}
+
 function App() {
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
@@ -325,6 +338,9 @@ function App() {
   const [hoveredSelection, setHoveredSelection] = createSignal<Selection | null>(null)
 
   const [dragState, setDragState] = createSignal<DragState | null>(null)
+  const [dragPreviewProject, setDragPreviewProject] = createSignal<LpProject | null>(null, {
+    equals: false,
+  })
   const [cursorDoc, setCursorDoc] = createSignal<Point | null>(null)
   const [snapPointPreview, setSnapPointPreview] = createSignal<SnapPointPreview | null>(null)
   const [lineStart, setLineStart] = createSignal<Point | null>(null)
@@ -384,6 +400,9 @@ function App() {
   let pdfCanvasRef: HTMLCanvasElement | undefined
   let touchSpacingTimer: number | null = null
   let targetDistanceSnapLock: TargetDistanceSnapLock | null = null
+  let queuedToolPointerMove: QueuedToolPointerMoveEvent | null = null
+  let queuedToolPointerFrame: number | null = null
+  let lastDragPreviewDelta: Point | null = null
   const activeTouchPoints = new Map<number, Point>()
 
   const pdfSignature = createMemo(() => {
@@ -392,8 +411,9 @@ function App() {
   })
 
   const hasPdf = createMemo(() => Boolean(project().pdf.dataBase64))
+  const overlaySourceProject = createMemo(() => dragPreviewProject() ?? project())
   const visibleProject = createMemo(() => {
-    const current = project()
+    const current = overlaySourceProject()
     const page = current.view.currentPage
     const pageScoped = filterProjectByCurrentPage(current, page)
     const layerAndPageScoped = filterProjectByVisibleLayers(pageScoped)
@@ -835,6 +855,222 @@ function App() {
     })
   }
 
+  function snapshotToolPointerMoveEvent(
+    event: PointerEvent & { currentTarget: HTMLDivElement },
+  ): QueuedToolPointerMoveEvent {
+    return {
+      currentTarget: event.currentTarget,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+      preventDefault: () => {
+        event.preventDefault()
+      },
+    }
+  }
+
+  function clearPendingToolPointerMove(pointerId?: number) {
+    if (pointerId !== undefined && queuedToolPointerMove?.pointerId !== pointerId) {
+      return
+    }
+
+    queuedToolPointerMove = null
+    if (queuedToolPointerFrame !== null) {
+      cancelAnimationFrame(queuedToolPointerFrame)
+      queuedToolPointerFrame = null
+    }
+  }
+
+  function clearDragPreviewState() {
+    lastDragPreviewDelta = null
+    setDragPreviewProject(null)
+  }
+
+  function primeDragPreviewIfNeeded(pointerId: number) {
+    const drag = dragState()
+    if (
+      !drag ||
+      drag.pointerId !== pointerId ||
+      (drag.kind !== 'move' && drag.kind !== 'edit-handle')
+    ) {
+      clearDragPreviewState()
+      return
+    }
+
+    clearDragPreviewState()
+  }
+
+  function processToolPointerMove(event: QueuedToolPointerMoveEvent) {
+    const pointerEvent = event as PointerEvent & { currentTarget: HTMLDivElement }
+
+    if (handleTouchPointerMoveForGesture({
+      event: pointerEvent,
+      activeTouchPoints,
+      screenPointFromPointer,
+      touchGesture,
+      clearTouchGesture,
+      beginTouchGestureFromActivePointers,
+      updateView,
+      setSnapPointPreview,
+      setHoveredSelection,
+    })) {
+      return
+    }
+
+    const currentTool = tool()
+    const activeDrag = dragState()
+
+    const rawDoc = docPointFromPointer(pointerEvent)
+    let resolvedDoc = rawDoc
+    if (rawDoc) {
+      if (!handlePointerHover({
+        event: pointerEvent,
+        currentTool,
+        rawDoc,
+        activeDrag,
+        selected,
+        multiSelection,
+        setCursorDoc,
+        setSnapPointPreview,
+        setHoveredSelection,
+        hitTest,
+        hitTestArcForAutoSpacing,
+      })) {
+        const selectDragState = currentTool === 'select' ? activeDrag : null
+        const snapReference = snapReferencePointForTool(currentTool, {
+          selectDragState,
+        })
+        const snapResolution = resolveSnapPoint(rawDoc, {
+          excludeSelection:
+            activeDrag && (activeDrag.kind === 'move' || activeDrag.kind === 'edit-handle')
+              ? activeDrag.kind === 'move'
+                ? (activeDrag.selections[0] ?? null)
+                : activeDrag.selection
+              : null,
+          referencePoint: snapReference,
+        })
+        const resolvedInput = resolveInputPoint(rawDoc, pointerEvent, snapResolution, {
+          selectDragState,
+          snapReferencePoint: snapReference,
+        })
+        resolvedDoc = resolvedInput.point
+        setCursorDoc(resolvedDoc)
+        setSnapPointPreview(resolvedInput.preview)
+        setHoveredSelection(null)
+      }
+    } else {
+      resolvedDoc = null
+      setCursorDoc(null)
+      setSnapPointPreview(null)
+      setHoveredSelection(null)
+    }
+
+    if (handleTouchSpacingPendingMove({
+      event: pointerEvent,
+      touchLongPressMoveTolerancePx: TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX,
+      touchSpacingPending,
+      screenPointFromPointer,
+      clearTouchSpacingTimer,
+    })) {
+      return
+    }
+
+    const drag = dragState()
+    if (!drag) {
+      return
+    }
+
+    if (drag.pointerId !== pointerEvent.pointerId) {
+      return
+    }
+
+    if (drag.kind === 'pan') {
+      const currentScreen = screenPointFromPointer(pointerEvent)
+
+      if (!currentScreen) {
+        return
+      }
+
+      const deltaX = currentScreen.x - drag.startScreen.x
+      const deltaY = currentScreen.y - drag.startScreen.y
+
+      updateView((view) => ({
+        ...view,
+        pan: {
+          x: drag.startPan.x + deltaX,
+          y: drag.startPan.y + deltaY,
+        },
+      }))
+      return
+    }
+
+    const currentDoc = resolvedDoc
+    if (!currentDoc) {
+      return
+    }
+
+    const delta = {
+      x: currentDoc.x - drag.startDoc.x,
+      y: currentDoc.y - drag.startDoc.y,
+    }
+
+    const nextProject = dragPreviewProject() ?? cloneProject(drag.sourceProject)
+    if (drag.kind === 'move') {
+      const previousDelta = lastDragPreviewDelta ?? { x: 0, y: 0 }
+      moveSelectionsByDelta(nextProject, drag.selections, {
+        x: delta.x - previousDelta.x,
+        y: delta.y - previousDelta.y,
+      })
+      lastDragPreviewDelta = delta
+    } else {
+      moveSelectionHandleByDelta(nextProject, drag.sourceProject, drag.handle, delta)
+      lastDragPreviewDelta = delta
+    }
+    setDragPreviewProject(nextProject)
+  }
+
+  function flushPendingToolPointerMove(pointerId?: number) {
+    if (pointerId !== undefined && queuedToolPointerMove?.pointerId !== pointerId) {
+      return
+    }
+
+    const pending = queuedToolPointerMove
+    if (!pending) {
+      clearPendingToolPointerMove(pointerId)
+      return
+    }
+
+    clearPendingToolPointerMove(pointerId)
+    processToolPointerMove(pending)
+  }
+
+  function scheduleToolPointerMove(event: PointerEvent & { currentTarget: HTMLDivElement }) {
+    queuedToolPointerMove = snapshotToolPointerMoveEvent(event)
+    if (queuedToolPointerFrame !== null) {
+      return
+    }
+
+    queuedToolPointerFrame = -1
+    const frameHandle = requestAnimationFrame(() => {
+      const pending = queuedToolPointerMove
+      queuedToolPointerMove = null
+      queuedToolPointerFrame = null
+      if (!pending) {
+        return
+      }
+      processToolPointerMove(pending)
+    })
+
+    if (queuedToolPointerFrame === -1) {
+      queuedToolPointerFrame = frameHandle
+    }
+  }
+
   function isCanvasKeyboardContext(): boolean {
     if (!stageRef || typeof document === 'undefined') {
       return false
@@ -1007,6 +1243,7 @@ function App() {
     const currentView = project().view
     clearTouchSpacingPending()
     setDragState(null)
+    clearDragPreviewState()
     setTouchGesture({
       pointerIds: [firstId, secondId],
       startDistance: Math.max(1, distance(firstPoint, secondPoint)),
@@ -1048,9 +1285,12 @@ function App() {
 
   function clearTransientToolState() {
     clearTargetDistanceSnapLock()
+    clearPendingToolPointerMove()
     activeTouchPoints.clear()
     clearTouchSpacingPending()
     clearTouchGesture()
+    setDragState(null)
+    clearDragPreviewState()
     setLineStart(null)
     setLinePathCommittedDistancePt(0)
     setArcStart(null)
@@ -2015,6 +2255,7 @@ function App() {
     }
 
     const event = normalizePointerEvent(incomingEvent)
+    clearPendingToolPointerMove(event.pointerId)
     if (event.pointerType !== 'touch' && document.activeElement !== event.currentTarget) {
       event.currentTarget.focus({ preventScroll: true })
     }
@@ -2098,6 +2339,7 @@ function App() {
       setError,
       setStatus,
     })) {
+      primeDragPreviewIfNeeded(event.pointerId)
       return
     }
 
@@ -2190,132 +2432,19 @@ function App() {
     incomingEvent: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
     const event = normalizePointerEvent(incomingEvent)
-
-    if (handleTouchPointerMoveForGesture({
-      event,
-      activeTouchPoints,
-      screenPointFromPointer,
-      touchGesture,
-      clearTouchGesture,
-      beginTouchGestureFromActivePointers,
-      updateView,
-      setSnapPointPreview,
-      setHoveredSelection,
-    })) {
+    if (event.pointerType === 'touch') {
+      processToolPointerMove(snapshotToolPointerMoveEvent(event))
       return
     }
 
-    const currentTool = tool()
-    const activeDrag = dragState()
-
-    const rawDoc = docPointFromPointer(event)
-    let resolvedDoc = rawDoc
-    if (rawDoc) {
-      if (!handlePointerHover({
-        event,
-        currentTool,
-        rawDoc,
-        activeDrag,
-        selected,
-        multiSelection,
-        setCursorDoc,
-        setSnapPointPreview,
-        setHoveredSelection,
-        hitTest,
-        hitTestArcForAutoSpacing,
-      })) {
-        const selectDragState = currentTool === 'select' ? activeDrag : null
-        const snapReference = snapReferencePointForTool(currentTool, {
-          selectDragState,
-        })
-        const snapResolution = resolveSnapPoint(rawDoc, {
-          excludeSelection:
-            activeDrag && (activeDrag.kind === 'move' || activeDrag.kind === 'edit-handle')
-              ? activeDrag.kind === 'move'
-                ? (activeDrag.selections[0] ?? null)
-                : activeDrag.selection
-              : null,
-          referencePoint: snapReference,
-        })
-        const resolvedInput = resolveInputPoint(rawDoc, event, snapResolution, {
-          selectDragState,
-          snapReferencePoint: snapReference,
-        })
-        resolvedDoc = resolvedInput.point
-        setCursorDoc(resolvedDoc)
-        setSnapPointPreview(resolvedInput.preview)
-        setHoveredSelection(null)
-      }
-    } else {
-      resolvedDoc = null
-      setCursorDoc(null)
-      setSnapPointPreview(null)
-      setHoveredSelection(null)
-    }
-
-    if (handleTouchSpacingPendingMove({
-      event,
-      touchLongPressMoveTolerancePx: TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX,
-      touchSpacingPending,
-      screenPointFromPointer,
-      clearTouchSpacingTimer,
-    })) {
-      return
-    }
-
-    const drag = dragState()
-    if (!drag) {
-      return
-    }
-
-    if (drag.pointerId !== event.pointerId) {
-      return
-    }
-
-    if (drag.kind === 'pan') {
-      const currentScreen = screenPointFromPointer(event)
-
-      if (!currentScreen) {
-        return
-      }
-
-      const deltaX = currentScreen.x - drag.startScreen.x
-      const deltaY = currentScreen.y - drag.startScreen.y
-
-      updateView((view) => ({
-        ...view,
-        pan: {
-          x: drag.startPan.x + deltaX,
-          y: drag.startPan.y + deltaY,
-        },
-      }))
-      return
-    }
-
-    const currentDoc = resolvedDoc
-    if (!currentDoc) {
-      return
-    }
-
-    const delta = {
-      x: currentDoc.x - drag.startDoc.x,
-      y: currentDoc.y - drag.startDoc.y,
-    }
-
-    const nextProject = cloneProject(drag.sourceProject)
-    if (drag.kind === 'move') {
-      moveSelectionsByDelta(nextProject, drag.selections, delta)
-    } else {
-      moveSelectionHandleByDelta(nextProject, drag.sourceProject, drag.handle, delta)
-    }
-    syncLegendItems(nextProject)
-    setProject(nextProject)
+    scheduleToolPointerMove(event)
   }
 
   function handleToolPointerUp(
     incomingEvent: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
     const event = normalizePointerEvent(incomingEvent)
+    flushPendingToolPointerMove(event.pointerId)
     if (event.pointerType === 'touch') {
       activeTouchPoints.delete(event.pointerId)
     }
@@ -2356,28 +2485,31 @@ function App() {
     }
 
     if (drag.kind === 'move' || drag.kind === 'edit-handle') {
+      const previewProject = dragPreviewProject() ?? project()
       const before = JSON.stringify(drag.sourceProject)
-      const after = JSON.stringify(project())
+      const after = JSON.stringify(previewProject)
 
       if (before !== after) {
         pushHistorySnapshotEntry(cloneProject(drag.sourceProject))
-        setProject((current) => ({
-          ...current,
+        setProject({
+          ...previewProject,
           projectMeta: {
-            ...current.projectMeta,
+            ...previewProject.projectMeta,
             updatedAt: new Date().toISOString(),
           },
-        }))
+        })
       }
     }
 
     setDragState(null)
+    clearDragPreviewState()
   }
 
   function handleToolPointerCancel(
     incomingEvent: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
     const event = normalizePointerEvent(incomingEvent)
+    clearPendingToolPointerMove(event.pointerId)
     if (event.pointerType === 'touch') {
       activeTouchPoints.delete(event.pointerId)
     }
@@ -2410,6 +2542,7 @@ function App() {
     }
 
     setDragState(null)
+    clearDragPreviewState()
   }
 
   function handleWheel(event: WheelEvent & { currentTarget: HTMLDivElement }) {
@@ -2557,6 +2690,7 @@ function App() {
     toggleHelp: helpState.toggleHelp,
     onResize: syncDialogResize,
     onCleanupExtra: () => {
+      clearPendingToolPointerMove()
       activeTouchPoints.clear()
       clearTouchSpacingPending()
       clearTouchGesture()

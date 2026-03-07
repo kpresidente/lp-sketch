@@ -18,6 +18,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/te
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { distanceToQuadratic } from './lib/geometry'
+import * as projectState from './lib/projectState'
 
 const fakeCanvasContext = {
   clearRect: vi.fn(),
@@ -25,6 +26,9 @@ const fakeCanvasContext = {
   scale: vi.fn(),
   drawImage: vi.fn(),
 }
+
+const originalRequestAnimationFrame = globalThis.requestAnimationFrame
+const originalCancelAnimationFrame = globalThis.cancelAnimationFrame
 
 beforeAll(() => {
   if (typeof globalThis.Path2D === 'undefined') {
@@ -70,11 +74,20 @@ beforeEach(() => {
     height: 800,
     toJSON: () => ({}),
   } as DOMRect)
+
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    callback(16)
+    return 1
+  }) as typeof globalThis.requestAnimationFrame
+
+  globalThis.cancelAnimationFrame = ((_: number) => undefined) as typeof globalThis.cancelAnimationFrame
 })
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  globalThis.requestAnimationFrame = originalRequestAnimationFrame
+  globalThis.cancelAnimationFrame = originalCancelAnimationFrame
 })
 
 function requireDrawingStage(container: HTMLElement): HTMLDivElement {
@@ -93,6 +106,40 @@ function requireCameraLayer(container: HTMLElement): HTMLDivElement {
     throw new Error('camera layer not found')
   }
   return layer
+}
+
+function installManualAnimationFrameController() {
+  const originalRequestAnimationFrame = globalThis.requestAnimationFrame
+  const originalCancelAnimationFrame = globalThis.cancelAnimationFrame
+  let nextHandle = 1
+  const callbacks = new Map<number, FrameRequestCallback>()
+
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    const handle = nextHandle++
+    callbacks.set(handle, callback)
+    return handle
+  }) as typeof globalThis.requestAnimationFrame
+
+  globalThis.cancelAnimationFrame = ((handle: number) => {
+    callbacks.delete(handle)
+  }) as typeof globalThis.cancelAnimationFrame
+
+  return {
+    flush(timestamp = 16) {
+      const pending = [...callbacks.entries()]
+      callbacks.clear()
+      for (const [, callback] of pending) {
+        callback(timestamp)
+      }
+    },
+    pendingCount() {
+      return callbacks.size
+    },
+    restore() {
+      globalThis.requestAnimationFrame = originalRequestAnimationFrame
+      globalThis.cancelAnimationFrame = originalCancelAnimationFrame
+    },
+  }
 }
 
 function historyButton(container: HTMLElement, index: 0 | 1): HTMLButtonElement {
@@ -2949,6 +2996,153 @@ describe('App interaction integration', () => {
     expect(parseNumericAttr(redoneLine, 'y2')).toBeCloseTo(movedY2, 6)
   })
 
+  it('defers move-drag updates until the next animation frame and flushes the latest move on pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 100,
+        clientY: 120,
+        pointerId: 1031,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 180,
+        pointerId: 1031,
+        pointerType: 'mouse',
+      })
+
+      const initialLine = firstDashedLine(container)
+      const initialX1 = parseNumericAttr(initialLine, 'x1')
+      const initialY1 = parseNumericAttr(initialLine, 'y1')
+      const initialX2 = parseNumericAttr(initialLine, 'x2')
+      const initialY2 = parseNumericAttr(initialLine, 'y2')
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      const initialPendingFrames = animationFrame.pendingCount()
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 160,
+        clientY: 150,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 190,
+        clientY: 180,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+
+      let currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2, 6)
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 210,
+        clientY: 200,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+
+      currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2, 6)
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      await fireEvent.pointerUp(stage, {
+        button: 0,
+        clientX: 210,
+        clientY: 200,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames)
+
+      currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2 + 50, 6)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
+  it('does not clone project state on move-drag pointer frames before pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const cloneProjectSpy = vi.spyOn(projectState, 'cloneProject')
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 120,
+        clientY: 180,
+        pointerId: 1033,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 260,
+        clientY: 180,
+        pointerId: 1033,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 190,
+        clientY: 180,
+        pointerId: 1034,
+        pointerType: 'mouse',
+      })
+
+      cloneProjectSpy.mockClear()
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 210,
+        pointerId: 1034,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 250,
+        clientY: 240,
+        pointerId: 1034,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      expect(cloneProjectSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
   it('moves a selected line endpoint via handle drag without moving the opposite endpoint', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -3032,6 +3226,134 @@ describe('App interaction integration', () => {
     expect(parseNumericAttr(restoredLine, 'y1')).toBeCloseTo(originalStart.y, 6)
     expect(parseNumericAttr(restoredLine, 'x2')).toBeCloseTo(originalEnd.x, 6)
     expect(parseNumericAttr(restoredLine, 'y2')).toBeCloseTo(originalEnd.y, 6)
+  })
+
+  it('does not clone project state on handle-edit pointer frames before pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const cloneProjectSpy = vi.spyOn(projectState, 'cloneProject')
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 220,
+        pointerId: 1331,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 420,
+        clientY: 220,
+        pointerId: 1331,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 320,
+        clientY: 220,
+        pointerId: 1332,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerUp(stage, {
+        button: 0,
+        clientX: 320,
+        clientY: 220,
+        pointerId: 1332,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        shiftKey: true,
+        ctrlKey: true,
+        clientX: 220,
+        clientY: 220,
+        pointerId: 1333,
+        pointerType: 'mouse',
+      })
+
+      cloneProjectSpy.mockClear()
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        shiftKey: true,
+        ctrlKey: true,
+        clientX: 220,
+        clientY: 300,
+        pointerId: 1333,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      expect(cloneProjectSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
+  it('keeps legend placement visually aligned during preview-only drag before pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Legend' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 260,
+        clientY: 220,
+        pointerId: 1334,
+        pointerType: 'mouse',
+      })
+
+      const legendBox = container.querySelector('svg.overlay-layer rect[fill="#fffffff0"]')
+      expect(legendBox).not.toBeNull()
+      if (!legendBox) {
+        return
+      }
+
+      const initialX = parseNumericAttr(legendBox, 'x')
+      const initialY = parseNumericAttr(legendBox, 'y')
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 300,
+        clientY: 260,
+        pointerId: 1335,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 340,
+        clientY: 300,
+        pointerId: 1335,
+        pointerType: 'mouse',
+      })
+
+      expect(parseNumericAttr(legendBox, 'x')).toBeCloseTo(initialX, 6)
+      expect(parseNumericAttr(legendBox, 'y')).toBeCloseTo(initialY, 6)
+
+      animationFrame.flush()
+
+      const movedLegendBox = container.querySelector('svg.overlay-layer rect[fill="#fffffff0"]')
+      expect(movedLegendBox).not.toBeNull()
+      if (!movedLegendBox) {
+        return
+      }
+
+      expect(parseNumericAttr(movedLegendBox, 'x')).toBeCloseTo(initialX + 40, 6)
+      expect(parseNumericAttr(movedLegendBox, 'y')).toBeCloseTo(initialY + 40, 6)
+    } finally {
+      animationFrame.restore()
+    }
   })
 
   it('keeps line handles aligned after moving a selected line and allows immediate handle edit without reselect', async () => {
@@ -3258,6 +3580,91 @@ describe('App interaction integration', () => {
     const movedLine = firstDashedLine(container)
     expect(parseNumericAttr(movedLine, 'x2')).toBeCloseTo(line2Start.x, 3)
     expect(parseNumericAttr(movedLine, 'y2')).toBeCloseTo(line2Start.y, 3)
+  })
+
+  it('defers handle-drag snap preview until the next animation frame', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 200,
+        clientY: 240,
+        pointerId: 1741,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 300,
+        clientY: 240,
+        pointerId: 1741,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 420,
+        clientY: 240,
+        pointerId: 1742,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 520,
+        clientY: 240,
+        pointerId: 1742,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      const initialPendingFrames = animationFrame.pendingCount()
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 250,
+        clientY: 240,
+        pointerId: 1743,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerUp(stage, {
+        button: 0,
+        clientX: 250,
+        clientY: 240,
+        pointerId: 1743,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 300,
+        clientY: 240,
+        pointerId: 1744,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 414,
+        clientY: 246,
+        pointerId: 1744,
+        pointerType: 'mouse',
+      })
+
+      expect(container.querySelector('g[data-snap-marker="active"]')).toBeNull()
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      animationFrame.flush()
+
+      expect(
+        container.querySelector(
+          'g[data-snap-marker="active"][data-snap-marker-kind="endpoint"] rect[data-snap-shape="square"]',
+        ),
+      ).not.toBeNull()
+    } finally {
+      animationFrame.restore()
+    }
   })
 
   it('does not show self-snap marker while dragging a selected line endpoint with no other targets', async () => {
