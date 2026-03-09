@@ -11,6 +11,5 @@ function parseEnabledFlag(raw: unknown): boolean {
 }
 
 export function workspaceCanvasSpikeEnabled(env: Record<string, unknown> = import.meta.env): boolean {
-  const devMode = env.DEV === true || env.DEV === 'true'
-  return devMode && parseEnabledFlag(env.VITE_WORKSPACE_CANVAS_SPIKE)
+  return parseEnabledFlag(env.VITE_WORKSPACE_CANVAS_SPIKE)
 }

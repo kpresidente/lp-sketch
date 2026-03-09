@@ -1910,6 +1910,13 @@ select.select-field:focus {
   pointer-events: none;
 }
 
+.workspace-interaction-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
 .app-error-boundary {
   min-height: 100vh;
   display: flex;

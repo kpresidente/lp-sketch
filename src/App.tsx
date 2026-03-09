@@ -12,6 +12,7 @@ import AppSidebar from './components/AppSidebar'
 import CanvasStage from './components/CanvasStage'
 import OverlayLayer from './components/OverlayLayer'
 import PropertiesToolOptions from './components/PropertiesToolOptions'
+import WorkspaceInteractionOverlay from './components/WorkspaceInteractionOverlay'
 import WorkspaceCanvas from './workspace/WorkspaceCanvas'
 import { createSidebarController } from './components/sidebar/createSidebarController'
 import AnnotationEditDialog from './components/dialogs/AnnotationEditDialog'
@@ -4048,7 +4049,38 @@ function App() {
               />
             )}
           >
-            <WorkspaceCanvas project={visibleProject()} />
+            <>
+              <WorkspaceCanvas project={visibleProject()} />
+              <WorkspaceInteractionOverlay
+                project={viewportVisibleProject()}
+                annotationScale={annotationScale()}
+                selected={overlaySelected()}
+                multiSelectedKeys={overlayMultiSelectedKeys()}
+                hovered={hoveredSelection()}
+                legendUi={legendUi()}
+                textFontSizePx={textFontSizePx()}
+                textLineHeightPx={textLineHeightPx()}
+                approximateTextWidth={approximateTextWidthWithScale}
+                legendEntriesForPlacement={legendEntriesForPlacement}
+                legendBoxSize={legendBoxSizeWithScale}
+                measurePathPreview={measurePathPreview()}
+                markPathPreview={markPathPreview()}
+                linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
+                linearAutoSpacingVertices={linearAutoSpacingVertices()}
+                linearAutoSpacingCorners={linearAutoSpacingCorners()}
+                arcChordPreview={arcChordPreview()}
+                arcCurvePreview={arcCurvePreview()}
+                linePreview={linePreview()}
+                dimensionTextPreview={dimensionTextPreview()}
+                directionPreview={directionPreview()}
+                arrowPreview={arrowPreview()}
+                calibrationLinePreview={calibrationLinePreview()}
+                dimensionTextLabel={dimensionTextLabelWithScale}
+                snapPointPreview={snapPointPreview()}
+                selectionHandlePreview={selectionHandlePreview()}
+                selectionDebugLabel={selectionDebugLabel()}
+              />
+            </>
           </Show>
         </CanvasStage>
 

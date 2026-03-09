@@ -84,6 +84,8 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
+
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     fakeCanvasContext as unknown as CanvasRenderingContext2D,
   )
@@ -249,12 +251,13 @@ describe('App behavior integration', () => {
     expect(units).toEqual(['in', 'ft'])
   })
 
-  it('mounts the workspace canvas instead of the persisted SVG overlay when the spike flag is enabled', () => {
+  it('mounts the workspace canvas and interaction overlay instead of the persisted SVG overlay when the spike flag is enabled', () => {
     vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
 
     const { container } = render(() => <App />)
 
     expect(container.querySelector('.workspace-canvas-layer')).toBeTruthy()
+    expect(container.querySelector('.workspace-interaction-overlay')).toBeTruthy()
     expect(container.querySelector('.overlay-layer')).toBeNull()
   })
 

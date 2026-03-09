@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { workspaceCanvasSpikeEnabled } from './workspaceRenderer'
 
 describe('workspaceCanvasSpikeEnabled', () => {
-  it('enables the spike only for developer mode with the explicit flag', () => {
+  it('enables the spike whenever the explicit env flag is set', () => {
     expect(
       workspaceCanvasSpikeEnabled({
         DEV: true,
@@ -15,7 +15,7 @@ describe('workspaceCanvasSpikeEnabled', () => {
         DEV: false,
         VITE_WORKSPACE_CANVAS_SPIKE: 'true',
       }),
-    ).toBe(false)
+    ).toBe(true)
 
     expect(
       workspaceCanvasSpikeEnabled({

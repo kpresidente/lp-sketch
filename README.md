@@ -54,4 +54,4 @@ The canonical project schema used by runtime validation is:
 
 ## Developer Flags
 
-- `VITE_WORKSPACE_CANVAS_SPIKE` - enables the read-only canvas workspace spike in development builds only
+- `VITE_WORKSPACE_CANVAS_SPIKE` - enables the canvas workspace flag path when set
