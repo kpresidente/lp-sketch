@@ -2,6 +2,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  onCleanup,
   on,
   Show,
 } from 'solid-js'
@@ -246,6 +247,7 @@ const SYMBOL_OPTIONS: SymbolType[] = [
 const COLOR_OPTIONS: MaterialColor[] = ['green', 'blue', 'purple', 'red']
 const LEGEND_TITLE = 'Legend'
 const TOUCH_LONG_PRESS_MS = 360
+const PDF_RENDER_SETTLE_MS = 120
 const TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX = 10
 const SELECTION_HANDLE_HIT_TOLERANCE_PX = 12
 const LINEAR_HIT_TIE_TOLERANCE_PX = 0.5
@@ -385,6 +387,7 @@ function App() {
     createSignal<Record<number, ManualScaleInputSnapshot>>({})
   const [measureTargetDistanceInput, setMeasureTargetDistanceInput] = createSignal('')
   const [pdfBrightnessPreview, setPdfBrightnessPreview] = createSignal(1)
+  const [pdfInteractionActive, setPdfInteractionActive] = createSignal(false)
   const [downleadVerticalFootagePlacementInput, setDownleadVerticalFootagePlacementInput] = createSignal('0')
   const [downleadVerticalFootageSelectedInput, setDownleadVerticalFootageSelectedInput] = createSignal('')
   const [annotationEdit, setAnnotationEdit] = createSignal<AnnotationEditState | null>(null)
@@ -402,6 +405,7 @@ function App() {
   let stageRef: HTMLDivElement | undefined
   let stageResizeObserver: ResizeObserver | undefined
   let pdfCanvasRef: HTMLCanvasElement | undefined
+  let pdfInteractionSettleTimer: number | null = null
   let touchSpacingTimer: number | null = null
   let targetDistanceSnapLock: TargetDistanceSnapLock | null = null
   let queuedToolPointerMove: QueuedToolPointerMoveEvent | null = null
@@ -413,6 +417,19 @@ function App() {
     const pdf = project().pdf
     return `${pdf.sha256}:${pdf.pageCount}:${pdf.widthPt}:${pdf.heightPt}:${pdf.dataBase64?.length ?? 0}`
   })
+  const pdfRenderScale = createMemo(() => clamp(project().view.zoom, 1, 2))
+
+  function markPdfInteractionActive() {
+    setPdfInteractionActive(true)
+    if (pdfInteractionSettleTimer !== null) {
+      window.clearTimeout(pdfInteractionSettleTimer)
+    }
+
+    pdfInteractionSettleTimer = window.setTimeout(() => {
+      pdfInteractionSettleTimer = null
+      setPdfInteractionActive(false)
+    }, PDF_RENDER_SETTLE_MS)
+  }
 
   const hasPdf = createMemo(() => Boolean(project().pdf.dataBase64))
   const overlaySourceProject = createMemo(() => dragPreviewProject() ?? project())
@@ -541,7 +558,16 @@ function App() {
     pdfState: () => project().pdf,
     pdfSignature,
     currentPage: () => project().view.currentPage,
+    renderScale: pdfRenderScale,
+    interactionActive: pdfInteractionActive,
     setError,
+  })
+
+  onCleanup(() => {
+    if (pdfInteractionSettleTimer !== null) {
+      window.clearTimeout(pdfInteractionSettleTimer)
+      pdfInteractionSettleTimer = null
+    }
   })
 
   const {
@@ -1348,6 +1374,7 @@ function App() {
   }
 
   function updateView(mutator: (view: { zoom: number; pan: Point }) => { zoom: number; pan: Point }) {
+    markPdfInteractionActive()
     setProject((prev) => ({
       ...prev,
       view: (() => {
