@@ -18,13 +18,42 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/te
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { distanceToQuadratic } from './lib/geometry'
+import * as projectState from './lib/projectState'
+import * as workspaceRenderer from './config/workspaceRenderer'
 
 const fakeCanvasContext = {
   clearRect: vi.fn(),
   fillRect: vi.fn(),
   scale: vi.fn(),
   drawImage: vi.fn(),
+  setLineDash: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  quadraticCurveTo: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  stroke: vi.fn(),
+  fill: vi.fn(),
+  fillText: vi.fn(),
+  closePath: vi.fn(),
+  arc: vi.fn(),
+  rect: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  strokeStyle: '',
+  fillStyle: '',
+  lineWidth: 1,
+  lineCap: 'butt' as CanvasLineCap,
+  lineJoin: 'miter' as CanvasLineJoin,
+  font: '',
+  textBaseline: 'alphabetic' as CanvasTextBaseline,
+  textAlign: 'left' as CanvasTextAlign,
 }
+
+const originalRequestAnimationFrame = globalThis.requestAnimationFrame
+const originalCancelAnimationFrame = globalThis.cancelAnimationFrame
 
 beforeAll(() => {
   if (typeof globalThis.Path2D === 'undefined') {
@@ -55,6 +84,8 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
+
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     fakeCanvasContext as unknown as CanvasRenderingContext2D,
   )
@@ -70,12 +101,25 @@ beforeEach(() => {
     height: 800,
     toJSON: () => ({}),
   } as DOMRect)
+
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    callback(16)
+    return 1
+  }) as typeof globalThis.requestAnimationFrame
+
+  globalThis.cancelAnimationFrame = ((_: number) => undefined) as typeof globalThis.cancelAnimationFrame
 })
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  globalThis.requestAnimationFrame = originalRequestAnimationFrame
+  globalThis.cancelAnimationFrame = originalCancelAnimationFrame
 })
+
+function enableWorkspaceCanvasFlag() {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
+}
 
 function requireDrawingStage(container: HTMLElement): HTMLDivElement {
   const stage = container.querySelector('.drawing-stage') as HTMLDivElement | null
@@ -93,6 +137,40 @@ function requireCameraLayer(container: HTMLElement): HTMLDivElement {
     throw new Error('camera layer not found')
   }
   return layer
+}
+
+function installManualAnimationFrameController() {
+  const originalRequestAnimationFrame = globalThis.requestAnimationFrame
+  const originalCancelAnimationFrame = globalThis.cancelAnimationFrame
+  let nextHandle = 1
+  const callbacks = new Map<number, FrameRequestCallback>()
+
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    const handle = nextHandle++
+    callbacks.set(handle, callback)
+    return handle
+  }) as typeof globalThis.requestAnimationFrame
+
+  globalThis.cancelAnimationFrame = ((handle: number) => {
+    callbacks.delete(handle)
+  }) as typeof globalThis.cancelAnimationFrame
+
+  return {
+    flush(timestamp = 16) {
+      const pending = [...callbacks.entries()]
+      callbacks.clear()
+      for (const [, callback] of pending) {
+        callback(timestamp)
+      }
+    },
+    pendingCount() {
+      return callbacks.size
+    },
+    restore() {
+      globalThis.requestAnimationFrame = originalRequestAnimationFrame
+      globalThis.cancelAnimationFrame = originalCancelAnimationFrame
+    },
+  }
 }
 
 function historyButton(container: HTMLElement, index: 0 | 1): HTMLButtonElement {
@@ -208,6 +286,29 @@ function parseStylePx(value: string): number {
   }
 
   return parsed
+}
+
+function requireSelectionHandle(
+  container: HTMLElement,
+  kind: string,
+): SVGCircleElement {
+  const handle = container.querySelector(
+    `circle[data-selection-handle="${kind}"]`,
+  ) as SVGCircleElement | null
+  expect(handle).not.toBeNull()
+  if (!handle) {
+    throw new Error(`selection handle "${kind}" not found`)
+  }
+
+  return handle
+}
+
+function selectionHandlePoint(container: HTMLElement, kind: string) {
+  const handle = requireSelectionHandle(container, kind)
+  return {
+    x: parseNumericAttr(handle, 'cx'),
+    y: parseNumericAttr(handle, 'cy'),
+  }
 }
 
 function hasDashedLineAt(
@@ -895,6 +996,121 @@ describe('App interaction integration', () => {
     ).not.toBeNull()
   })
 
+  it('shows live previews for line, arc, arrow, and calibration workflows with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 120,
+      clientY: 140,
+      pointerId: 1037,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 200,
+      clientY: 170,
+      pointerId: 1037,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#374151"][stroke-dasharray="6 4"]',
+      ),
+    ).not.toBeNull()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Arc' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 260,
+      clientY: 180,
+      pointerId: 1038,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 340,
+      clientY: 180,
+      pointerId: 1038,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#334155"][stroke-dasharray="6 4"]',
+      ),
+    ).not.toBeNull()
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 340,
+      clientY: 180,
+      pointerId: 1038,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 130,
+      pointerId: 1038,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay path[stroke="#334155"][stroke-dasharray="6 4"]',
+      ),
+    ).not.toBeNull()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Arrow' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 420,
+      clientY: 240,
+      pointerId: 1039,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 500,
+      clientY: 290,
+      pointerId: 1039,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#1f2937"][stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
+      ),
+    ).not.toBeNull()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Calibrate' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 220,
+      pointerId: 1040,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 610,
+      clientY: 220,
+      pointerId: 1040,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#0f766e"][stroke-dasharray="8 3"]',
+      ),
+    ).not.toBeNull()
+  })
+
   it('places and edits text notes, with undo for edits', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -929,6 +1145,44 @@ describe('App interaction integration', () => {
     await fireEvent.click(historyButton(container, 0))
     expect(screen.getByText('Roof Note')).toBeTruthy()
     expect(screen.queryByText('Roof Note Updated')).toBeNull()
+  })
+
+  it('places and edits text notes with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Text' }))
+    const textInput = screen.getByLabelText('Text') as HTMLInputElement
+    await fireEvent.input(textInput, { target: { value: 'Roof Note' } })
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 340,
+      clientY: 190,
+      pointerId: 1042,
+      pointerType: 'mouse',
+    })
+
+    expect(screen.getByText('Text note placed.')).toBeTruthy()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.doubleClick(stage, {
+      clientX: 340,
+      clientY: 190,
+    })
+    const dialogInput = screen.getByDisplayValue('Roof Note') as HTMLInputElement
+    await fireEvent.input(dialogInput, { target: { value: 'Roof Note Updated' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    expect(screen.getByText('Text updated.')).toBeTruthy()
+
+    await fireEvent.click(historyButton(container, 0))
+
+    await fireEvent.doubleClick(stage, {
+      clientX: 340,
+      clientY: 190,
+    })
+    expect(screen.getByDisplayValue('Roof Note')).toBeTruthy()
   })
 
   it('does not delete a selected text annotation when Backspace/Delete is pressed inside the text editor input', async () => {
@@ -1112,6 +1366,47 @@ describe('App interaction integration', () => {
     })
   })
 
+  it('shows dimension preview linework with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await applyManualScale('1', '20')
+    await fireEvent.click(screen.getByRole('button', { name: 'Dim Text' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 220,
+      clientY: 220,
+      pointerId: 1951,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 420,
+      clientY: 220,
+      pointerId: 1951,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 320,
+      clientY: 280,
+      pointerId: 1951,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay g[data-dimension-preview="active"]',
+      ),
+    ).not.toBeNull()
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay g[data-dimension-preview-linework="active"]',
+      ),
+    ).not.toBeNull()
+  })
+
   it('supports layer reassignment from the annotation edit dialog and layer visibility toggles', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -1240,6 +1535,72 @@ describe('App interaction integration', () => {
     ).not.toBeNull()
   })
 
+  it('supports arrow placement, selection, undo, and redo with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Arrow' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 420,
+      clientY: 300,
+      pointerId: 1044,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 350,
+      pointerId: 1044,
+      pointerType: 'mouse',
+    })
+
+    expect(screen.getByText('Arrow placed.')).toBeTruthy()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 470,
+      clientY: 325,
+      pointerId: 1045,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 470,
+      clientY: 325,
+      pointerId: 1045,
+      pointerType: 'mouse',
+    })
+
+    expect(container.querySelector('circle[data-selection-handle="arrow-tail"]')).not.toBeNull()
+    expect(container.querySelector('circle[data-selection-handle="arrow-head"]')).not.toBeNull()
+
+    await fireEvent.click(historyButton(container, 0))
+    expect(container.querySelector('circle[data-selection-handle="arrow-tail"]')).toBeNull()
+    expect(container.querySelector('circle[data-selection-handle="arrow-head"]')).toBeNull()
+
+    await fireEvent.click(historyButton(container, 1))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 470,
+      clientY: 325,
+      pointerId: 1046,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 470,
+      clientY: 325,
+      pointerId: 1046,
+      pointerType: 'mouse',
+    })
+
+    expect(container.querySelector('circle[data-selection-handle="arrow-tail"]')).not.toBeNull()
+    expect(container.querySelector('circle[data-selection-handle="arrow-head"]')).not.toBeNull()
+  })
+
   it('supports legend label edits and undo sequence', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -1280,6 +1641,62 @@ describe('App interaction integration', () => {
     expect(screen.queryByText('Class I Copper Air terminal')).toBeNull()
   }, 15000)
 
+  it('supports legend label edits and undo sequence with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'AT' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+      pointerId: 1041,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Legend' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 664,
+      clientY: 104,
+      pointerId: 1041,
+      pointerType: 'mouse',
+    })
+
+    expect(screen.getByText('Legend placed.')).toBeTruthy()
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Labels' }))
+    const roofAirInput = screen.getByDisplayValue('Air terminal A') as HTMLInputElement
+    await fireEvent.input(roofAirInput, { target: { value: 'Roof Air' } })
+    const legendDialog = screen.getByRole('dialog', { name: 'Legend labels editor' })
+    const legendApplyButton = within(legendDialog).getByRole('button', { name: 'Apply' })
+    await fireEvent.click(legendApplyButton)
+    expect(screen.getByText('Legend labels updated.')).toBeTruthy()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Labels' }))
+    expect(screen.getByDisplayValue('Roof Air')).toBeTruthy()
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await fireEvent.click(historyButton(container, 0))
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 664,
+      clientY: 104,
+      pointerId: 1042,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 664,
+      clientY: 104,
+      pointerId: 1042,
+      pointerType: 'mouse',
+    })
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Labels' }))
+    expect(screen.getByDisplayValue('Air terminal A')).toBeTruthy()
+  }, 15000)
+
   it('places and edits shared general notes content', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -1317,6 +1734,55 @@ describe('App interaction integration', () => {
 
     expect(screen.getByText('General notes updated.')).toBeTruthy()
     expect(screen.getByText('1. Install per UL 96A.')).toBeTruthy()
+  }, 15000)
+
+  it('places and edits shared general notes content with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Notes' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 364,
+      clientY: 244,
+      pointerId: 2011,
+      pointerType: 'mouse',
+    })
+
+    expect(screen.getByText('General notes placed.')).toBeTruthy()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.dblClick(stage, {
+      button: 0,
+      clientX: 364,
+      clientY: 244,
+    })
+
+    const noteInput = container.querySelector(
+      '.general-notes-dialog .legend-label-input',
+    ) as HTMLInputElement | null
+    expect(noteInput).not.toBeNull()
+    if (!noteInput) {
+      return
+    }
+
+    await fireEvent.input(noteInput, { target: { value: 'Install per UL 96A.' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(screen.getByText('General notes updated.')).toBeTruthy()
+
+    await fireEvent.dblClick(stage, {
+      button: 0,
+      clientX: 364,
+      clientY: 244,
+    })
+
+    const reopenedInput = container.querySelector(
+      '.general-notes-dialog .legend-label-input',
+    ) as HTMLInputElement | null
+    expect(reopenedInput).not.toBeNull()
+    expect(reopenedInput?.value).toBe('Install per UL 96A.')
   }, 15000)
 
   it('keeps legend label editor on-screen and supports dragging', async () => {
@@ -2562,6 +3028,56 @@ describe('App interaction integration', () => {
     ).toBeNull()
   })
 
+  it('uses temporary hover highlight in select mode with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 240,
+      clientY: 220,
+      pointerId: 1851,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 220,
+      pointerId: 1851,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerMove(stage, {
+      clientX: 300,
+      clientY: 220,
+      pointerId: 1852,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#0369a1"][stroke-dasharray]',
+      ),
+    ).not.toBeNull()
+    expect(container.querySelector('g[data-snap-marker="active"]')).toBeNull()
+
+    await fireEvent.pointerMove(stage, {
+      clientX: 1000,
+      clientY: 700,
+      pointerId: 1852,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#0369a1"][stroke-dasharray]',
+      ),
+    ).toBeNull()
+  })
+
   it('prefers mark hover/selection over overlapping line candidates in select mode', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -2809,6 +3325,71 @@ describe('App interaction integration', () => {
     expect(container.querySelector('svg.overlay-layer line[stroke="#111827"][stroke-dasharray]')).toBeNull()
   })
 
+  it('shows selection highlight immediately on click with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 260,
+      clientY: 220,
+      pointerId: 186,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 360,
+      clientY: 220,
+      pointerId: 186,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+      pointerId: 187,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+      pointerId: 187,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#111827"][stroke-dasharray]',
+      ),
+    ).not.toBeNull()
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 1000,
+      clientY: 700,
+      pointerId: 188,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 1000,
+      clientY: 700,
+      pointerId: 188,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay line[stroke="#111827"][stroke-dasharray]',
+      ),
+    ).toBeNull()
+  })
+
   it('prefers symbol selection over overlapping line candidates', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -2949,6 +3530,269 @@ describe('App interaction integration', () => {
     expect(parseNumericAttr(redoneLine, 'y2')).toBeCloseTo(movedY2, 6)
   })
 
+  it('treats drag move as one undoable transaction with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+      pointerId: 1101,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 220,
+      clientY: 180,
+      pointerId: 1101,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 160,
+      clientY: 150,
+      pointerId: 1102,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 160,
+      clientY: 150,
+      pointerId: 1102,
+      pointerType: 'mouse',
+    })
+
+    const initialStart = selectionHandlePoint(container, 'line-start')
+    const initialEnd = selectionHandlePoint(container, 'line-end')
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 160,
+      clientY: 150,
+      pointerId: 1103,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 210,
+      clientY: 200,
+      pointerId: 1103,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 210,
+      clientY: 200,
+      pointerId: 1103,
+      pointerType: 'mouse',
+    })
+
+    const movedStart = selectionHandlePoint(container, 'line-start')
+    const movedEnd = selectionHandlePoint(container, 'line-end')
+    expect(movedStart.x).not.toBeCloseTo(initialStart.x, 3)
+    expect(movedStart.y).not.toBeCloseTo(initialStart.y, 3)
+    expect(movedEnd.x).not.toBeCloseTo(initialEnd.x, 3)
+    expect(movedEnd.y).not.toBeCloseTo(initialEnd.y, 3)
+
+    await fireEvent.click(historyButton(container, 0))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 160,
+      clientY: 150,
+      pointerId: 1104,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 160,
+      clientY: 150,
+      pointerId: 1104,
+      pointerType: 'mouse',
+    })
+
+    const restoredStart = selectionHandlePoint(container, 'line-start')
+    const restoredEnd = selectionHandlePoint(container, 'line-end')
+    expect(restoredStart.x).toBeCloseTo(initialStart.x, 6)
+    expect(restoredStart.y).toBeCloseTo(initialStart.y, 6)
+    expect(restoredEnd.x).toBeCloseTo(initialEnd.x, 6)
+    expect(restoredEnd.y).toBeCloseTo(initialEnd.y, 6)
+
+    await fireEvent.click(historyButton(container, 1))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 210,
+      clientY: 200,
+      pointerId: 1105,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 210,
+      clientY: 200,
+      pointerId: 1105,
+      pointerType: 'mouse',
+    })
+
+    const redoneStart = selectionHandlePoint(container, 'line-start')
+    const redoneEnd = selectionHandlePoint(container, 'line-end')
+    expect(redoneStart.x).toBeCloseTo(movedStart.x, 6)
+    expect(redoneStart.y).toBeCloseTo(movedStart.y, 6)
+    expect(redoneEnd.x).toBeCloseTo(movedEnd.x, 6)
+    expect(redoneEnd.y).toBeCloseTo(movedEnd.y, 6)
+  })
+
+  it('defers move-drag updates until the next animation frame and flushes the latest move on pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 100,
+        clientY: 120,
+        pointerId: 1031,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 180,
+        pointerId: 1031,
+        pointerType: 'mouse',
+      })
+
+      const initialLine = firstDashedLine(container)
+      const initialX1 = parseNumericAttr(initialLine, 'x1')
+      const initialY1 = parseNumericAttr(initialLine, 'y1')
+      const initialX2 = parseNumericAttr(initialLine, 'x2')
+      const initialY2 = parseNumericAttr(initialLine, 'y2')
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      const initialPendingFrames = animationFrame.pendingCount()
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 160,
+        clientY: 150,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 190,
+        clientY: 180,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+
+      let currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2, 6)
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 210,
+        clientY: 200,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+
+      currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2, 6)
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      await fireEvent.pointerUp(stage, {
+        button: 0,
+        clientX: 210,
+        clientY: 200,
+        pointerId: 1032,
+        pointerType: 'mouse',
+      })
+
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames)
+
+      currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2 + 50, 6)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
+  it('does not clone project state on move-drag pointer frames before pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const cloneProjectSpy = vi.spyOn(projectState, 'cloneProject')
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 120,
+        clientY: 180,
+        pointerId: 1033,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 260,
+        clientY: 180,
+        pointerId: 1033,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 190,
+        clientY: 180,
+        pointerId: 1034,
+        pointerType: 'mouse',
+      })
+
+      cloneProjectSpy.mockClear()
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 210,
+        pointerId: 1034,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 250,
+        clientY: 240,
+        pointerId: 1034,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      expect(cloneProjectSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
   it('moves a selected line endpoint via handle drag without moving the opposite endpoint', async () => {
     const { container } = render(() => <App />)
     const stage = requireDrawingStage(container)
@@ -3032,6 +3876,233 @@ describe('App interaction integration', () => {
     expect(parseNumericAttr(restoredLine, 'y1')).toBeCloseTo(originalStart.y, 6)
     expect(parseNumericAttr(restoredLine, 'x2')).toBeCloseTo(originalEnd.x, 6)
     expect(parseNumericAttr(restoredLine, 'y2')).toBeCloseTo(originalEnd.y, 6)
+  })
+
+  it('moves a selected line endpoint via handle drag with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 220,
+      clientY: 220,
+      pointerId: 1131,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 420,
+      clientY: 220,
+      pointerId: 1131,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 320,
+      clientY: 220,
+      pointerId: 1132,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 320,
+      clientY: 220,
+      pointerId: 1132,
+      pointerType: 'mouse',
+    })
+
+    const originalStart = selectionHandlePoint(container, 'line-start')
+    const originalEnd = selectionHandlePoint(container, 'line-end')
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      shiftKey: true,
+      ctrlKey: true,
+      clientX: 220,
+      clientY: 220,
+      pointerId: 1133,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      shiftKey: true,
+      ctrlKey: true,
+      clientX: 220,
+      clientY: 320,
+      pointerId: 1133,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      shiftKey: true,
+      ctrlKey: true,
+      clientX: 220,
+      clientY: 320,
+      pointerId: 1133,
+      pointerType: 'mouse',
+    })
+
+    const movedStart = selectionHandlePoint(container, 'line-start')
+    const movedEnd = selectionHandlePoint(container, 'line-end')
+    expect(movedStart.x).toBeCloseTo(originalStart.x, 6)
+    expect(movedStart.y).not.toBeCloseTo(originalStart.y, 3)
+    expect(movedEnd.x).toBeCloseTo(originalEnd.x, 6)
+    expect(movedEnd.y).toBeCloseTo(originalEnd.y, 6)
+
+    await fireEvent.click(historyButton(container, 0))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 320,
+      clientY: 220,
+      pointerId: 1134,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 320,
+      clientY: 220,
+      pointerId: 1134,
+      pointerType: 'mouse',
+    })
+
+    const restoredStart = selectionHandlePoint(container, 'line-start')
+    const restoredEnd = selectionHandlePoint(container, 'line-end')
+    expect(restoredStart.x).toBeCloseTo(originalStart.x, 6)
+    expect(restoredStart.y).toBeCloseTo(originalStart.y, 6)
+    expect(restoredEnd.x).toBeCloseTo(originalEnd.x, 6)
+    expect(restoredEnd.y).toBeCloseTo(originalEnd.y, 6)
+  })
+
+  it('does not clone project state on handle-edit pointer frames before pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const cloneProjectSpy = vi.spyOn(projectState, 'cloneProject')
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 220,
+        pointerId: 1331,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 420,
+        clientY: 220,
+        pointerId: 1331,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 320,
+        clientY: 220,
+        pointerId: 1332,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerUp(stage, {
+        button: 0,
+        clientX: 320,
+        clientY: 220,
+        pointerId: 1332,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        shiftKey: true,
+        ctrlKey: true,
+        clientX: 220,
+        clientY: 220,
+        pointerId: 1333,
+        pointerType: 'mouse',
+      })
+
+      cloneProjectSpy.mockClear()
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        shiftKey: true,
+        ctrlKey: true,
+        clientX: 220,
+        clientY: 300,
+        pointerId: 1333,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      expect(cloneProjectSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
+  it('keeps legend placement visually aligned during preview-only drag before pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Legend' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 260,
+        clientY: 220,
+        pointerId: 1334,
+        pointerType: 'mouse',
+      })
+
+      const legendBox = container.querySelector('svg.overlay-layer rect[fill="#fffffff0"]')
+      expect(legendBox).not.toBeNull()
+      if (!legendBox) {
+        return
+      }
+
+      const initialX = parseNumericAttr(legendBox, 'x')
+      const initialY = parseNumericAttr(legendBox, 'y')
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 300,
+        clientY: 260,
+        pointerId: 1335,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 340,
+        clientY: 300,
+        pointerId: 1335,
+        pointerType: 'mouse',
+      })
+
+      expect(parseNumericAttr(legendBox, 'x')).toBeCloseTo(initialX, 6)
+      expect(parseNumericAttr(legendBox, 'y')).toBeCloseTo(initialY, 6)
+
+      animationFrame.flush()
+
+      const movedLegendBox = container.querySelector('svg.overlay-layer rect[fill="#fffffff0"]')
+      expect(movedLegendBox).not.toBeNull()
+      if (!movedLegendBox) {
+        return
+      }
+
+      expect(parseNumericAttr(movedLegendBox, 'x')).toBeCloseTo(initialX + 40, 6)
+      expect(parseNumericAttr(movedLegendBox, 'y')).toBeCloseTo(initialY + 40, 6)
+    } finally {
+      animationFrame.restore()
+    }
   })
 
   it('keeps line handles aligned after moving a selected line and allows immediate handle edit without reselect', async () => {
@@ -3258,6 +4329,165 @@ describe('App interaction integration', () => {
     const movedLine = firstDashedLine(container)
     expect(parseNumericAttr(movedLine, 'x2')).toBeCloseTo(line2Start.x, 3)
     expect(parseNumericAttr(movedLine, 'y2')).toBeCloseTo(line2Start.y, 3)
+  })
+
+  it('shows snap marker while editing a selected line handle with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 200,
+      clientY: 240,
+      pointerId: 2171,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 240,
+      pointerId: 2171,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 420,
+      clientY: 240,
+      pointerId: 2172,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 240,
+      pointerId: 2172,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 250,
+      clientY: 240,
+      pointerId: 2173,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 250,
+      clientY: 240,
+      pointerId: 2173,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 300,
+      clientY: 240,
+      pointerId: 2174,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 414,
+      clientY: 246,
+      pointerId: 2174,
+      pointerType: 'mouse',
+    })
+
+    expect(
+      container.querySelector(
+        'svg.workspace-interaction-overlay g[data-snap-marker="active"][data-snap-marker-kind="endpoint"] rect[data-snap-shape="square"]',
+      ),
+    ).not.toBeNull()
+  })
+
+  it('defers handle-drag snap preview until the next animation frame', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 200,
+        clientY: 240,
+        pointerId: 1741,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 300,
+        clientY: 240,
+        pointerId: 1741,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 420,
+        clientY: 240,
+        pointerId: 1742,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 520,
+        clientY: 240,
+        pointerId: 1742,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      const initialPendingFrames = animationFrame.pendingCount()
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 250,
+        clientY: 240,
+        pointerId: 1743,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerUp(stage, {
+        button: 0,
+        clientX: 250,
+        clientY: 240,
+        pointerId: 1743,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 300,
+        clientY: 240,
+        pointerId: 1744,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 414,
+        clientY: 246,
+        pointerId: 1744,
+        pointerType: 'mouse',
+      })
+
+      expect(container.querySelector('g[data-snap-marker="active"]')).toBeNull()
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      animationFrame.flush()
+
+      expect(
+        container.querySelector(
+          'g[data-snap-marker="active"][data-snap-marker-kind="endpoint"] rect[data-snap-shape="square"]',
+        ),
+      ).not.toBeNull()
+    } finally {
+      animationFrame.restore()
+    }
   })
 
   it('does not show self-snap marker while dragging a selected line endpoint with no other targets', async () => {
@@ -4058,6 +5288,80 @@ describe('App interaction integration', () => {
     const rotated = firstSymbolRotationDeg(container)
     expect(rotated).toBeGreaterThan(170)
     expect(rotated).toBeLessThan(190)
+  })
+
+  it('supports selecting and rotating a directional symbol with the canvas flag enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await selectMaterial('Grounding')
+    await fireEvent.click(screen.getByRole('button', { name: 'Ground Rod' }))
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 320,
+      pointerId: 1151,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 600,
+      clientY: 320,
+      pointerId: 1151,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 320,
+      pointerId: 1152,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 320,
+      pointerId: 1152,
+      pointerType: 'mouse',
+    })
+
+    const initialHandle = requireSelectionHandle(container, 'symbol-direction')
+    const handleScreen = overlayDocToScreen(container, {
+      x: parseNumericAttr(initialHandle, 'cx'),
+      y: parseNumericAttr(initialHandle, 'cy'),
+    })
+
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: handleScreen.x,
+      clientY: handleScreen.y,
+      pointerId: 1153,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 240,
+      pointerId: 1153,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 520,
+      clientY: 240,
+      pointerId: 1153,
+      pointerType: 'mouse',
+    })
+
+    const baseDoc = screenToOverlayDoc(container, { x: 520, y: 320 })
+    const movedHandle = selectionHandlePoint(container, 'symbol-direction')
+    const angle = pointAngleDegrees(baseDoc, movedHandle)
+    expect(angle).toBeGreaterThan(260)
+    expect(angle).toBeLessThan(280)
   })
 
   it('applies 15-degree angle snap to directional symbol preview while choosing direction', async () => {

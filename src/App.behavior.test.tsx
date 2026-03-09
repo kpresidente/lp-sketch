@@ -17,6 +17,7 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import * as workspaceRenderer from './config/workspaceRenderer'
 
 vi.setConfig({ testTimeout: 15000 })
 
@@ -25,7 +26,34 @@ const fakeCanvasContext = {
   fillRect: vi.fn(),
   scale: vi.fn(),
   drawImage: vi.fn(),
+  setLineDash: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  quadraticCurveTo: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  stroke: vi.fn(),
+  fill: vi.fn(),
+  fillText: vi.fn(),
+  closePath: vi.fn(),
+  arc: vi.fn(),
+  rect: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  strokeStyle: '',
+  fillStyle: '',
+  lineWidth: 1,
+  lineCap: 'butt' as CanvasLineCap,
+  lineJoin: 'miter' as CanvasLineJoin,
+  font: '',
+  textBaseline: 'alphabetic' as CanvasTextBaseline,
+  textAlign: 'left' as CanvasTextAlign,
 }
+
+const originalRequestAnimationFrame = globalThis.requestAnimationFrame
+const originalCancelAnimationFrame = globalThis.cancelAnimationFrame
 
 beforeAll(() => {
   if (typeof globalThis.Path2D === 'undefined') {
@@ -56,6 +84,8 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
+
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     fakeCanvasContext as unknown as CanvasRenderingContext2D,
   )
@@ -71,11 +101,20 @@ beforeEach(() => {
     height: 800,
     toJSON: () => ({}),
   } as DOMRect)
+
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    callback(16)
+    return 1
+  }) as typeof globalThis.requestAnimationFrame
+
+  globalThis.cancelAnimationFrame = ((_: number) => undefined) as typeof globalThis.cancelAnimationFrame
 })
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  globalThis.requestAnimationFrame = originalRequestAnimationFrame
+  globalThis.cancelAnimationFrame = originalCancelAnimationFrame
 })
 
 function requireDrawingStage(container: HTMLElement): HTMLDivElement {
@@ -94,6 +133,57 @@ function requireCameraLayer(container: HTMLElement): HTMLDivElement {
     throw new Error('camera layer not found')
   }
   return layer
+}
+
+function cameraViewFromContainer(container: HTMLElement): { panX: number; panY: number; zoom: number } {
+  const transform = requireCameraLayer(container).style.transform
+  const match = transform.match(
+    /^\s*translate\((-?\d*\.?\d+)px,\s*(-?\d*\.?\d+)px\)\s*scale\((-?\d*\.?\d+)\)\s*$/,
+  )
+
+  if (!match) {
+    throw new Error(`Unexpected camera transform format: ${transform}`)
+  }
+
+  return {
+    panX: Number.parseFloat(match[1]),
+    panY: Number.parseFloat(match[2]),
+    zoom: Number.parseFloat(match[3]),
+  }
+}
+
+function installManualAnimationFrameController() {
+  const originalRequestAnimationFrame = globalThis.requestAnimationFrame
+  const originalCancelAnimationFrame = globalThis.cancelAnimationFrame
+  let nextHandle = 1
+  const callbacks = new Map<number, FrameRequestCallback>()
+
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    const handle = nextHandle++
+    callbacks.set(handle, callback)
+    return handle
+  }) as typeof globalThis.requestAnimationFrame
+
+  globalThis.cancelAnimationFrame = ((handle: number) => {
+    callbacks.delete(handle)
+  }) as typeof globalThis.cancelAnimationFrame
+
+  return {
+    flush(timestamp = 16) {
+      const pending = [...callbacks.entries()]
+      callbacks.clear()
+      for (const [, callback] of pending) {
+        callback(timestamp)
+      }
+    },
+    pendingCount() {
+      return callbacks.size
+    },
+    restore() {
+      globalThis.requestAnimationFrame = originalRequestAnimationFrame
+      globalThis.cancelAnimationFrame = originalCancelAnimationFrame
+    },
+  }
 }
 
 function requireToggleByLabel(container: HTMLElement, label: string): HTMLButtonElement {
@@ -159,6 +249,16 @@ describe('App behavior integration', () => {
     const units = Array.from(container.querySelectorAll('.scale-input-unit'))
       .map((entry) => entry.textContent?.trim())
     expect(units).toEqual(['in', 'ft'])
+  })
+
+  it('mounts the workspace canvas and interaction overlay instead of the persisted SVG overlay when the spike flag is enabled', () => {
+    vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
+
+    const { container } = render(() => <App />)
+
+    expect(container.querySelector('.workspace-canvas-layer')).toBeTruthy()
+    expect(container.querySelector('.workspace-interaction-overlay')).toBeTruthy()
+    expect(container.querySelector('.overlay-layer')).toBeNull()
   })
 
   it('shows and clears report repro steps based on report type', async () => {
@@ -271,6 +371,59 @@ describe('App behavior integration', () => {
     )
     expect(zoomStatus).toBeTruthy()
     expect(zoomStatus?.textContent).not.toContain('100%')
+  })
+
+  it('defers pan drag updates until the next animation frame and keeps only the latest pointer position', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Pan' }))
+      const initialPendingFrames = animationFrame.pendingCount()
+
+      const initialView = cameraViewFromContainer(container)
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 120,
+        clientY: 140,
+        pointerId: 203,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 180,
+        clientY: 190,
+        pointerId: 203,
+        pointerType: 'mouse',
+      })
+
+      expect(cameraViewFromContainer(container)).toEqual(initialView)
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 210,
+        clientY: 225,
+        pointerId: 203,
+        pointerType: 'mouse',
+      })
+
+      expect(cameraViewFromContainer(container)).toEqual(initialView)
+      expect(animationFrame.pendingCount()).toBe(initialPendingFrames + 1)
+
+      animationFrame.flush()
+
+      expect(cameraViewFromContainer(container)).toEqual({
+        panX: initialView.panX + 90,
+        panY: initialView.panY + 85,
+        zoom: initialView.zoom,
+      })
+    } finally {
+      animationFrame.restore()
+    }
   })
 
   it('validates second and third points in 3-point curve mode', async () => {

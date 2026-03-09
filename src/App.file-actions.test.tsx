@@ -78,6 +78,7 @@ import {
   MAX_PDF_IMPORT_BYTES,
   MAX_PROJECT_LOAD_BYTES,
 } from './config/runtimeLimits'
+import * as workspaceRenderer from './config/workspaceRenderer'
 import { createDefaultProject } from './model/defaultProject'
 import App from './App'
 
@@ -86,6 +87,30 @@ const fakeCanvasContext = {
   fillRect: vi.fn(),
   scale: vi.fn(),
   drawImage: vi.fn(),
+  setLineDash: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  quadraticCurveTo: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  stroke: vi.fn(),
+  fill: vi.fn(),
+  fillText: vi.fn(),
+  closePath: vi.fn(),
+  arc: vi.fn(),
+  rect: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  strokeStyle: '',
+  fillStyle: '',
+  lineWidth: 1,
+  lineCap: 'butt' as CanvasLineCap,
+  lineJoin: 'miter' as CanvasLineJoin,
+  font: '',
+  textBaseline: 'alphabetic' as CanvasTextBaseline,
+  textAlign: 'left' as CanvasTextAlign,
 }
 
 beforeAll(() => {
@@ -105,6 +130,8 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
+
   renderProjectImageBlobMock.mockReset()
   renderProjectPdfBlobMock.mockReset()
   downloadBlobMock.mockReset()
@@ -207,6 +234,10 @@ function requireOverlayLayer(container: HTMLElement): SVGSVGElement {
   return overlay
 }
 
+function enableWorkspaceCanvasFlag() {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
+}
+
 describe('App file actions integration', () => {
   it('saves project and invokes export actions with normalized filename base', async () => {
     render(() => <App />)
@@ -224,6 +255,28 @@ describe('App file actions integration', () => {
     expect(renderProjectImageBlobMock).toHaveBeenCalledTimes(2)
     expect(renderProjectImageBlobMock.mock.calls[0][1]).toBe('png')
     expect(renderProjectImageBlobMock.mock.calls[1][1]).toBe('jpg')
+    expect(renderProjectPdfBlobMock).toHaveBeenCalledTimes(1)
+    expect(downloadBlobMock).toHaveBeenCalledTimes(3)
+    expect(downloadBlobMock.mock.calls[0][0]).toBe('Untitled-LP-Sketch.png')
+    expect(downloadBlobMock.mock.calls[1][0]).toBe('Untitled-LP-Sketch.jpg')
+    expect(downloadBlobMock.mock.calls[2][0]).toBe('Untitled-LP-Sketch.pdf')
+  })
+
+  it('keeps save and export actions working when the workspace canvas flag is enabled', async () => {
+    enableWorkspaceCanvasFlag()
+    render(() => <App />)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(downloadTextFileMock).toHaveBeenCalledTimes(1)
+    expect(downloadTextFileMock.mock.calls[0][0]).toBe('Untitled LP Sketch.lpsketch.json')
+    expect(screen.getByText('Saved Untitled LP Sketch.lpsketch.json')).toBeTruthy()
+
+    await fireEvent.click(screen.getByRole('button', { name: 'PNG' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'JPG' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
+
+    expect(renderProjectImageBlobMock).toHaveBeenCalledTimes(2)
     expect(renderProjectPdfBlobMock).toHaveBeenCalledTimes(1)
     expect(downloadBlobMock).toHaveBeenCalledTimes(3)
     expect(downloadBlobMock.mock.calls[0][0]).toBe('Untitled-LP-Sketch.png')

@@ -5,6 +5,7 @@ export type HandledOperationTelemetryEvent =
   | 'autosave_restore_discarded'
   | 'autosave_persist_failed'
   | 'project_export_failed'
+  | 'workspace_canvas_render_failed'
 
 export interface ClientTelemetryConfig {
   enabled: boolean
