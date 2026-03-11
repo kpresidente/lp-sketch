@@ -13,8 +13,6 @@ import AppSidebar from './components/AppSidebar'
 import CanvasStage from './components/CanvasStage'
 import OverlayLayer from './components/OverlayLayer'
 import PropertiesToolOptions from './components/PropertiesToolOptions'
-import WorkspaceInteractionOverlay from './components/WorkspaceInteractionOverlay'
-import WorkspaceCanvas from './workspace/WorkspaceCanvas'
 import { createSidebarController } from './components/sidebar/createSidebarController'
 import AnnotationEditDialog from './components/dialogs/AnnotationEditDialog'
 import GeneralNotesDialog from './components/dialogs/GeneralNotesDialog'
@@ -30,7 +28,6 @@ import { useProjectFileActions } from './hooks/useProjectFileActions'
 import { useProjectAutosave } from './hooks/useProjectAutosave'
 import { useDialogResizeSync } from './hooks/useDialogResizeSync'
 import { useGlobalAppShortcuts } from './hooks/useGlobalAppShortcuts'
-import { workspaceCanvasSpikeEnabled } from './config/workspaceRenderer'
 import {
   resolveInputPoint as resolveInputPointEngine,
   snapReferencePointForTool as snapReferencePointForToolEngine,
@@ -328,7 +325,6 @@ interface QueuedToolPointerMoveEvent {
 }
 
 function App() {
-  const workspaceCanvasSpike = workspaceCanvasSpikeEnabled()
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
     past: [],
@@ -432,7 +428,9 @@ function App() {
   }
 
   const hasPdf = createMemo(() => Boolean(project().pdf.dataBase64))
-  const overlaySourceProject = createMemo(() => dragPreviewProject() ?? project())
+  const overlaySourceProject = createMemo(() => dragPreviewProject() ?? project(), undefined, {
+    equals: false,
+  })
   const visibleProject = createMemo(() => {
     const current = overlaySourceProject()
     const page = current.view.currentPage
@@ -1643,6 +1641,7 @@ function App() {
       delta,
       DIRECTION_HANDLE_LENGTH_PX,
     )
+    refreshSelectionHandleIdentity(draft, handle)
   }
 
   function hitTest(point: Point): Selection | null {
@@ -1655,6 +1654,108 @@ function App() {
 
   function moveSelectionsByDelta(draft: LpProject, selections: readonly Selection[], delta: Point) {
     moveSelectionsByDeltaEngine(draft, selections, delta)
+    refreshSelectionIdentities(draft, selections)
+  }
+
+  function refreshSelectionIdentities(draft: LpProject, selections: readonly Selection[]) {
+    const refreshed = new Set<string>()
+    for (const selection of selections) {
+      const key = `${selection.kind}:${selection.id}`
+      if (refreshed.has(key)) {
+        continue
+      }
+
+      refreshed.add(key)
+      refreshSelectionIdentity(draft, selection)
+    }
+  }
+
+  function refreshSelectionHandleIdentity(draft: LpProject, handle: SelectionHandleTarget) {
+    if (handle.kind === 'symbol-direction') {
+      refreshSelectionIdentity(draft, { kind: 'symbol', id: handle.id })
+      return
+    }
+
+    refreshSelectionIdentity(draft, { kind: handle.kind, id: handle.id })
+  }
+
+  function refreshSelectionIdentity(draft: LpProject, selection: Selection) {
+    if (selection.kind === 'line') {
+      const index = draft.elements.lines.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.elements.lines[index] = { ...draft.elements.lines[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'arc') {
+      const index = draft.elements.arcs.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.elements.arcs[index] = { ...draft.elements.arcs[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'curve') {
+      const index = draft.elements.curves.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.elements.curves[index] = { ...draft.elements.curves[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'symbol') {
+      const index = draft.elements.symbols.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.elements.symbols[index] = { ...draft.elements.symbols[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'legend') {
+      const index = draft.legend.placements.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.legend.placements[index] = { ...draft.legend.placements[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'general_note') {
+      const index = draft.generalNotes.placements.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.generalNotes.placements[index] = { ...draft.generalNotes.placements[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'text') {
+      const index = draft.elements.texts.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.elements.texts[index] = { ...draft.elements.texts[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'dimension_text') {
+      const index = draft.elements.dimensionTexts.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.elements.dimensionTexts[index] = { ...draft.elements.dimensionTexts[index] }
+      }
+      return
+    }
+
+    if (selection.kind === 'arrow') {
+      const index = draft.elements.arrows.findIndex((entry) => entry.id === selection.id)
+      if (index >= 0) {
+        draft.elements.arrows[index] = { ...draft.elements.arrows[index] }
+      }
+      return
+    }
+
+    const index = draft.construction.marks.findIndex((entry) => entry.id === selection.id)
+    if (index >= 0) {
+      draft.construction.marks[index] = { ...draft.construction.marks[index] }
+    }
   }
 
   function deleteSelections(targets: readonly Selection[]) {
@@ -4041,74 +4142,36 @@ function App() {
           onWheel={handleWheel}
           onDoubleClick={handleDoubleClick}
         >
-          <Show
-            when={workspaceCanvasSpike}
-            fallback={(
-              <OverlayLayer
-                project={viewportVisibleProject()}
-                annotationScale={annotationScale()}
-                selected={overlaySelected()}
-                multiSelectedKeys={overlayMultiSelectedKeys()}
-                hovered={hoveredSelection()}
-                legendUi={legendUi()}
-                textFontSizePx={textFontSizePx()}
-                textLineHeightPx={textLineHeightPx()}
-                approximateTextWidth={approximateTextWidthWithScale}
-                legendEntriesForPlacement={legendEntriesForPlacement}
-                legendBoxSize={legendBoxSizeWithScale}
-                legendLineText={legendLineText}
-                measurePathPreview={measurePathPreview()}
-                markPathPreview={markPathPreview()}
-                linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
-                linearAutoSpacingVertices={linearAutoSpacingVertices()}
-                linearAutoSpacingCorners={linearAutoSpacingCorners()}
-                arcChordPreview={arcChordPreview()}
-                arcCurvePreview={arcCurvePreview()}
-                linePreview={linePreview()}
-                dimensionTextPreview={dimensionTextPreview()}
-                directionPreview={directionPreview()}
-                arrowPreview={arrowPreview()}
-                calibrationLinePreview={calibrationLinePreview()}
-                dimensionTextLabel={dimensionTextLabelWithScale}
-                snapPointPreview={snapPointPreview()}
-                selectionHandlePreview={selectionHandlePreview()}
-                selectionDebugLabel={selectionDebugLabel()}
-              />
-            )}
-          >
-            <>
-              <WorkspaceCanvas project={visibleProject()} />
-              <WorkspaceInteractionOverlay
-                project={viewportVisibleProject()}
-                annotationScale={annotationScale()}
-                selected={overlaySelected()}
-                multiSelectedKeys={overlayMultiSelectedKeys()}
-                hovered={hoveredSelection()}
-                legendUi={legendUi()}
-                textFontSizePx={textFontSizePx()}
-                textLineHeightPx={textLineHeightPx()}
-                approximateTextWidth={approximateTextWidthWithScale}
-                legendEntriesForPlacement={legendEntriesForPlacement}
-                legendBoxSize={legendBoxSizeWithScale}
-                measurePathPreview={measurePathPreview()}
-                markPathPreview={markPathPreview()}
-                linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
-                linearAutoSpacingVertices={linearAutoSpacingVertices()}
-                linearAutoSpacingCorners={linearAutoSpacingCorners()}
-                arcChordPreview={arcChordPreview()}
-                arcCurvePreview={arcCurvePreview()}
-                linePreview={linePreview()}
-                dimensionTextPreview={dimensionTextPreview()}
-                directionPreview={directionPreview()}
-                arrowPreview={arrowPreview()}
-                calibrationLinePreview={calibrationLinePreview()}
-                dimensionTextLabel={dimensionTextLabelWithScale}
-                snapPointPreview={snapPointPreview()}
-                selectionHandlePreview={selectionHandlePreview()}
-                selectionDebugLabel={selectionDebugLabel()}
-              />
-            </>
-          </Show>
+          <OverlayLayer
+            project={viewportVisibleProject()}
+            annotationScale={annotationScale()}
+            selected={overlaySelected()}
+            multiSelectedKeys={overlayMultiSelectedKeys()}
+            hovered={hoveredSelection()}
+            legendUi={legendUi()}
+            textFontSizePx={textFontSizePx()}
+            textLineHeightPx={textLineHeightPx()}
+            approximateTextWidth={approximateTextWidthWithScale}
+            legendEntriesForPlacement={legendEntriesForPlacement}
+            legendBoxSize={legendBoxSizeWithScale}
+            legendLineText={legendLineText}
+            measurePathPreview={measurePathPreview()}
+            markPathPreview={markPathPreview()}
+            linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
+            linearAutoSpacingVertices={linearAutoSpacingVertices()}
+            linearAutoSpacingCorners={linearAutoSpacingCorners()}
+            arcChordPreview={arcChordPreview()}
+            arcCurvePreview={arcCurvePreview()}
+            linePreview={linePreview()}
+            dimensionTextPreview={dimensionTextPreview()}
+            directionPreview={directionPreview()}
+            arrowPreview={arrowPreview()}
+            calibrationLinePreview={calibrationLinePreview()}
+            dimensionTextLabel={dimensionTextLabelWithScale}
+            snapPointPreview={snapPointPreview()}
+            selectionHandlePreview={selectionHandlePreview()}
+            selectionDebugLabel={selectionDebugLabel()}
+          />
         </CanvasStage>
 
         <Show when={annotationEdit()}>

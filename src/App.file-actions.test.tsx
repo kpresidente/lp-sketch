@@ -78,7 +78,6 @@ import {
   MAX_PDF_IMPORT_BYTES,
   MAX_PROJECT_LOAD_BYTES,
 } from './config/runtimeLimits'
-import * as workspaceRenderer from './config/workspaceRenderer'
 import { createDefaultProject } from './model/defaultProject'
 import App from './App'
 
@@ -130,8 +129,6 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
-  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
-
   renderProjectImageBlobMock.mockReset()
   renderProjectPdfBlobMock.mockReset()
   downloadBlobMock.mockReset()
@@ -234,10 +231,6 @@ function requireOverlayLayer(container: HTMLElement): SVGSVGElement {
   return overlay
 }
 
-function enableWorkspaceCanvasFlag() {
-  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
-}
-
 describe('App file actions integration', () => {
   it('saves project and invokes export actions with normalized filename base', async () => {
     render(() => <App />)
@@ -255,28 +248,6 @@ describe('App file actions integration', () => {
     expect(renderProjectImageBlobMock).toHaveBeenCalledTimes(2)
     expect(renderProjectImageBlobMock.mock.calls[0][1]).toBe('png')
     expect(renderProjectImageBlobMock.mock.calls[1][1]).toBe('jpg')
-    expect(renderProjectPdfBlobMock).toHaveBeenCalledTimes(1)
-    expect(downloadBlobMock).toHaveBeenCalledTimes(3)
-    expect(downloadBlobMock.mock.calls[0][0]).toBe('Untitled-LP-Sketch.png')
-    expect(downloadBlobMock.mock.calls[1][0]).toBe('Untitled-LP-Sketch.jpg')
-    expect(downloadBlobMock.mock.calls[2][0]).toBe('Untitled-LP-Sketch.pdf')
-  })
-
-  it('keeps save and export actions working when the workspace canvas flag is enabled', async () => {
-    enableWorkspaceCanvasFlag()
-    render(() => <App />)
-
-    await fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(downloadTextFileMock).toHaveBeenCalledTimes(1)
-    expect(downloadTextFileMock.mock.calls[0][0]).toBe('Untitled LP Sketch.lpsketch.json')
-    expect(screen.getByText('Saved Untitled LP Sketch.lpsketch.json')).toBeTruthy()
-
-    await fireEvent.click(screen.getByRole('button', { name: 'PNG' }))
-    await fireEvent.click(screen.getByRole('button', { name: 'JPG' }))
-    await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
-
-    expect(renderProjectImageBlobMock).toHaveBeenCalledTimes(2)
     expect(renderProjectPdfBlobMock).toHaveBeenCalledTimes(1)
     expect(downloadBlobMock).toHaveBeenCalledTimes(3)
     expect(downloadBlobMock.mock.calls[0][0]).toBe('Untitled-LP-Sketch.png')

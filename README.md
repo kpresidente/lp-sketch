@@ -51,7 +51,3 @@ The canonical project schema used by runtime validation is:
 - `VITE_TELEMETRY_ENDPOINT`
 - `VITE_APP_VERSION`
 - `VITE_APP_ENV`
-
-## Developer Flags
-
-- `VITE_WORKSPACE_CANVAS_SPIKE` - enables the canvas workspace flag path when set

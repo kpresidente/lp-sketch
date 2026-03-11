@@ -17,7 +17,8 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
-import * as workspaceRenderer from './config/workspaceRenderer'
+
+vi.setConfig({ testTimeout: 15000 })
 
 const fakeCanvasContext = {
   clearRect: vi.fn(),
@@ -53,8 +54,6 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
-  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
-
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     fakeCanvasContext as unknown as CanvasRenderingContext2D,
   )

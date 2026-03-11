@@ -17,7 +17,6 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
-import * as workspaceRenderer from './config/workspaceRenderer'
 
 vi.setConfig({ testTimeout: 15000 })
 
@@ -84,8 +83,6 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
-  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
-
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     fakeCanvasContext as unknown as CanvasRenderingContext2D,
   )
@@ -249,16 +246,6 @@ describe('App behavior integration', () => {
     const units = Array.from(container.querySelectorAll('.scale-input-unit'))
       .map((entry) => entry.textContent?.trim())
     expect(units).toEqual(['in', 'ft'])
-  })
-
-  it('mounts the workspace canvas and interaction overlay instead of the persisted SVG overlay when the spike flag is enabled', () => {
-    vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
-
-    const { container } = render(() => <App />)
-
-    expect(container.querySelector('.workspace-canvas-layer')).toBeTruthy()
-    expect(container.querySelector('.workspace-interaction-overlay')).toBeTruthy()
-    expect(container.querySelector('.overlay-layer')).toBeNull()
   })
 
   it('shows and clears report repro steps based on report type', async () => {

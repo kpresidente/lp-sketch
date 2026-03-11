@@ -121,34 +121,3 @@ export interface OverlayLayerProps {
   selectionHandlePreview: SelectionHandlePreview | null
   selectionDebugLabel?: string | null
 }
-
-export type WorkspaceInteractionOverlayProps = Pick<
-  OverlayLayerProps,
-  | 'project'
-  | 'annotationScale'
-  | 'selected'
-  | 'multiSelectedKeys'
-  | 'hovered'
-  | 'legendUi'
-  | 'textFontSizePx'
-  | 'textLineHeightPx'
-  | 'approximateTextWidth'
-  | 'legendEntriesForPlacement'
-  | 'legendBoxSize'
-  | 'measurePathPreview'
-  | 'markPathPreview'
-  | 'linearAutoSpacingPathPreview'
-  | 'linearAutoSpacingVertices'
-  | 'linearAutoSpacingCorners'
-  | 'arcChordPreview'
-  | 'arcCurvePreview'
-  | 'linePreview'
-  | 'dimensionTextPreview'
-  | 'directionPreview'
-  | 'arrowPreview'
-  | 'calibrationLinePreview'
-  | 'dimensionTextLabel'
-  | 'snapPointPreview'
-  | 'selectionHandlePreview'
-  | 'selectionDebugLabel'
->
