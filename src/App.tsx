@@ -1664,7 +1664,6 @@ function App() {
       if (refreshed.has(key)) {
         continue
       }
-
       refreshed.add(key)
       refreshSelectionIdentity(draft, selection)
     }

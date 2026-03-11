@@ -14,7 +14,7 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
   default: 'mock-worker-url',
 }))
 
-import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
+import { cleanup, fireEvent, render, screen, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 
@@ -25,6 +25,30 @@ const fakeCanvasContext = {
   fillRect: vi.fn(),
   scale: vi.fn(),
   drawImage: vi.fn(),
+  setLineDash: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  quadraticCurveTo: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  stroke: vi.fn(),
+  fill: vi.fn(),
+  fillText: vi.fn(),
+  closePath: vi.fn(),
+  arc: vi.fn(),
+  rect: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  strokeStyle: '',
+  fillStyle: '',
+  lineWidth: 1,
+  lineCap: 'butt' as CanvasLineCap,
+  lineJoin: 'miter' as CanvasLineJoin,
+  font: '',
+  textBaseline: 'alphabetic' as CanvasTextBaseline,
+  textAlign: 'left' as CanvasTextAlign,
 }
 
 beforeAll(() => {
@@ -77,6 +101,22 @@ afterEach(() => {
 })
 
 describe('App accessibility semantics', () => {
+  it('shows the workspace flag badge in the sidebar header when enabled', () => {
+    vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
+
+    render(() => <App />)
+
+    const sidebar = screen.getByLabelText('Primary controls')
+    expect(within(sidebar).getByText('on')).toBeTruthy()
+  })
+
+  it('does not show the workspace flag badge when disabled', () => {
+    render(() => <App />)
+
+    const sidebar = screen.getByLabelText('Primary controls')
+    expect(within(sidebar).queryByText('on')).toBeNull()
+  })
+
   it('exposes sidebar landmark, panel region bindings, and keyboard-importable skeleton actions', async () => {
     render(() => <App />)
 

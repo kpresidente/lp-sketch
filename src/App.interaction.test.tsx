@@ -3131,6 +3131,164 @@ describe('App interaction integration', () => {
     }
   })
 
+  it('updates SVG move-drag preview on every animation frame before pointer up', async () => {
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 100,
+        clientY: 120,
+        pointerId: 10321,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 180,
+        pointerId: 10321,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 160,
+        clientY: 150,
+        pointerId: 10322,
+        pointerType: 'mouse',
+      })
+
+      const initialLine = firstDashedLine(container)
+      const initialX1 = parseNumericAttr(initialLine, 'x1')
+      const initialY1 = parseNumericAttr(initialLine, 'y1')
+      const initialX2 = parseNumericAttr(initialLine, 'x2')
+      const initialY2 = parseNumericAttr(initialLine, 'y2')
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 190,
+        clientY: 180,
+        pointerId: 10322,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      let currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1 + 30, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1 + 30, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2 + 30, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2 + 30, 6)
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 210,
+        clientY: 200,
+        pointerId: 10322,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      currentLine = firstDashedLine(container)
+      expect(parseNumericAttr(currentLine, 'x1')).toBeCloseTo(initialX1 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'y1')).toBeCloseTo(initialY1 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'x2')).toBeCloseTo(initialX2 + 50, 6)
+      expect(parseNumericAttr(currentLine, 'y2')).toBeCloseTo(initialY2 + 50, 6)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
+  it('updates canvas-flag move-drag preview on every animation frame before pointer up', async () => {
+    enableWorkspaceCanvasFlag()
+    const animationFrame = installManualAnimationFrameController()
+
+    try {
+      const { container } = render(() => <App />)
+      const stage = requireDrawingStage(container)
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 100,
+        clientY: 120,
+        pointerId: 10323,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 220,
+        clientY: 180,
+        pointerId: 10323,
+        pointerType: 'mouse',
+      })
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 160,
+        clientY: 150,
+        pointerId: 10324,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerUp(stage, {
+        button: 0,
+        clientX: 160,
+        clientY: 150,
+        pointerId: 10324,
+        pointerType: 'mouse',
+      })
+
+      const initialStart = selectionHandlePoint(container, 'line-start')
+      const initialEnd = selectionHandlePoint(container, 'line-end')
+
+      await fireEvent.pointerDown(stage, {
+        button: 0,
+        clientX: 160,
+        clientY: 150,
+        pointerId: 10325,
+        pointerType: 'mouse',
+      })
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 190,
+        clientY: 180,
+        pointerId: 10325,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      let currentStart = selectionHandlePoint(container, 'line-start')
+      let currentEnd = selectionHandlePoint(container, 'line-end')
+      expect(currentStart.x).toBeCloseTo(initialStart.x + 30, 6)
+      expect(currentStart.y).toBeCloseTo(initialStart.y + 30, 6)
+      expect(currentEnd.x).toBeCloseTo(initialEnd.x + 30, 6)
+      expect(currentEnd.y).toBeCloseTo(initialEnd.y + 30, 6)
+
+      await fireEvent.pointerMove(stage, {
+        button: 0,
+        clientX: 210,
+        clientY: 200,
+        pointerId: 10325,
+        pointerType: 'mouse',
+      })
+      animationFrame.flush()
+
+      currentStart = selectionHandlePoint(container, 'line-start')
+      currentEnd = selectionHandlePoint(container, 'line-end')
+      expect(currentStart.x).toBeCloseTo(initialStart.x + 50, 6)
+      expect(currentStart.y).toBeCloseTo(initialStart.y + 50, 6)
+      expect(currentEnd.x).toBeCloseTo(initialEnd.x + 50, 6)
+      expect(currentEnd.y).toBeCloseTo(initialEnd.y + 50, 6)
+    } finally {
+      animationFrame.restore()
+    }
+  })
+
   it('does not clone project state on move-drag pointer frames before pointer up', async () => {
     const animationFrame = installManualAnimationFrameController()
 

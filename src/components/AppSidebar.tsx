@@ -1,4 +1,5 @@
 import ComponentsPanel from './sidebar/ComponentsPanel'
+import { workspaceCanvasSpikeEnabled } from '../config/workspaceRenderer'
 import LayersPanel from './sidebar/LayersPanel'
 import ProjectPanel from './sidebar/ProjectPanel'
 import ScalePanel from './sidebar/ScalePanel'
@@ -6,6 +7,8 @@ import StatusMessages from './sidebar/StatusMessages'
 import StylePanel from './sidebar/StylePanel'
 import ToolsPanel from './sidebar/ToolsPanel'
 export default function AppSidebar() {
+  const workspaceFlagEnabled = workspaceCanvasSpikeEnabled()
+
   return (
     <aside class="sidebar" aria-label="Primary controls">
 
@@ -17,7 +20,10 @@ export default function AppSidebar() {
           </svg>
         </div>
         <div class="logo-info">
-          <div class="app-name">LP Sketch</div>
+          <div class="app-name-row">
+            <div class="app-name">LP Sketch</div>
+            {workspaceFlagEnabled && <span class="feature-flag-badge">on</span>}
+          </div>
           <div class="app-desc">Lightning Protection Design</div>
         </div>
       </div>
