@@ -17,6 +17,7 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
 import { cleanup, fireEvent, render, screen, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import * as workspaceRenderer from './config/workspaceRenderer'
 
 vi.setConfig({ testTimeout: 15000 })
 

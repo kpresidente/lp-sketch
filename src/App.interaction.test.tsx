@@ -17,6 +17,7 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import * as workspaceRenderer from './config/workspaceRenderer'
 import { distanceToQuadratic } from './lib/geometry'
 import * as projectState from './lib/projectState'
 
@@ -83,6 +84,8 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
+
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     fakeCanvasContext as unknown as CanvasRenderingContext2D,
   )
@@ -113,6 +116,10 @@ afterEach(() => {
   globalThis.requestAnimationFrame = originalRequestAnimationFrame
   globalThis.cancelAnimationFrame = originalCancelAnimationFrame
 })
+
+function enableWorkspaceCanvasFlag() {
+  vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(true)
+}
 
 function requireDrawingStage(container: HTMLElement): HTMLDivElement {
   const stage = container.querySelector('.drawing-stage') as HTMLDivElement | null
