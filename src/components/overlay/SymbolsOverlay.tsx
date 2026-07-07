@@ -1,9 +1,8 @@
-import { For } from 'solid-js'
+import { For, Show } from 'solid-js'
 import SymbolGlyph from '../SymbolGlyph'
 import {
   downleadFootageLabelPosition,
-  isDownleadSymbolType,
-  symbolVerticalFootageFt,
+  downleadFootageLabelText,
 } from '../../lib/conductorFootage'
 import type { OverlayLayerProps } from './types'
 
@@ -18,7 +17,11 @@ export default function SymbolsOverlay(props: SymbolsOverlayProps) {
   return (
     <For each={props.project.elements.symbols}>
       {(symbol) => {
-        const labelPosition = downleadFootageLabelPosition(symbol, designScale())
+        const downleadLabel = () => {
+          const position = downleadFootageLabelPosition(symbol, designScale())
+          const text = downleadFootageLabelText(symbol)
+          return position && text ? { position, text } : null
+        }
         const isSelected = () =>
           (props.selected?.kind === 'symbol' && props.selected?.id === symbol.id) ||
           !!props.multiSelectedKeys?.has(`symbol:${symbol.id}`)
@@ -35,20 +38,22 @@ export default function SymbolsOverlay(props: SymbolsOverlayProps) {
                 !isSelected()
               }
             />
-            {isDownleadSymbolType(symbol.symbolType) && labelPosition && (
-              <text
-                data-vertical-footage-indicator="active"
-                x={labelPosition.x}
-                y={labelPosition.y}
-                fill="#111827"
-                font-size={`${props.textFontSizePx}px`}
-                font-family="Segoe UI, Arial, sans-serif"
-                dominant-baseline="hanging"
-                pointer-events="none"
-              >
-                {symbolVerticalFootageFt(symbol)}
-              </text>
-            )}
+            <Show when={downleadLabel()}>
+              {(label) => (
+                <text
+                  data-vertical-footage-indicator="active"
+                  x={label().position.x}
+                  y={label().position.y}
+                  fill="#111827"
+                  font-size={`${props.textFontSizePx}px`}
+                  font-family="Segoe UI, Arial, sans-serif"
+                  dominant-baseline="hanging"
+                  pointer-events="none"
+                >
+                  {label().text}
+                </text>
+              )}
+            </Show>
           </g>
         )
       }}

@@ -62,8 +62,7 @@ test.describe('selection and symbols', () => {
     await expectStatus(page, 'Directional symbol placed.')
 
     const verticalIndicator = page.locator('svg.overlay-layer text[data-vertical-footage-indicator="active"]')
-    await expect(verticalIndicator).toHaveCount(1)
-    await expect(verticalIndicator).toContainText('0')
+    await expect(verticalIndicator).toHaveCount(0)
 
     await tools.getByRole('button', { name: /Select$/ }).click()
     await clickStage(page, { x: 300, y: 260 })
@@ -73,6 +72,7 @@ test.describe('selection and symbols', () => {
     await verticalInput.fill('50')
     await verticalInput.press('Enter')
     await expectStatus(page, 'Vertical distance updated.')
+    await expect(verticalIndicator).toHaveCount(1)
     await expect(verticalIndicator).toContainText('50')
   })
 

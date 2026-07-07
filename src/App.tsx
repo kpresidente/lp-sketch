@@ -3530,13 +3530,14 @@ function App() {
       return
     }
 
+    const currentEditorScreen = legendLabelEdit()?.screen
     commitProjectChange((draft) => {
       draft.settings.legendDataScope = scope
     })
 
     const current = selected()
     if (current?.kind === 'legend') {
-      editLegendPlacementById(current.id)
+      editLegendPlacementById(current.id, currentEditorScreen)
     }
     setStatus(scope === 'page' ? 'Legend data scope set to page.' : 'Legend data scope set to global.')
   }
@@ -3546,13 +3547,14 @@ function App() {
       return
     }
 
+    const currentEditorScreen = generalNotesEdit()?.screen
     commitProjectChange((draft) => {
       draft.settings.notesDataScope = scope
     })
 
     const current = selected()
     if (current?.kind === 'general_note') {
-      editGeneralNotesPlacementById(current.id)
+      editGeneralNotesPlacementById(current.id, currentEditorScreen)
     }
     setStatus(scope === 'page' ? 'General notes scope set to page.' : 'General notes scope set to global.')
   }

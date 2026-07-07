@@ -1,8 +1,12 @@
 import { For, Show } from 'solid-js'
 import SymbolGlyph from '../SymbolGlyph'
 import { COLOR_HEX } from '../../model/defaultProject'
-import { legendSymbolCenterOffsetY, legendSymbolScale } from '../../lib/legendSymbolScale'
-import { wireDashPatternSvgForScale, wireStrokeWidthForScale } from '../../lib/annotationScale'
+import { legendSymbolCenterOffsetY, legendSymbolDirectionDeg, legendSymbolScale } from '../../lib/legendSymbolScale'
+import {
+  legendConductorSampleXRangeForScale,
+  wireDashPatternSvgForScale,
+  wireStrokeWidthForScale,
+} from '../../lib/annotationScale'
 import type { SymbolElement } from '../../types/project'
 import type { OverlayLayerProps } from './types'
 
@@ -137,6 +141,13 @@ export default function LegendsOverlay(props: LegendsOverlayProps) {
                     props.legendUi.titleHeightPx +
                     props.legendUi.rowHeightPx +
                     index() * props.legendUi.rowHeightPx
+                  const conductorWireClass = entry.class === 'class2' ? 'class2' : 'class1'
+                  const conductorStrokeWidth = wireStrokeWidthForScale(conductorWireClass, designScale())
+                  const conductorLineXRange = legendConductorSampleXRangeForScale(
+                    props.legendUi,
+                    conductorWireClass,
+                    designScale(),
+                  )
                   const symbolType = entry.symbolType ?? 'air_terminal'
                   const symbolScale = legendSymbolScale(symbolType, designScale())
                   const legendSymbol: SymbolElement = {
@@ -151,6 +162,7 @@ export default function LegendsOverlay(props: LegendsOverlayProps) {
                     },
                     color: entry.color,
                     class: entry.class,
+                    directionDeg: legendSymbolDirectionDeg(symbolType),
                   }
 
                   return (
@@ -160,14 +172,14 @@ export default function LegendsOverlay(props: LegendsOverlayProps) {
                         fallback={(
                           <line
                             data-legend-symbol="conductor"
-                            x1={origin.x + props.legendUi.symbolCenterXPx - 10 * designScale()}
+                            x1={origin.x + conductorLineXRange.x1}
                             y1={rowTop + props.legendUi.rowHeightPx / 2}
-                            x2={origin.x + props.legendUi.symbolCenterXPx + 10 * designScale()}
+                            x2={origin.x + conductorLineXRange.x2}
                             y2={rowTop + props.legendUi.rowHeightPx / 2}
                             stroke={COLOR_HEX[entry.color]}
-                            stroke-width={wireStrokeWidthForScale(entry.class === 'class2' ? 'class2' : 'class1', designScale())}
+                            stroke-width={conductorStrokeWidth}
                             stroke-linecap="round"
-                            stroke-dasharray={wireDashPatternSvgForScale(entry.class === 'class2' ? 'class2' : 'class1', designScale())}
+                            stroke-dasharray={wireDashPatternSvgForScale(conductorWireClass, designScale())}
                           />
                         )}
                       >

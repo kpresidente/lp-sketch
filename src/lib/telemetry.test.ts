@@ -110,7 +110,7 @@ describe('telemetry', () => {
       'User john@example.com hit token 1234567890',
       {
         source: 'https://app.test/load?secret=abc',
-        file_name: 'broken.lpsketch.json',
+        file_name: 'broken.json',
         file_size: 1234,
       },
       {
@@ -127,7 +127,7 @@ describe('telemetry', () => {
     expect(payload.message).not.toContain('1234567890')
     expect(payload.page).toMatch(/^http:\/\/localhost(?::\d+)?\/load-project$/)
     expect(payload.context.source).toBe('https://app.test/load')
-    expect(payload.context.file_name).toBe('broken.lpsketch.json')
+    expect(payload.context.file_name).toBe('broken.json')
     expect(payload.context.file_size).toBe(1234)
   })
 

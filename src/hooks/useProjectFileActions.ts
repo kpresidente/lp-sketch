@@ -7,6 +7,7 @@ import {
   MAX_PROJECT_ELEMENT_COUNT,
   MAX_PROJECT_LOAD_BYTES,
 } from '../config/runtimeLimits'
+import { clearAutosaveDraft } from '../lib/autosave'
 import { cloneProject } from '../lib/projectState'
 import { arrayBufferToBase64, downloadBlob, downloadTextFile, sha256Hex } from '../lib/files'
 import { renderProjectImageBlob, renderProjectPdfBlob } from '../lib/export'
@@ -15,6 +16,9 @@ import { reportHandledOperationTelemetry } from '../lib/telemetry'
 import { migrateProjectForLoad } from '../model/migration'
 import { asProject, validateProject } from '../model/validation'
 import type { LpProject, Selection } from '../types/project'
+
+const PROJECT_FILE_ACCEPT = { 'application/json': ['.lps', '.json'] }
+const PROJECT_SAVE_EXTENSION = 'lps'
 
 interface FilePickerWindow {
   showOpenFilePicker?: (options?: {
@@ -44,6 +48,7 @@ interface UseProjectFileActionsOptions {
   setStatus: (message: string) => void
   setError: (message: string) => void
   getPdfCanvas: () => HTMLCanvasElement | undefined
+  confirmDiscardExistingDrawing?: (elementCount: number) => boolean | Promise<boolean>
 }
 
 export function useProjectFileActions(options: UseProjectFileActionsOptions) {
@@ -157,6 +162,14 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
     return byPage
   }
 
+  function createEmptyNotesByPage(pageCount: number): Record<number, string[]> {
+    const byPage: Record<number, string[]> = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = []
+    }
+    return byPage
+  }
+
   function mbLimitLabel(bytes: number): string {
     return `${Math.round(bytes / (1024 * 1024))} MB`
   }
@@ -226,6 +239,26 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
     options.setMultiSelection([])
   }
 
+  async function confirmDiscardExistingDrawing(): Promise<boolean> {
+    const elementCount = projectElementCount(options.project())
+    if (elementCount === 0) {
+      return true
+    }
+
+    if (options.confirmDiscardExistingDrawing) {
+      return options.confirmDiscardExistingDrawing(elementCount)
+    }
+
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') {
+      return true
+    }
+
+    const noun = elementCount === 1 ? 'element' : 'elements'
+    return window.confirm(
+      `Importing a new PDF will delete ${elementCount} existing drawing ${noun}. Continue?`,
+    )
+  }
+
   async function importPdfFile(file: File) {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
       options.setError('Please select a PDF file.')
@@ -234,6 +267,12 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
 
     if (file.size > MAX_PDF_IMPORT_BYTES) {
       options.setError(`PDF file exceeds ${mbLimitLabel(MAX_PDF_IMPORT_BYTES)} limit.`)
+      return
+    }
+
+    const confirmed = await confirmDiscardExistingDrawing()
+    if (!confirmed) {
+      options.setStatus('PDF import canceled.')
       return
     }
 
@@ -324,9 +363,32 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
           pan: { x: 24, y: 24 },
           byPage: viewByPage,
         },
+        elements: {
+          lines: [],
+          arcs: [],
+          curves: [],
+          symbols: [],
+          texts: [],
+          arrows: [],
+          dimensionTexts: [],
+        },
+        construction: {
+          marks: [],
+        },
+        legend: {
+          items: [],
+          placements: [],
+          customSuffixes: {},
+        },
+        generalNotes: {
+          notes: [],
+          notesByPage: createEmptyNotesByPage(pageCount),
+          placements: [],
+        },
       }
 
       options.replaceProject(nextProject)
+      clearAutosaveDraft()
       resetSelectionAndTransient()
       options.setStatus(`Imported ${file.name}`)
     } catch (error) {
@@ -461,7 +523,7 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         types: [
           {
             description: 'LP Sketch projects',
-            accept: { 'application/json': ['.json', '.lpsketch.json'] },
+            accept: PROJECT_FILE_ACCEPT,
           },
         ],
         excludeAcceptAllOption: false,
@@ -479,7 +541,7 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
 
   function handleSaveProject() {
     const data = JSON.stringify(options.project(), null, 2)
-    const filename = `${options.project().projectMeta.name || 'lp-sketch'}.lpsketch.json`
+    const filename = `${options.project().projectMeta.name || 'lp-sketch'}.${PROJECT_SAVE_EXTENSION}`
     if (!supportsNativeFileDialogs) {
       downloadTextFile(filename, data)
       options.setStatus(`Saved ${filename}`)
@@ -493,7 +555,7 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
           types: [
             {
               description: 'LP Sketch project',
-              accept: { 'application/json': ['.json', '.lpsketch.json'] },
+              accept: PROJECT_FILE_ACCEPT,
             },
           ],
           excludeAcceptAllOption: false,

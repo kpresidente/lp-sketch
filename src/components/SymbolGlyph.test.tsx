@@ -174,6 +174,14 @@ describe('SymbolGlyph', () => {
     expect(stem).not.toBeNull()
   })
 
+  it('shortens the class2 ground-rod stem to the first grounding bar', () => {
+    const { container } = renderSymbol(makeSymbol('ground_rod', 'class2'))
+
+    expect(container.querySelector('line[x1="0"][y1="0"][x2="0"][y2="23"]')).not.toBeNull()
+    expect(container.querySelector('line[x1="0"][y1="0"][x2="0"][y2="27"]')).toBeNull()
+    expect(container.querySelector('line[x1="-13"][y1="23"][x2="13"][y2="23"]')).not.toBeNull()
+  })
+
   it('renders continued as annotation black regardless of active material color', () => {
     const symbol = makeSymbol('continued', 'none')
     symbol.color = 'red'

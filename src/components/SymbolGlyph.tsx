@@ -217,10 +217,11 @@ function symbolShape(
         </>
       )
 
-    case 'ground_rod':
+    case 'ground_rod': {
+      const stemEndY = (style.className === 'class2' ? 23 : 27) * scale
       return (
         <>
-          <line x1={0} y1={0} x2={0} y2={27 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
+          <line x1={0} y1={0} x2={0} y2={stemEndY} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
           <Show when={style.className === 'class2'}>
             <line x1={-13 * scale} y1={23 * scale} x2={13 * scale} y2={23 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
           </Show>
@@ -229,6 +230,7 @@ function symbolShape(
           <line x1={-3.6 * scale} y1={35 * scale} x2={3.6 * scale} y2={35 * scale} stroke={style.color} stroke-width={2 * scale} stroke-linecap="round" />
         </>
       )
+    }
 
     case 'steel_bond':
       return (

@@ -75,6 +75,7 @@ vi.mock('./lib/telemetry', () => ({
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
+  AUTOSAVE_STORAGE_KEY,
   MAX_PDF_IMPORT_BYTES,
   MAX_PROJECT_LOAD_BYTES,
 } from './config/runtimeLimits'
@@ -129,6 +130,7 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  window.localStorage.clear()
   renderProjectImageBlobMock.mockReset()
   renderProjectPdfBlobMock.mockReset()
   downloadBlobMock.mockReset()
@@ -190,6 +192,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  window.localStorage.clear()
   vi.restoreAllMocks()
 })
 
@@ -204,7 +207,7 @@ function requirePdfInput(container: HTMLElement): HTMLInputElement {
 
 function requireLoadInput(container: HTMLElement): HTMLInputElement {
   const input = container.querySelector(
-    'input[type="file"][accept="application/json,.json"]',
+    'input[type="file"][accept=".lps,application/json,.json"]',
   ) as HTMLInputElement | null
   expect(input).not.toBeNull()
   if (!input) {
@@ -238,8 +241,8 @@ describe('App file actions integration', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(downloadTextFileMock).toHaveBeenCalledTimes(1)
-    expect(downloadTextFileMock.mock.calls[0][0]).toBe('Untitled LP Sketch.lpsketch.json')
-    expect(screen.getByText('Saved Untitled LP Sketch.lpsketch.json')).toBeTruthy()
+    expect(downloadTextFileMock.mock.calls[0][0]).toBe('Untitled LP Sketch.lps')
+    expect(screen.getByText('Saved Untitled LP Sketch.lps')).toBeTruthy()
 
     await fireEvent.click(screen.getByRole('button', { name: 'PNG' }))
     await fireEvent.click(screen.getByRole('button', { name: 'JPG' }))
@@ -322,7 +325,7 @@ describe('App file actions integration', () => {
       errors: [],
     })
 
-    const migratedFile = new File(['{"schemaVersion":"0.9.0"}'], 'legacy.lpsketch.json', {
+    const migratedFile = new File(['{"schemaVersion":"0.9.0"}'], 'legacy.json', {
       type: 'application/json',
     })
     Object.defineProperty(migratedFile, 'text', {
@@ -330,14 +333,14 @@ describe('App file actions integration', () => {
     })
 
     await fireEvent.change(loadInput, { target: { files: [migratedFile] } })
-    expect(screen.getByText('Loaded legacy.lpsketch.json (migrated 0.9.0 -> 1.2.0)')).toBeTruthy()
+    expect(screen.getByText('Loaded legacy.json (migrated 0.9.0 -> 1.2.0)')).toBeTruthy()
 
     validateProjectMock.mockReturnValueOnce({
       valid: false,
       errors: ['missing required property schemaVersion'],
     })
 
-    const invalidFile = new File(['{}'], 'invalid.lpsketch.json', {
+    const invalidFile = new File(['{}'], 'invalid.lps', {
       type: 'application/json',
     })
     Object.defineProperty(invalidFile, 'text', {
@@ -350,7 +353,7 @@ describe('App file actions integration', () => {
       'project_load_failed',
       expect.stringContaining('Project file failed schema validation.'),
       expect.objectContaining({
-        file_name: 'invalid.lpsketch.json',
+        file_name: 'invalid.lps',
         file_size: 2,
       }),
     )
@@ -360,7 +363,7 @@ describe('App file actions integration', () => {
       throw 'bad-load'
     })
 
-    const fallbackFile = new File(['{"schemaVersion":"1.2.0"}'], 'fallback.lpsketch.json', {
+    const fallbackFile = new File(['{"schemaVersion":"1.2.0"}'], 'fallback.json', {
       type: 'application/json',
     })
     Object.defineProperty(fallbackFile, 'text', {
@@ -373,13 +376,14 @@ describe('App file actions integration', () => {
       'project_load_failed',
       'Unable to load project file.',
       expect.objectContaining({
-        file_name: 'fallback.lpsketch.json',
+        file_name: 'fallback.json',
         file_size: 25,
       }),
     )
   })
 
   it('imports PDFs across invalid, success, and fallback error paths', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const { container } = render(() => <App />)
     const pdfInput = requirePdfInput(container)
 
@@ -394,8 +398,9 @@ describe('App file actions integration', () => {
     })
 
     await fireEvent.change(pdfInput, { target: { files: [validPdf] } })
-    expect(sha256HexMock).toHaveBeenCalledTimes(1)
     expect(await screen.findByText('Imported roof-plan.pdf')).toBeTruthy()
+    expect(sha256HexMock).toHaveBeenCalledTimes(1)
+    expect(confirmSpy).not.toHaveBeenCalled()
     expect(screen.getByText('roof-plan.pdf loaded')).toBeTruthy()
     const overlay = requireOverlayLayer(container)
     expect(overlay.getAttribute('width')).toBe('640')
@@ -423,6 +428,46 @@ describe('App file actions integration', () => {
     )
   })
 
+  it('prompts before replacing restored drawing elements during PDF import', async () => {
+    const restoredProject = createDefaultProject('Restored Drawing')
+    restoredProject.elements.lines.push({
+      id: 'line-restored',
+      start: { x: 10, y: 10 },
+      end: { x: 100, y: 100 },
+      color: 'green',
+      class: 'class1',
+    })
+    window.localStorage.setItem(
+      AUTOSAVE_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        savedAt: '2026-07-06T12:00:00.000Z',
+        degraded: false,
+        project: restoredProject,
+      }),
+    )
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const { container } = render(() => <App />)
+
+    expect(await screen.findByText(/Recovered autosaved draft/)).toBeTruthy()
+
+    const pdfInput = requirePdfInput(container)
+    const pdfBytes = new Uint8Array([1, 2, 3, 4])
+    const replacementPdf = new File([pdfBytes], 'replacement.pdf', { type: 'application/pdf' })
+    Object.defineProperty(replacementPdf, 'arrayBuffer', {
+      value: async () => pdfBytes.buffer.slice(0),
+    })
+
+    await fireEvent.change(pdfInput, { target: { files: [replacementPdf] } })
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      'Importing a new PDF will delete 1 existing drawing element. Continue?',
+    )
+    expect(await screen.findByText('Imported replacement.pdf')).toBeTruthy()
+    expect(screen.getByText('replacement.pdf loaded')).toBeTruthy()
+    expect(window.localStorage.getItem(AUTOSAVE_STORAGE_KEY)).toBeNull()
+  })
+
   it('rejects oversized PDF imports before parsing', async () => {
     const { container } = render(() => <App />)
     const pdfInput = requirePdfInput(container)
@@ -444,7 +489,7 @@ describe('App file actions integration', () => {
     const { container } = render(() => <App />)
     const loadInput = requireLoadInput(container)
 
-    const oversizedProject = new File(['{}'], 'oversized.lpsketch.json', {
+    const oversizedProject = new File(['{}'], 'oversized.lps', {
       type: 'application/json',
     })
     Object.defineProperty(oversizedProject, 'size', {

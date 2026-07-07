@@ -83,7 +83,7 @@ export default function ProjectPanel() {
           <input
             ref={loadProjectInput}
             type="file"
-            accept="application/json,.json"
+            accept=".lps,application/json,.json"
             onChange={props.onLoadProject}
             hidden
           />

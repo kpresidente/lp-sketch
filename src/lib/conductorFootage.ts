@@ -45,6 +45,11 @@ export function symbolVerticalFootageFt(symbol: Pick<SymbolElement, 'symbolType'
   return normalizeVerticalFootageFt(symbol.verticalFootageFt)
 }
 
+export function downleadFootageLabelText(symbol: Pick<SymbolElement, 'symbolType' | 'verticalFootageFt'>): string | null {
+  const footage = symbolVerticalFootageFt(symbol)
+  return footage > 0 ? String(footage) : null
+}
+
 export function downleadFootageLabelPosition(
   symbol: Pick<SymbolElement, 'symbolType' | 'position'>,
   annotationScale = 1,

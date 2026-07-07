@@ -230,10 +230,11 @@ export function drawSymbol(
       ctx.strokeStyle = color
       ctx.lineWidth = 2 * designScale
       ctx.lineCap = 'round'
+      const stemEndY = (className === 'class2' ? 23 : 27) * designScale
 
       ctx.beginPath()
       ctx.moveTo(0, 0)
-      ctx.lineTo(0, 27 * designScale)
+      ctx.lineTo(0, stemEndY)
       ctx.stroke()
 
       if (className === 'class2') {

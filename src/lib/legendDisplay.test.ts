@@ -104,7 +104,7 @@ describe('legend display entries', () => {
 
     const entries = buildLegendDisplayEntries(project, placement, [])
     expect(entries).toHaveLength(1)
-    expect(entries[0].label).toBe('Class I Copper conductor footage')
+    expect(entries[0].label).toBe('Class I Copper Conductor Footage')
     expect(entries[0].countLabel).toBe('unscaled')
   })
 
@@ -129,7 +129,7 @@ describe('legend display entries', () => {
 
     const entries = buildLegendDisplayEntries(project, placement, project.legend.items)
     expect(entries).toHaveLength(1)
-    expect(entries[0].label).toBe('Class II Copper Air terminal A Roof Edge')
+    expect(entries[0].label).toBe('Class II Copper Air Terminal A Roof Edge')
   })
 
   it('switches legend counts between global and page scope', () => {

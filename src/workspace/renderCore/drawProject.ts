@@ -3,6 +3,7 @@ import type { LpProject, SymbolElement } from '../../types/project'
 import {
   annotationScaleFactor,
   approximateLegendLineWidthForScale,
+  legendConductorSampleXRangeForScale,
   scaledLegendMetrics,
   textFontSizePxForScale,
   textLineHeightPxForScale,
@@ -10,9 +11,8 @@ import {
   wireStrokeWidthForScale,
 } from '../../lib/annotationScale'
 import {
+  downleadFootageLabelText,
   downleadFootageLabelPosition,
-  isDownleadSymbolType,
-  symbolVerticalFootageFt,
 } from '../../lib/conductorFootage'
 import {
   dimensionBarLineSegments,
@@ -25,7 +25,7 @@ import { circularArcGeometryFromThreePoints } from '../../lib/geometry'
 import { GENERAL_NOTES_TITLE, generalNotesBoxSize, generalNotesDisplayLines, scaledGeneralNotesMetrics } from '../../lib/generalNotes'
 import { buildLegendItemsFromSymbols } from '../../lib/legend'
 import { buildLegendDisplayEntries, type LegendDisplayEntry } from '../../lib/legendDisplay'
-import { legendSymbolCenterOffsetY, legendSymbolScale } from '../../lib/legendSymbolScale'
+import { legendSymbolCenterOffsetY, legendSymbolDirectionDeg, legendSymbolScale } from '../../lib/legendSymbolScale'
 import { splitTextIntoLines } from '../../lib/textLayout'
 import { drawSymbol } from './drawSymbol'
 
@@ -167,9 +167,10 @@ function drawLegendPlacements(
         ctx.lineWidth = wireStrokeWidthForScale(wireClass, designScale)
         ctx.lineCap = 'round'
         ctx.setLineDash(wireDashPatternCanvasForScale(wireClass, designScale))
+        const conductorLineXRange = legendConductorSampleXRangeForScale(legendMetrics, wireClass, designScale)
         ctx.beginPath()
-        ctx.moveTo(legendMetrics.symbolCenterXPx - 10 * designScale, symbolCenterY)
-        ctx.lineTo(legendMetrics.symbolCenterXPx + 10 * designScale, symbolCenterY)
+        ctx.moveTo(conductorLineXRange.x1, symbolCenterY)
+        ctx.lineTo(conductorLineXRange.x2, symbolCenterY)
         ctx.stroke()
         ctx.setLineDash([])
       } else {
@@ -184,6 +185,7 @@ function drawLegendPlacements(
           },
           color: entry.color,
           class: entry.class,
+          directionDeg: legendSymbolDirectionDeg(symbolType),
         }
         drawSymbol(ctx, legendSymbol, symbolScale)
       }
@@ -327,23 +329,16 @@ export function drawProjectToContext(
   }
 
   for (const symbol of project.elements.symbols) {
-    if (!isDownleadSymbolType(symbol.symbolType)) {
-      continue
-    }
-
+    const labelText = downleadFootageLabelText(symbol)
     const position = downleadFootageLabelPosition(symbol, designScale)
-    if (!position) {
+    if (!labelText || !position) {
       continue
     }
 
     ctx.fillStyle = '#111827'
     ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
     ctx.textBaseline = 'top'
-    ctx.fillText(
-      String(symbolVerticalFootageFt(symbol)),
-      position.x,
-      position.y,
-    )
+    ctx.fillText(labelText, position.x, position.y)
   }
 
   for (const text of project.elements.texts) {

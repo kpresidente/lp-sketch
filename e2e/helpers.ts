@@ -245,7 +245,7 @@ export function createProjectJsonPayload(options?: {
   }
 
   return {
-    name: options?.fileName ?? 'e2e-loaded.lpsketch.json',
+    name: options?.fileName ?? 'e2e-loaded.lps',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(project, null, 2)),
   }
@@ -406,7 +406,7 @@ export async function createMultiPageProjectJsonPayload(options?: {
   }
 
   return {
-    name: options?.fileName ?? 'e2e-multipage.lpsketch.json',
+    name: options?.fileName ?? 'e2e-multipage.lps',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(project, null, 2)),
   }
@@ -417,7 +417,7 @@ export async function loadProjectFromProjectPanel(page: Page, payload: FilePaylo
   await panelRegion(page, 'Project').getByRole('button', { name: /Load$/ }).click()
   const chooser = await chooserPromise
   await chooser.setFiles(payload)
-  await expectStatus(page, /Loaded .*\.lpsketch\.json/)
+  await expectStatus(page, /Loaded .*\.lps/)
 }
 
 export async function applyManualScale(page: Page, inches: string, feet: string) {

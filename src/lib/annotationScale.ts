@@ -16,9 +16,10 @@ const BASE_LEGEND_PADDING_X_PX = 8
 const BASE_LEGEND_PADDING_Y_PX = 8
 const BASE_LEGEND_TITLE_HEIGHT_PX = 18
 const BASE_LEGEND_ROW_HEIGHT_PX = 20
-const BASE_LEGEND_SYMBOL_CENTER_X_PX = 12
+const BASE_LEGEND_SYMBOL_CENTER_X_PX = 18
 const BASE_LEGEND_SYMBOL_RADIUS_PX = 5
-const BASE_LEGEND_TEXT_OFFSET_X_PX = 30
+const BASE_LEGEND_TEXT_OFFSET_X_PX = 36
+const BASE_LEGEND_CONDUCTOR_SAMPLE_HALF_LENGTH_PX = 10
 
 export interface ScaledLegendMetrics {
   titleFontSizePx: number
@@ -78,6 +79,21 @@ export function approximateLegendLineWidthForScale(text: string, scale: number):
 
 export function wireStrokeWidthForScale(wireClass: WireClass, scale: number): number {
   return (wireClass === 'class1' ? 2 : 3) * scale
+}
+
+export function legendConductorSampleXRangeForScale(
+  metrics: Pick<ScaledLegendMetrics, 'symbolCenterXPx'>,
+  wireClass: WireClass,
+  scale: number,
+): { x1: number; x2: number } {
+  const halfLength = BASE_LEGEND_CONDUCTOR_SAMPLE_HALF_LENGTH_PX * scale
+  const capInset = wireStrokeWidthForScale(wireClass, scale) / 2
+  const x1 = metrics.symbolCenterXPx - halfLength + capInset
+
+  return {
+    x1,
+    x2: x1 + halfLength * 2,
+  }
 }
 
 export function wireDashPatternSvgForScale(

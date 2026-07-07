@@ -13,6 +13,8 @@ import MarksOverlay from './MarksOverlay'
 import PathPreviewsOverlay from './PathPreviewsOverlay'
 import SymbolsOverlay from './SymbolsOverlay'
 import ToolPreviewsOverlay from './ToolPreviewsOverlay'
+import { legendSymbolCenterOffsetY, legendSymbolScale } from '../../lib/legendSymbolScale'
+import { wireStrokeWidthForScale } from '../../lib/annotationScale'
 import type { LegendDisplayEntry, LegendUiMetrics } from './types'
 
 afterEach(() => {
@@ -27,9 +29,21 @@ const legendUi: LegendUiMetrics = {
   paddingYPx: 8,
   titleHeightPx: 18,
   rowHeightPx: 20,
-  symbolCenterXPx: 12,
+  symbolCenterXPx: 18,
   symbolRadiusPx: 5,
-  textOffsetXPx: 24,
+  textOffsetXPx: 30,
+}
+
+function parseTranslateTransform(transform: string | null): Point {
+  const match = transform?.match(/translate\((-?\d*\.?\d+) (-?\d*\.?\d+)\)/)
+  if (!match) {
+    throw new Error(`Expected translate transform, received ${transform ?? 'null'}`)
+  }
+
+  return {
+    x: Number.parseFloat(match[1]),
+    y: Number.parseFloat(match[2]),
+  }
 }
 
 describe('overlay branch rendering', () => {
@@ -165,6 +179,14 @@ describe('overlay branch rendering', () => {
       class: 'class1',
       verticalFootageFt: 42,
     })
+    project.elements.symbols.push({
+      id: 'downlead-zero',
+      symbolType: 'surface_downlead_roof',
+      position: { x: 140, y: 100 },
+      color: 'green',
+      class: 'class1',
+      verticalFootageFt: 0,
+    })
 
     const { container } = render(() => (
       <svg>
@@ -179,6 +201,7 @@ describe('overlay branch rendering', () => {
     ))
 
     const label = container.querySelector('text[data-vertical-footage-indicator="active"]')
+    expect(container.querySelectorAll('text[data-vertical-footage-indicator="active"]')).toHaveLength(1)
     expect(label).not.toBeNull()
     expect(label?.getAttribute('fill')).toBe('#111827')
     expect(label?.getAttribute('x')).toBe('108')
@@ -246,6 +269,15 @@ describe('overlay branch rendering', () => {
     const populatedEntries = () =>
       [
         {
+          key: 'entry-conductor',
+          symbolKind: 'conductor',
+          symbolType: null,
+          label: 'Conductor Footage',
+          countLabel: '12 ft',
+          color: 'green',
+          class: 'class1',
+        },
+        {
           key: 'entry-none',
           symbolKind: 'component',
           symbolType: 'bond',
@@ -272,6 +304,15 @@ describe('overlay branch rendering', () => {
           color: 'red',
           class: 'class2',
         },
+        {
+          key: 'entry-ground-rod',
+          symbolKind: 'component',
+          symbolType: 'ground_rod',
+          label: 'Ground Rod',
+          countLabel: '1',
+          color: 'red',
+          class: 'class2',
+        },
       ] satisfies LegendDisplayEntry[]
 
     const { container } = render(() => (
@@ -294,12 +335,41 @@ describe('overlay branch rendering', () => {
     expect(container.querySelector('circle[fill="#DC143C"][stroke="#DC143C"]')).not.toBeNull()
     expect(screen.getByText('Description')).toBeTruthy()
     expect(screen.getByText('Count')).toBeTruthy()
+    expect(screen.getByText('Conductor Footage')).toBeTruthy()
     expect(screen.getByText('Bond')).toBeTruthy()
     expect(screen.getByText('Air terminal')).toBeTruthy()
     expect(screen.getByText('Roof terminal')).toBeTruthy()
+    expect(screen.getByText('Ground Rod')).toBeTruthy()
+    expect(screen.getByText('12 ft')).toBeTruthy()
     expect(screen.getByText('2')).toBeTruthy()
-    expect(screen.getByText('1')).toBeTruthy()
+    expect(screen.getAllByText('1')).toHaveLength(2)
     expect(screen.getByText('3')).toBeTruthy()
+
+    const conductorLine = container.querySelector('line[data-legend-symbol="conductor"]')
+    const conductorX1 = Number(conductorLine?.getAttribute('x1'))
+    const conductorX2 = Number(conductorLine?.getAttribute('x2'))
+    const conductorStrokeWidth = Number(conductorLine?.getAttribute('stroke-width'))
+    expect(conductorStrokeWidth).toBe(wireStrokeWidthForScale('class1', 1))
+    expect(conductorX1 - conductorStrokeWidth / 2).toBe(project.legend.placements[0].position.x + legendUi.paddingXPx)
+    expect(conductorX2 - conductorX1).toBe(20)
+
+    const groundRodGroup = container.querySelector('g[data-symbol-type="ground_rod"]')
+    expect(groundRodGroup).not.toBeNull()
+    const groundRodRotationGroup = groundRodGroup?.querySelector('g')
+    expect(groundRodRotationGroup?.getAttribute('transform')).toBe('rotate(0)')
+
+    const groundRodIndex = 4
+    const rowTop =
+      project.legend.placements[0].position.y +
+      legendUi.paddingYPx +
+      legendUi.titleHeightPx +
+      legendUi.rowHeightPx +
+      groundRodIndex * legendUi.rowHeightPx
+    const rowCenterY = rowTop + legendUi.rowHeightPx / 2
+    const symbolScale = legendSymbolScale('ground_rod', 1)
+    const groundRodPosition = parseTranslateTransform(groundRodGroup?.getAttribute('transform') ?? null)
+    expect(groundRodPosition.x).toBe(project.legend.placements[0].position.x + legendUi.symbolCenterXPx)
+    expect(groundRodPosition.y - legendSymbolCenterOffsetY('ground_rod', symbolScale)).toBeCloseTo(rowCenterY)
   })
 
   it('renders general notes placements with numbered entries', () => {

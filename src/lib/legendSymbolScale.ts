@@ -12,6 +12,10 @@ export function legendSymbolScale(symbolType: SymbolType, annotationScale: numbe
   return factor * annotationScale
 }
 
+export function legendSymbolDirectionDeg(symbolType: SymbolType): number | undefined {
+  return symbolType === 'ground_rod' ? 90 : undefined
+}
+
 export function legendSymbolCenterOffsetY(symbolType: SymbolType, symbolScale: number): number {
   if (symbolType !== 'ground_rod') {
     return 0

@@ -133,7 +133,7 @@ export function useGeneralNotesDialog(options: UseGeneralNotesDialogOptions) {
     setGeneralNotesDialogDrag(null)
   }
 
-  function editGeneralNotesPlacementById(placementId: string) {
+  function editGeneralNotesPlacementById(placementId: string, screenOverride?: Point) {
     const p = options.project()
     const placement = p.generalNotes.placements.find((entry) => entry.id === placementId)
     if (!placement) {
@@ -144,7 +144,9 @@ export function useGeneralNotesDialog(options: UseGeneralNotesDialogOptions) {
     setGeneralNotesEdit({
       placementId,
       notes: notes.length > 0 ? notes : [''],
-      screen: generalNotesDialogScreenFromDocPoint(placement.position),
+      screen: screenOverride
+        ? normalizeGeneralNotesDialogScreen(screenOverride)
+        : generalNotesDialogScreenFromDocPoint(placement.position),
     })
     options.setSelected({ kind: 'general_note', id: placementId })
   }

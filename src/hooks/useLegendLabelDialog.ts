@@ -115,7 +115,7 @@ export function useLegendLabelDialog(options: UseLegendLabelDialogOptions) {
     setLegendLabelDialogDrag(null)
   }
 
-  function editLegendPlacementById(placementId: string) {
+  function editLegendPlacementById(placementId: string, screenOverride?: Point) {
     const p = options.project()
     const placement = p.legend.placements.find((entry) => entry.id === placementId)
     if (!placement) {
@@ -143,7 +143,9 @@ export function useLegendLabelDialog(options: UseLegendLabelDialogOptions) {
       rows,
       placementId,
       inputByKey,
-      screen: legendLabelDialogScreenFromDocPoint(placement.position),
+      screen: screenOverride
+        ? normalizeLegendLabelDialogScreen(screenOverride)
+        : legendLabelDialogScreenFromDocPoint(placement.position),
     })
     options.setSelected({ kind: 'legend', id: placementId })
   }

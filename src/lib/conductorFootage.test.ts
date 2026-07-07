@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDefaultProject } from '../model/defaultProject'
 import {
+  downleadFootageLabelText,
   downleadFootageLabelPosition,
   isDownleadSymbolType,
   normalizeVerticalFootageFt,
@@ -29,6 +30,13 @@ describe('conductor footage helpers', () => {
 
     expect(downleadFootageLabelPosition(symbol, 1)).toEqual({ x: 108, y: 186 })
     expect(downleadFootageLabelPosition(symbol, 1.5)).toEqual({ x: 112, y: 179 })
+  })
+
+  it('omits downlead footage label text for zero values', () => {
+    expect(downleadFootageLabelText({ symbolType: 'conduit_downlead_ground', verticalFootageFt: 0 })).toBeNull()
+    expect(downleadFootageLabelText({ symbolType: 'surface_downlead_roof', verticalFootageFt: undefined })).toBeNull()
+    expect(downleadFootageLabelText({ symbolType: 'bond', verticalFootageFt: 22 })).toBeNull()
+    expect(downleadFootageLabelText({ symbolType: 'conduit_downlead_roof', verticalFootageFt: 22 })).toBe('22')
   })
 
   it('summarizes horizontal and vertical footage by material and class', () => {

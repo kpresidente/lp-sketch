@@ -25,7 +25,7 @@ test.describe('project operations', () => {
     await expect(brightness).toBeEnabled()
   })
 
-  test('save and load project JSON', async ({ page }) => {
+  test('save and load project file', async ({ page }) => {
     await gotoApp(page)
     const project = panelRegion(page, 'Project')
 
@@ -34,15 +34,15 @@ test.describe('project operations', () => {
     const downloadPromise = page.waitForEvent('download')
     await project.getByRole('button', { name: /Save$/ }).click()
     const download = await downloadPromise
-    expect(download.suggestedFilename()).toContain('E2E Save Load.lpsketch.json')
-    await expectStatus(page, 'Saved E2E Save Load.lpsketch.json')
+    expect(download.suggestedFilename()).toContain('E2E Save Load.lps')
+    await expectStatus(page, 'Saved E2E Save Load.lps')
 
     const chooserPromise = page.waitForEvent('filechooser')
     await project.getByRole('button', { name: /Load$/ }).click()
     const chooser = await chooserPromise
     await chooser.setFiles(createProjectJsonPayload({ withLine: true }))
 
-    await expectStatus(page, /Loaded e2e-loaded\.lpsketch\.json/)
+    await expectStatus(page, /Loaded e2e-loaded\.lps/)
     await expect(page.getByPlaceholder('Project name...')).toHaveValue('Loaded E2E Project')
     await expect(page.locator('svg.overlay-layer line[stroke="#2e8b57"]')).toHaveCount(1)
   })

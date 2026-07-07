@@ -31,7 +31,7 @@ LP Sketch is a lightning protection system design communication tool. It allows 
 2. **Set the drawing scale** -- Either manually or by calibrating against a known dimension (see [Drawing Scale](#help-scale-drawing-scale))
 3. **Design your protection system** -- Draw conductors, place components, auto-space air terminals
 4. **Annotate** -- Add dimension texts, notes, arrows, legend, and general notes
-5. **Save your project** -- Save to a `.lpsketch.json` file for future editing
+5. **Save your project** -- Save to a `.lps` file for future editing
 6. **Export** -- Export as PNG, JPG, or flattened PDF for handoff
 
 ---
@@ -57,13 +57,13 @@ Once imported, the PDF renders as a locked background. You cannot edit the PDF c
 
 ### 2.3. Saving and Loading {#help-project-save-load}
 
-**Saving:** Click **Save** in the File section to download your project as a `.lpsketch.json` file. This file contains:
+**Saving:** Click **Save** in the File section to download your project as a `.lps` file. This file contains:
 - All your design elements (conductors, components, annotations) across all pages
 - The embedded PDF (base64-encoded)
 - All project settings (scale, material, class, layer visibility, etc.)
 - Legend and general notes data
 
-**Loading:** Click **Load** in the File section and select a previously saved `.lpsketch.json` file. The application validates the file, runs any necessary schema migrations for backward compatibility, and restores your full design state.
+**Loading:** Click **Load** in the File section and select a previously saved `.lps` file. Plain `.json` project files are also accepted. The application validates the file, runs any necessary schema migrations for backward compatibility, and restores your full design state.
 
 **Limits:**
 - Maximum project file size: 30 MB
@@ -441,7 +441,7 @@ Connection components represent the physical junction hardware in your LP system
 
 ### 4.4. Downleads {#help-components-downleads}
 
-Downlead components represent the vertical conductor runs from rooftop to ground level. Each downlead carries a **vertical footage** value (0–999 feet) that records the length of the vertical conductor run. This footage is added to the [conductor footage](#help-conductor-footage) totals and displayed adjacent to the symbol on the drawing.
+Downlead components represent the vertical conductor runs from rooftop to ground level. Each downlead carries a **vertical footage** value (0–999 feet) that records the length of the vertical conductor run. This footage is added to the [conductor footage](#help-conductor-footage) totals, and nonzero values are displayed adjacent to the symbol on the drawing.
 
 | Component | Description | Placement |
 |-----------|-------------|-----------|
@@ -913,8 +913,8 @@ Summed from the **Vertical** footage values entered on [downlead](#help-componen
 
 ### 13.3. Footage Display {#help-conductor-footage-display}
 
-- **Legend:** Conductor footage rows appear in the legend grouped by material and wire class (e.g., "Class I Copper conductor footage: 145 ft")
-- **Downlead labels:** Each downlead symbol shows its vertical footage value adjacent to the symbol on the drawing
+- **Legend:** Conductor footage rows appear in the legend grouped by material and wire class (e.g., "Class I Copper Conductor Footage: 145 ft")
+- **Downlead labels:** Each downlead symbol with nonzero vertical footage shows that value adjacent to the symbol on the drawing
 
 ---
 

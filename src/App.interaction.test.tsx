@@ -462,6 +462,7 @@ function verticalFootageLabels(container: HTMLElement): string[] {
   ).map((entry) => entry.textContent?.trim() ?? '')
 }
 
+
 describe('App interaction integration', () => {
   it('creates a line segment from two line-tool clicks', async () => {
     const { container } = render(() => <App />)
@@ -496,6 +497,7 @@ describe('App interaction integration', () => {
     const line = container.querySelector('svg.overlay-layer line[stroke="#2e8b57"]')
     expect(line).not.toBeNull()
   })
+
 
   it('supports inside-corner measure-mark input via Alt+click fallback', async () => {
     const { container } = render(() => <App />)
@@ -1375,10 +1377,10 @@ describe('App interaction integration', () => {
 
     await fireEvent.click(historyButton(container, 0))
     expect(screen.queryByText('Roof Air')).toBeNull()
-    expect(screen.getByText('Class I Copper Air terminal A')).toBeTruthy()
+    expect(screen.getByText('Class I Copper Air Terminal A')).toBeTruthy()
 
     await fireEvent.click(historyButton(container, 0))
-    expect(screen.queryByText('Class I Copper Air terminal')).toBeNull()
+    expect(screen.queryByText('Class I Copper Air Terminal')).toBeNull()
   }, 15000)
 
   it('places and edits shared general notes content', async () => {
@@ -1403,11 +1405,57 @@ describe('App interaction integration', () => {
       clientY: 244,
     })
 
-    expect(container.querySelector('.general-notes-dialog')).not.toBeNull()
+    const notesDialog = container.querySelector('.general-notes-dialog') as HTMLDivElement | null
+    expect(notesDialog).not.toBeNull()
+    if (!notesDialog) {
+      return
+    }
 
-    const noteInput = container.querySelector(
-      '.general-notes-dialog .legend-label-input',
-    ) as HTMLInputElement | null
+    const notesInitialLeft = parseStylePx(notesDialog.style.left)
+    const notesInitialTop = parseStylePx(notesDialog.style.top)
+    const notesTitleBar = notesDialog.querySelector('.legend-label-titlebar') as HTMLDivElement | null
+    expect(notesTitleBar).not.toBeNull()
+    if (!notesTitleBar) {
+      return
+    }
+
+    await fireEvent.pointerDown(notesTitleBar, {
+      button: 0,
+      clientX: notesInitialLeft + 24,
+      clientY: notesInitialTop + 12,
+      pointerId: 1012,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerMove(notesTitleBar, {
+      button: 0,
+      clientX: 160,
+      clientY: 120,
+      pointerId: 1012,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(notesTitleBar, {
+      button: 0,
+      clientX: 160,
+      clientY: 120,
+      pointerId: 1012,
+      pointerType: 'mouse',
+    })
+
+    const notesMovedLeft = parseStylePx(notesDialog.style.left)
+    const notesMovedTop = parseStylePx(notesDialog.style.top)
+    expect(notesMovedLeft).not.toBe(notesInitialLeft)
+    expect(notesMovedTop).not.toBe(notesInitialTop)
+
+    await fireEvent.click(within(notesDialog).getByRole('button', { name: 'Page' }))
+    const notesDialogAfterScopeChange = container.querySelector('.general-notes-dialog') as HTMLDivElement | null
+    expect(notesDialogAfterScopeChange).not.toBeNull()
+    if (!notesDialogAfterScopeChange) {
+      return
+    }
+    expect(parseStylePx(notesDialogAfterScopeChange.style.left)).toBe(notesMovedLeft)
+    expect(parseStylePx(notesDialogAfterScopeChange.style.top)).toBe(notesMovedTop)
+
+    const noteInput = notesDialogAfterScopeChange.querySelector('.legend-label-input') as HTMLInputElement | null
     expect(noteInput).not.toBeNull()
     if (!noteInput) {
       return
@@ -1416,7 +1464,7 @@ describe('App interaction integration', () => {
     await fireEvent.input(noteInput, { target: { value: 'Install per UL 96A.' } })
     await fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
 
-    expect(screen.getByText('General notes updated.')).toBeTruthy()
+    expect(screen.getByText('Page 1 notes updated.')).toBeTruthy()
     expect(screen.getByText('1. Install per UL 96A.')).toBeTruthy()
   }, 15000)
 
@@ -1491,7 +1539,16 @@ describe('App interaction integration', () => {
     expect(movedTop).not.toBe(initialTop)
     expect(movedLeft).toBeGreaterThanOrEqual(12)
     expect(movedTop).toBeGreaterThanOrEqual(12)
-  })
+
+    await fireEvent.click(within(dialog).getByRole('button', { name: 'Page' }))
+    const dialogAfterScopeChange = container.querySelector('.legend-label-dialog') as HTMLDivElement | null
+    expect(dialogAfterScopeChange).not.toBeNull()
+    if (!dialogAfterScopeChange) {
+      return
+    }
+    expect(parseStylePx(dialogAfterScopeChange.style.left)).toBe(movedLeft)
+    expect(parseStylePx(dialogAfterScopeChange.style.top)).toBe(movedTop)
+  }, 15000)
 
   it('filters legend entries by visible layers', async () => {
     const { container } = render(() => <App />)
@@ -1521,19 +1578,19 @@ describe('App interaction integration', () => {
       pointerId: 922,
       pointerType: 'mouse',
     })
-    expect(screen.getByText('Class I Copper conductor footage')).toBeTruthy()
+    expect(screen.getByText('Class I Copper Conductor Footage')).toBeTruthy()
 
     const rooftopLayerToggle = requireToggleByLabel(container, 'Rooftop')
     await fireEvent.click(rooftopLayerToggle)
     expect(isToggleOn(rooftopLayerToggle)).toBe(false)
     await waitFor(() => {
-      expect(screen.queryByText('Class I Copper conductor footage')).toBeNull()
+      expect(screen.queryByText('Class I Copper Conductor Footage')).toBeNull()
     })
     expect(screen.getByText('No components used yet.')).toBeTruthy()
 
     await fireEvent.click(rooftopLayerToggle)
     expect(isToggleOn(rooftopLayerToggle)).toBe(true)
-    expect(screen.getByText('Class I Copper conductor footage')).toBeTruthy()
+    expect(screen.getByText('Class I Copper Conductor Footage')).toBeTruthy()
   }, 15000)
 
   it('auto-connectors place connector symbols for junctions and remain consistent through undo/redo', async () => {
@@ -5021,7 +5078,7 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
 
-    expect(verticalFootageLabels(container)).toContain('0')
+    expect(verticalFootageLabels(container)).not.toContain('0')
 
     await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
     await fireEvent.pointerDown(stage, {
@@ -5036,7 +5093,7 @@ describe('App interaction integration', () => {
     expect(selectedInput.value).toBe('0')
 
     await fireEvent.input(selectedInput, { target: { value: '58' } })
-    expect(verticalFootageLabels(container)).toContain('0')
+    expect(verticalFootageLabels(container)).not.toContain('0')
     expect(verticalFootageLabels(container)).not.toContain('58')
 
     await fireEvent.blur(selectedInput)
@@ -5051,7 +5108,8 @@ describe('App interaction integration', () => {
     expect(screen.queryByText('Vertical Feet')).toBeNull()
 
     await fireEvent.click(historyButton(container, 0))
-    expect(verticalFootageLabels(container)).toContain('0')
+    expect(verticalFootageLabels(container)).not.toContain('58')
+    expect(verticalFootageLabels(container)).not.toContain('0')
   })
 
   it('shows measure path distance in scaled real units', async () => {

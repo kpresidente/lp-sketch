@@ -2,13 +2,14 @@ import { defineConfig, devices } from '@playwright/test'
 
 const PORT = 4173
 const BASE_URL = `http://127.0.0.1:${PORT}`
+const isWindows = process.platform === 'win32'
 
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI || isWindows ? 1 : undefined,
   reporter: 'list',
   use: {
     baseURL: BASE_URL,

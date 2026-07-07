@@ -30,7 +30,7 @@ test.describe('multi-page workflows', () => {
     await loadProjectFromProjectPanel(
       page,
       await createMultiPageProjectJsonPayload({
-        fileName: 'e2e-multipage-page-scope.lpsketch.json',
+        fileName: 'e2e-multipage-page-scope.lps',
         notesScope: 'page',
       }),
     )
@@ -44,7 +44,7 @@ test.describe('multi-page workflows', () => {
     await loadProjectFromProjectPanel(
       page,
       await createMultiPageProjectJsonPayload({
-        fileName: 'e2e-multipage-global-scope.lpsketch.json',
+        fileName: 'e2e-multipage-global-scope.lps',
         notesScope: 'global',
       }),
     )

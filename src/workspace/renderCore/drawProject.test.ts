@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultProject } from '../../model/defaultProject'
+import { scaledLegendMetrics, wireStrokeWidthForScale } from '../../lib/annotationScale'
+import { legendSymbolCenterOffsetY, legendSymbolScale } from '../../lib/legendSymbolScale'
 import { drawProjectToContext } from './drawProject'
+import { drawSymbol } from './drawSymbol'
 
 type DrawOp = {
   op: string
@@ -177,11 +180,87 @@ describe('drawProjectToContext', () => {
       includeMarks: false,
     })
 
+    const legendMetrics = scaledLegendMetrics(1)
+    const firstLegendRowCenterY = legendMetrics.paddingYPx + legendMetrics.titleHeightPx + legendMetrics.rowHeightPx * 1.5
+    const conductorSampleStartX = legendMetrics.paddingXPx + wireStrokeWidthForScale('class1', 1) / 2
     expect(hasOperation(ctx.operations, 'moveTo', (args) => args[0] === 12 && args[1] === 18)).toBe(true)
     expect(hasOperation(ctx.operations, 'lineTo', (args) => args[0] === 144 && args[1] === 30)).toBe(true)
     expect(hasOperation(ctx.operations, 'fillText', (args) => args[0] === 'RIDGE NOTE')).toBe(true)
     expect(hasOperation(ctx.operations, 'fillText', (args) => args[0] === 'Legend')).toBe(true)
     expect(hasOperation(ctx.operations, 'fillText', (args) => args[0] === 'General Notes')).toBe(true)
     expect(hasOperation(ctx.operations, 'translate', (args) => args[0] === 180 && args[1] === 64)).toBe(true)
+    expect(
+      hasOperation(
+        ctx.operations,
+        'moveTo',
+        (args) => args[0] === conductorSampleStartX && args[1] === firstLegendRowCenterY,
+      ),
+    ).toBe(true)
+    expect(
+      hasOperation(
+        ctx.operations,
+        'lineTo',
+        (args) => args[0] === conductorSampleStartX + 20 && args[1] === firstLegendRowCenterY,
+      ),
+    ).toBe(true)
+  })
+
+  it('centers ground rod symbols in rendered legend rows', () => {
+    ensurePath2DStub()
+
+    const project = createDefaultProject('Ground Rod Legend')
+    project.settings.designScale = 'small'
+    project.elements.symbols.push({
+      id: 'ground-rod-1',
+      symbolType: 'ground_rod',
+      position: { x: 40, y: 40 },
+      color: 'red',
+      class: 'class2',
+      directionDeg: 90,
+    })
+    project.legend.placements.push({
+      id: 'legend-1',
+      position: { x: 100, y: 80 },
+      editedLabels: {},
+    })
+
+    const ctx = new RecordingContext()
+
+    drawProjectToContext(ctx as unknown as CanvasRenderingContext2D, project, {
+      includeMarks: false,
+    })
+
+    const legendMetrics = scaledLegendMetrics(1)
+    const rowCenterY = 8 + 18 + 20 + 20 / 2
+    const symbolScale = legendSymbolScale('ground_rod', 1)
+    const expectedLegendGroundRodY = rowCenterY + legendSymbolCenterOffsetY('ground_rod', symbolScale)
+    const legendGroundRodTranslateIndex = ctx.operations.findIndex(
+      (entry) =>
+        entry.op === 'translate' &&
+        entry.args[0] === legendMetrics.symbolCenterXPx &&
+        typeof entry.args[1] === 'number' &&
+        Math.abs(entry.args[1] - expectedLegendGroundRodY) < 0.001,
+    )
+
+    expect(legendGroundRodTranslateIndex).toBeGreaterThanOrEqual(0)
+    expect(ctx.operations[legendGroundRodTranslateIndex + 1]).toEqual({ op: 'rotate', args: [0] })
+  })
+
+
+  it('shortens class2 ground rod stems in canvas rendering', () => {
+    const ctx = new RecordingContext()
+
+    drawSymbol(ctx as unknown as CanvasRenderingContext2D, {
+      id: 'ground-rod-class2',
+      symbolType: 'ground_rod',
+      position: { x: 0, y: 0 },
+      color: 'red',
+      class: 'class2',
+      directionDeg: 90,
+    }, 1)
+
+    expect(hasOperation(ctx.operations, 'lineTo', (args) => args[0] === 0 && args[1] === 23)).toBe(true)
+    expect(hasOperation(ctx.operations, 'lineTo', (args) => args[0] === 0 && args[1] === 27)).toBe(false)
+    expect(hasOperation(ctx.operations, 'moveTo', (args) => args[0] === -13 && args[1] === 23)).toBe(true)
   })
 })

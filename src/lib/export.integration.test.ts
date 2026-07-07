@@ -470,7 +470,7 @@ describe('export integration', () => {
       hasOperation(
         ops,
         'fillText',
-        (args) => args[0] === 'Class I Copper Air terminal',
+        (args) => args[0] === 'Class I Copper Air Terminal',
       ),
     ).toBe(true)
     expect(
@@ -578,6 +578,14 @@ describe('export integration', () => {
       class: 'class1',
       verticalFootageFt: 37,
     })
+    project.elements.symbols.push({
+      id: 'downlead-zero',
+      symbolType: 'conduit_downlead_roof',
+      position: { x: 260, y: 160 },
+      color: 'green',
+      class: 'class1',
+      verticalFootageFt: 0,
+    })
 
     await renderProjectCanvas(project, {
       includeBackground: false,
@@ -593,6 +601,7 @@ describe('export integration', () => {
         (args) => args[0] === '37' && args[1] === 218 && args[2] === 146,
       ),
     ).toBe(true)
+    expect(hasOperation(ops, 'fillText', (args) => args[0] === '0')).toBe(false)
   })
 
   it('excludes hidden layers from rendered export geometry', async () => {

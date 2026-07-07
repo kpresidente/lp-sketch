@@ -55,6 +55,11 @@ export function legendEditorBaseLabel(
   return entry.label
 }
 
+function properCaseGeneratedLegendLabel(label: string | undefined): string {
+  const safeLabel = label && label.trim().length > 0 ? label : 'Component'
+  return safeLabel.replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
+}
+
 function conductorCountLabel(
   project: LpProject,
   horizontalPt: number,
@@ -87,7 +92,7 @@ function buildConductorRows(project: LpProject, placement: LegendPlacement): Leg
     }
 
     const key = `conductor|${summary.material}|${summary.wireClass}`
-    const baseLabel = `${classLabel[summary.wireClass]} ${MATERIAL_LABEL[summary.material]} conductor footage`
+    const baseLabel = `${classLabel[summary.wireClass]} ${MATERIAL_LABEL[summary.material]} Conductor Footage`
     const editedLabel = placement.editedLabels[key]?.trim()
     rows.push({
       key,
@@ -119,7 +124,7 @@ function buildSymbolRows(
     `${item.symbolType}|${item.letter ?? ''}`
 
   const withSuffix = (item: LegendItem): string => {
-    const prefix = `${classLabel[item.class]} ${MATERIAL_LABEL[item.color]} ${item.label}`
+    const prefix = `${classLabel[item.class]} ${MATERIAL_LABEL[item.color]} ${properCaseGeneratedLegendLabel(item.label)}`
     const suffix = suffixes[suffixKeyForItem(item)]?.trim()
     if (!suffix) {
       return prefix
