@@ -107,6 +107,7 @@ export interface LineElement {
   start: Point
   end: Point
   page?: number
+  zIndex?: number
   color: MaterialColor
   class: WireClass
 }
@@ -117,6 +118,7 @@ export interface ArcElement {
   end: Point
   through: Point
   page?: number
+  zIndex?: number
   color: MaterialColor
   class: WireClass
 }
@@ -127,6 +129,7 @@ export interface CurveElement {
   end: Point
   through: Point
   page?: number
+  zIndex?: number
   color: MaterialColor
   class: WireClass
 }
@@ -136,6 +139,7 @@ export interface SymbolElement {
   symbolType: SymbolType
   position: Point
   page?: number
+  zIndex?: number
   directionDeg?: number
   verticalFootageFt?: number
   letter?: string
@@ -153,6 +157,7 @@ export interface TextElement {
   position: Point
   text: string
   page?: number
+  zIndex?: number
   color: MaterialColor
   layer: LayerId
 }
@@ -162,6 +167,7 @@ export interface ArrowElement {
   tail: Point
   head: Point
   page?: number
+  zIndex?: number
   color: MaterialColor
   layer: LayerId
 }
@@ -172,6 +178,7 @@ export interface DimensionTextElement {
   end: Point
   position: Point
   page?: number
+  zIndex?: number
   overrideText?: string
   showLinework?: boolean
   layer: LayerId
@@ -181,6 +188,7 @@ export interface MarkElement {
   id: string
   position: Point
   page?: number
+  zIndex?: number
 }
 
 export interface LegendItem {
@@ -196,6 +204,7 @@ export interface LegendPlacement {
   id: string
   position: Point
   page?: number
+  zIndex?: number
   editedLabels: Record<string, string>
 }
 
@@ -203,6 +212,7 @@ export interface GeneralNotePlacement {
   id: string
   position: Point
   page?: number
+  zIndex?: number
 }
 
 export interface LpProject {

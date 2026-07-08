@@ -623,6 +623,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
         "color": {
           "$ref": "#/$defs/materialColor"
         },
@@ -659,6 +663,10 @@
         "page": {
           "type": "integer",
           "minimum": 1
+        },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
         },
         "color": {
           "$ref": "#/$defs/materialColor"
@@ -697,6 +705,10 @@
           "type": "number",
           "minimum": 0,
           "exclusiveMaximum": 360
+        },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
         },
         "verticalFootageFt": {
           "type": "integer",
@@ -920,6 +932,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
         "text": {
           "type": "string"
         },
@@ -962,6 +978,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
         "color": {
           "$ref": "#/$defs/materialColor"
         },
@@ -1003,6 +1023,10 @@
         "page": {
           "type": "integer",
           "minimum": 1
+        },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
         },
         "overrideText": {
           "type": "string",
@@ -1099,6 +1123,10 @@
         "page": {
           "type": "integer",
           "minimum": 1
+        },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -1170,6 +1198,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
         "editedLabels": {
           "type": "object",
           "additionalProperties": {
@@ -1227,6 +1259,10 @@
         "page": {
           "type": "integer",
           "minimum": 1
+        },
+        "zIndex": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },

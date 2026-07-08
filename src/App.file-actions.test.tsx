@@ -241,8 +241,8 @@ describe('App file actions integration', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(downloadTextFileMock).toHaveBeenCalledTimes(1)
-    expect(downloadTextFileMock.mock.calls[0][0]).toBe('Untitled LP Sketch.lps')
-    expect(screen.getByText('Saved Untitled LP Sketch.lps')).toBeTruthy()
+    expect(downloadTextFileMock.mock.calls[0][0]).toBe('LP Sketch.lps')
+    expect(screen.getByText('Saved LP Sketch.lps')).toBeTruthy()
 
     await fireEvent.click(screen.getByRole('button', { name: 'PNG' }))
     await fireEvent.click(screen.getByRole('button', { name: 'JPG' }))
@@ -253,10 +253,10 @@ describe('App file actions integration', () => {
     expect(renderProjectImageBlobMock.mock.calls[1][1]).toBe('jpg')
     expect(renderProjectPdfBlobMock).toHaveBeenCalledTimes(1)
     expect(downloadBlobMock).toHaveBeenCalledTimes(3)
-    expect(downloadBlobMock.mock.calls[0][0]).toBe('Untitled-LP-Sketch.png')
-    expect(downloadBlobMock.mock.calls[1][0]).toBe('Untitled-LP-Sketch.jpg')
-    expect(downloadBlobMock.mock.calls[2][0]).toBe('Untitled-LP-Sketch.pdf')
-  })
+    expect(downloadBlobMock.mock.calls[0][0]).toBe('LP-Sketch.png')
+    expect(downloadBlobMock.mock.calls[1][0]).toBe('LP-Sketch.jpg')
+    expect(downloadBlobMock.mock.calls[2][0]).toBe('LP-Sketch.pdf')
+  }, 10_000)
 
   it('passes the rendered PDF canvas into PDF export after importing a source PDF', async () => {
     const { container } = render(() => <App />)

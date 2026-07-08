@@ -11,46 +11,6 @@ exports[`export regression fixtures > matches golden canvas operations for condu
   },
   {
     "args": [
-      [],
-    ],
-    "op": "setLineDash",
-  },
-  {
-    "args": [],
-    "op": "beginPath",
-  },
-  {
-    "args": [
-      36,
-      42,
-    ],
-    "op": "moveTo",
-  },
-  {
-    "args": [
-      310,
-      44,
-    ],
-    "op": "lineTo",
-  },
-  {
-    "args": [
-      "#2e8b57",
-      3,
-      "round",
-      "miter",
-      [],
-    ],
-    "op": "stroke",
-  },
-  {
-    "args": [
-      [],
-    ],
-    "op": "setLineDash",
-  },
-  {
-    "args": [
       [
         8,
         6,
@@ -90,6 +50,40 @@ exports[`export regression fixtures > matches golden canvas operations for condu
       [],
     ],
     "op": "setLineDash",
+  },
+  {
+    "args": [
+      [],
+    ],
+    "op": "setLineDash",
+  },
+  {
+    "args": [],
+    "op": "beginPath",
+  },
+  {
+    "args": [
+      36,
+      42,
+    ],
+    "op": "moveTo",
+  },
+  {
+    "args": [
+      310,
+      44,
+    ],
+    "op": "lineTo",
+  },
+  {
+    "args": [
+      "#2e8b57",
+      3,
+      "round",
+      "miter",
+      [],
+    ],
+    "op": "stroke",
   },
   {
     "args": [
@@ -322,18 +316,6 @@ exports[`export regression fixtures > matches golden canvas operations for dimen
       ],
     ],
     "op": "stroke",
-  },
-  {
-    "args": [
-      [],
-    ],
-    "op": "setLineDash",
-  },
-  {
-    "args": [
-      [],
-    ],
-    "op": "setLineDash",
   },
   {
     "args": [

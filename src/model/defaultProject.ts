@@ -100,7 +100,7 @@ export function colorForSymbol(symbolType: SymbolType, activeColor: MaterialColo
   return activeColor
 }
 
-export function createDefaultProject(name = 'Untitled LP Sketch'): LpProject {
+export function createDefaultProject(name = 'LP Sketch'): LpProject {
   const timestamp = new Date().toISOString()
   const defaultScaleState = {
     isSet: false,

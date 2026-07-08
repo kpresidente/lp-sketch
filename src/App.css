@@ -1064,6 +1064,21 @@ select.select-field:focus {
   flex-shrink: 0;
 }
 
+.tb-z-order-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tb-z-order-control {
+  display: inline-flex;
+}
+
+.properties-z-order-help-btn {
+  margin-left: -2px;
+}
+
 .tb-field {
   display: inline-flex;
   align-items: center;

@@ -1,6 +1,8 @@
 import { For } from 'solid-js'
 import { isDownleadSymbolType } from '../lib/conductorFootage'
 import { useAppController } from '../context/AppControllerContext'
+import { useHelp } from '../context/HelpContext'
+import { tablerIconClass } from '../config/iconRegistry'
 import { DIRECTIONAL_SYMBOLS } from '../model/defaultProject'
 
 const LETTER_OPTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
@@ -119,6 +121,7 @@ function symbolHint(props: PropertiesController): string {
 
 export default function PropertiesToolOptions() {
   const props = useAppController()
+  const help = useHelp()
   const handleEnterBlur = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
     if (event.key !== 'Enter') {
       return
@@ -143,25 +146,51 @@ export default function PropertiesToolOptions() {
   const letteredComponentOptionsVisible = () =>
     props.tool === 'symbol' &&
     (props.activeSymbol === 'air_terminal' || props.activeSymbol === 'bonded_air_terminal')
+  const sendBackTitle = () =>
+    props.canSendSelectedToBack
+      ? 'Send behind next overlapping item in current layer'
+      : 'No overlapping item below in current layer'
+  const bringForwardTitle = () =>
+    props.canBringSelectedToFront
+      ? 'Bring in front of next overlapping item in current layer'
+      : 'No overlapping item above in current layer'
   const zOrderControls = () => (
-    <>
+    <span class="tb-z-order-controls">
+      <span class="tb-z-order-control" title={sendBackTitle()}>
+        <button
+          class="tb-btn"
+          type="button"
+          title={sendBackTitle()}
+          onClick={props.onSendSelectedToBack}
+          disabled={!props.canSendSelectedToBack}
+        >
+          Send Back
+        </button>
+      </span>
+      <span class="tb-z-order-control" title={bringForwardTitle()}>
+        <button
+          class="tb-btn"
+          type="button"
+          title={bringForwardTitle()}
+          onClick={props.onBringSelectedToFront}
+          disabled={!props.canBringSelectedToFront}
+        >
+          Bring Forward
+        </button>
+      </span>
       <button
-        class="tb-btn"
+        class="section-help-btn properties-z-order-help-btn"
         type="button"
-        onClick={props.onSendSelectedToBack}
-        disabled={!props.canSendSelectedToBack}
+        title="Z-order help"
+        aria-label="Z-order help"
+        onClick={(event) => {
+          event.stopPropagation()
+          help.openHelp('help-selection-z-order')
+        }}
       >
-        Send Back
+        <i class={tablerIconClass('info-square-rounded')} />
       </button>
-      <button
-        class="tb-btn"
-        type="button"
-        onClick={props.onBringSelectedToFront}
-        disabled={!props.canBringSelectedToFront}
-      >
-        Bring Forward
-      </button>
-    </>
+    </span>
   )
 
   const renderInlineOptions = () => {
@@ -607,6 +636,8 @@ export default function PropertiesToolOptions() {
             />
             <span class="tb-unit">ft</span>
           </div>
+          <div class="tb-sep" />
+          {zOrderControls()}
           <div class="tb-sep" />
           <span class="tb-hint">Press Enter or blur to apply.</span>
         </div>

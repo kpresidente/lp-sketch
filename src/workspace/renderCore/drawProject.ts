@@ -26,6 +26,7 @@ import { GENERAL_NOTES_TITLE, generalNotesBoxSize, generalNotesDisplayLines, sca
 import { buildLegendItemsFromSymbols } from '../../lib/legend'
 import { buildLegendDisplayEntries, type LegendDisplayEntry } from '../../lib/legendDisplay'
 import { legendSymbolCenterOffsetY, legendSymbolDirectionDeg, legendSymbolScale } from '../../lib/legendSymbolScale'
+import { projectDrawOrderEntries } from '../../lib/selection/zOrder'
 import { splitTextIntoLines } from '../../lib/textLayout'
 import { drawSymbol } from './drawSymbol'
 
@@ -268,200 +269,207 @@ export function drawProjectToContext(
   const designScale = annotationScaleFactor(project.settings.designScale)
   const textFontSizePx = textFontSizePxForScale(designScale)
 
-  for (const line of project.elements.lines) {
-    ctx.strokeStyle = colorFor(line.color)
-    ctx.lineWidth = wireStrokeWidthForScale(line.class, designScale)
-    ctx.lineCap = 'round'
-    ctx.setLineDash(wireDashPatternCanvasForScale(line.class, designScale))
-
-    ctx.beginPath()
-    ctx.moveTo(line.start.x, line.start.y)
-    ctx.lineTo(line.end.x, line.end.y)
-    ctx.stroke()
-  }
-
-  ctx.setLineDash([])
-
-  for (const arc of project.elements.arcs) {
-    ctx.strokeStyle = colorFor(arc.color)
-    ctx.lineWidth = wireStrokeWidthForScale(arc.class, designScale)
-    ctx.lineCap = 'round'
-    ctx.setLineDash(wireDashPatternCanvasForScale(arc.class, designScale))
-
-    const geometry = circularArcGeometryFromThreePoints(arc.start, arc.through, arc.end)
-    if (!geometry) {
-      ctx.beginPath()
-      ctx.moveTo(arc.start.x, arc.start.y)
-      ctx.lineTo(arc.end.x, arc.end.y)
-      ctx.stroke()
-    } else {
-      ctx.beginPath()
-      ctx.arc(
-        geometry.center.x,
-        geometry.center.y,
-        geometry.radius,
-        geometry.startAngle,
-        geometry.endAngle,
-        !geometry.sweepPositive,
-      )
-      ctx.stroke()
-    }
-  }
-
-  ctx.setLineDash([])
-
-  for (const curve of project.elements.curves) {
-    ctx.strokeStyle = colorFor(curve.color)
-    ctx.lineWidth = wireStrokeWidthForScale(curve.class, designScale)
-    ctx.lineCap = 'round'
-    ctx.setLineDash(wireDashPatternCanvasForScale(curve.class, designScale))
-
-    ctx.beginPath()
-    ctx.moveTo(curve.start.x, curve.start.y)
-    ctx.quadraticCurveTo(curve.through.x, curve.through.y, curve.end.x, curve.end.y)
-    ctx.stroke()
-  }
-
-  ctx.setLineDash([])
-
-  for (const symbol of project.elements.symbols) {
-    drawSymbol(ctx, symbol, designScale)
-  }
-
-  for (const symbol of project.elements.symbols) {
-    const labelText = downleadFootageLabelText(symbol)
-    const position = downleadFootageLabelPosition(symbol, designScale)
-    if (!labelText || !position) {
-      continue
-    }
-
-    ctx.fillStyle = '#111827'
-    ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
-    ctx.textBaseline = 'top'
-    ctx.fillText(labelText, position.x, position.y)
-  }
-
-  for (const text of project.elements.texts) {
-    ctx.fillStyle = colorFor(text.color)
-    ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
-    ctx.textBaseline = 'top'
-    const lines = splitTextIntoLines(text.text)
-    for (let i = 0; i < lines.length; i += 1) {
-      ctx.fillText(
-        lines[i] && lines[i].length > 0 ? lines[i] : ' ',
-        text.position.x,
-        text.position.y + i * textLineHeightPxForScale(designScale),
-      )
-    }
-  }
-
-  for (const dimensionText of project.elements.dimensionTexts) {
-    const label = dimensionTextLabel(dimensionText, project.scale)
-    const labelWidth = dimensionLabelWidthPx(
-      label,
-      designScale,
-      textFontSizePx,
-      ctx,
-    )
-    if (dimensionText.showLinework) {
-      const geometry = dimensionLineworkGeometry(
-        {
-          start: dimensionText.start,
-          end: dimensionText.end,
-          position: dimensionText.position,
-        },
-      )
-      if (geometry) {
-        const extensionSegments = dimensionExtensionLineSegments(geometry, 6 * designScale)
-        const barSegments = dimensionBarLineSegments(
-          geometry,
-          dimensionText.position,
-          labelWidth,
-          textLineHeightPxForScale(designScale),
-          4 * designScale,
-        )
-        ctx.strokeStyle = '#111827'
+  for (const entry of projectDrawOrderEntries(project, { includeMarks })) {
+    switch (entry.kind) {
+      case 'line': {
+        const line = entry.item
+        ctx.strokeStyle = colorFor(line.color)
+        ctx.lineWidth = wireStrokeWidthForScale(line.class, designScale)
         ctx.lineCap = 'round'
+        ctx.setLineDash(wireDashPatternCanvasForScale(line.class, designScale))
+
+        ctx.beginPath()
+        ctx.moveTo(line.start.x, line.start.y)
+        ctx.lineTo(line.end.x, line.end.y)
+        ctx.stroke()
         ctx.setLineDash([])
-
-        ctx.lineWidth = 1.25 * designScale
-        for (const segment of extensionSegments) {
-          ctx.beginPath()
-          ctx.moveTo(segment.start.x, segment.start.y)
-          ctx.lineTo(segment.end.x, segment.end.y)
-          ctx.stroke()
-        }
-
-        ctx.lineWidth = 1.5 * designScale
-        for (const segment of barSegments) {
-          ctx.beginPath()
-          ctx.moveTo(segment.start.x, segment.start.y)
-          ctx.lineTo(segment.end.x, segment.end.y)
-          ctx.stroke()
-        }
+        break
       }
-    }
+      case 'arc': {
+        const arc = entry.item
+        ctx.strokeStyle = colorFor(arc.color)
+        ctx.lineWidth = wireStrokeWidthForScale(arc.class, designScale)
+        ctx.lineCap = 'round'
+        ctx.setLineDash(wireDashPatternCanvasForScale(arc.class, designScale))
 
-    ctx.fillStyle = '#111827'
-    ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(
-      label,
-      dimensionText.position.x,
-      dimensionText.position.y,
-    )
-    ctx.textAlign = 'left'
-  }
+        const geometry = circularArcGeometryFromThreePoints(arc.start, arc.through, arc.end)
+        if (!geometry) {
+          ctx.beginPath()
+          ctx.moveTo(arc.start.x, arc.start.y)
+          ctx.lineTo(arc.end.x, arc.end.y)
+          ctx.stroke()
+        } else {
+          ctx.beginPath()
+          ctx.arc(
+            geometry.center.x,
+            geometry.center.y,
+            geometry.radius,
+            geometry.startAngle,
+            geometry.endAngle,
+            !geometry.sweepPositive,
+          )
+          ctx.stroke()
+        }
+        ctx.setLineDash([])
+        break
+      }
+      case 'curve': {
+        const curve = entry.item
+        ctx.strokeStyle = colorFor(curve.color)
+        ctx.lineWidth = wireStrokeWidthForScale(curve.class, designScale)
+        ctx.lineCap = 'round'
+        ctx.setLineDash(wireDashPatternCanvasForScale(curve.class, designScale))
 
-  for (const arrow of project.elements.arrows) {
-    const color = colorFor(arrow.color)
-    const dx = arrow.head.x - arrow.tail.x
-    const dy = arrow.head.y - arrow.tail.y
-    const angle = Math.atan2(dy, dx)
-    const headLength = 8 * designScale
+        ctx.beginPath()
+        ctx.moveTo(curve.start.x, curve.start.y)
+        ctx.quadraticCurveTo(curve.through.x, curve.through.y, curve.end.x, curve.end.y)
+        ctx.stroke()
+        ctx.setLineDash([])
+        break
+      }
+      case 'symbol': {
+        const symbol = entry.item
+        drawSymbol(ctx, symbol, designScale)
 
-    ctx.strokeStyle = color
-    ctx.lineWidth = 2 * designScale
-    ctx.lineCap = 'round'
+        const labelText = downleadFootageLabelText(symbol)
+        const position = downleadFootageLabelPosition(symbol, designScale)
+        if (labelText && position) {
+          ctx.fillStyle = '#111827'
+          ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
+          ctx.textBaseline = 'top'
+          ctx.fillText(labelText, position.x, position.y)
+        }
+        break
+      }
+      case 'legend':
+        drawLegendPlacements(ctx, { ...project, legend: { ...project.legend, placements: [entry.item] } }, designScale)
+        break
+      case 'general_note':
+        drawGeneralNotesPlacements(ctx, { ...project, generalNotes: { ...project.generalNotes, placements: [entry.item] } }, designScale)
+        break
+      case 'text': {
+        const text = entry.item
+        ctx.fillStyle = colorFor(text.color)
+        ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
+        ctx.textBaseline = 'top'
+        const lines = splitTextIntoLines(text.text)
+        for (let i = 0; i < lines.length; i += 1) {
+          ctx.fillText(
+            lines[i] && lines[i].length > 0 ? lines[i] : ' ',
+            text.position.x,
+            text.position.y + i * textLineHeightPxForScale(designScale),
+          )
+        }
+        break
+      }
+      case 'dimension_text': {
+        const dimensionText = entry.item
+        const label = dimensionTextLabel(dimensionText, project.scale)
+        const labelWidth = dimensionLabelWidthPx(
+          label,
+          designScale,
+          textFontSizePx,
+          ctx,
+        )
+        if (dimensionText.showLinework) {
+          const geometry = dimensionLineworkGeometry(
+            {
+              start: dimensionText.start,
+              end: dimensionText.end,
+              position: dimensionText.position,
+            },
+          )
+          if (geometry) {
+            const extensionSegments = dimensionExtensionLineSegments(geometry, 6 * designScale)
+            const barSegments = dimensionBarLineSegments(
+              geometry,
+              dimensionText.position,
+              labelWidth,
+              textLineHeightPxForScale(designScale),
+              4 * designScale,
+            )
+            ctx.strokeStyle = '#111827'
+            ctx.lineCap = 'round'
+            ctx.setLineDash([])
 
-    ctx.beginPath()
-    ctx.moveTo(arrow.tail.x, arrow.tail.y)
-    ctx.lineTo(arrow.head.x, arrow.head.y)
-    ctx.stroke()
+            ctx.lineWidth = 1.25 * designScale
+            for (const segment of extensionSegments) {
+              ctx.beginPath()
+              ctx.moveTo(segment.start.x, segment.start.y)
+              ctx.lineTo(segment.end.x, segment.end.y)
+              ctx.stroke()
+            }
 
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.moveTo(arrow.head.x, arrow.head.y)
-    ctx.lineTo(
-      arrow.head.x - headLength * Math.cos(angle - Math.PI / 6),
-      arrow.head.y - headLength * Math.sin(angle - Math.PI / 6),
-    )
-    ctx.lineTo(
-      arrow.head.x - headLength * Math.cos(angle + Math.PI / 6),
-      arrow.head.y - headLength * Math.sin(angle + Math.PI / 6),
-    )
-    ctx.closePath()
-    ctx.fill()
-  }
+            ctx.lineWidth = 1.5 * designScale
+            for (const segment of barSegments) {
+              ctx.beginPath()
+              ctx.moveTo(segment.start.x, segment.start.y)
+              ctx.lineTo(segment.end.x, segment.end.y)
+              ctx.stroke()
+            }
+          }
+        }
 
-  drawLegendPlacements(ctx, project, designScale)
-  drawGeneralNotesPlacements(ctx, project, designScale)
+        ctx.fillStyle = '#111827'
+        ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(
+          label,
+          dimensionText.position.x,
+          dimensionText.position.y,
+        )
+        ctx.textAlign = 'left'
+        break
+      }
+      case 'arrow': {
+        const arrow = entry.item
+        const color = colorFor(arrow.color)
+        const dx = arrow.head.x - arrow.tail.x
+        const dy = arrow.head.y - arrow.tail.y
+        const angle = Math.atan2(dy, dx)
+        const headLength = 8 * designScale
 
-  if (includeMarks) {
-    for (const mark of project.construction.marks) {
-      ctx.strokeStyle = '#b91c1c'
-      ctx.lineWidth = 1.8 * designScale
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2 * designScale
+        ctx.lineCap = 'round'
 
-      ctx.beginPath()
-      ctx.moveTo(mark.position.x - 5 * designScale, mark.position.y - 5 * designScale)
-      ctx.lineTo(mark.position.x + 5 * designScale, mark.position.y + 5 * designScale)
-      ctx.stroke()
+        ctx.beginPath()
+        ctx.moveTo(arrow.tail.x, arrow.tail.y)
+        ctx.lineTo(arrow.head.x, arrow.head.y)
+        ctx.stroke()
 
-      ctx.beginPath()
-      ctx.moveTo(mark.position.x - 5 * designScale, mark.position.y + 5 * designScale)
-      ctx.lineTo(mark.position.x + 5 * designScale, mark.position.y - 5 * designScale)
-      ctx.stroke()
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.moveTo(arrow.head.x, arrow.head.y)
+        ctx.lineTo(
+          arrow.head.x - headLength * Math.cos(angle - Math.PI / 6),
+          arrow.head.y - headLength * Math.sin(angle - Math.PI / 6),
+        )
+        ctx.lineTo(
+          arrow.head.x - headLength * Math.cos(angle + Math.PI / 6),
+          arrow.head.y - headLength * Math.sin(angle + Math.PI / 6),
+        )
+        ctx.closePath()
+        ctx.fill()
+        break
+      }
+      case 'mark': {
+        const mark = entry.item
+        ctx.strokeStyle = '#b91c1c'
+        ctx.lineWidth = 1.8 * designScale
+
+        ctx.beginPath()
+        ctx.moveTo(mark.position.x - 5 * designScale, mark.position.y - 5 * designScale)
+        ctx.lineTo(mark.position.x + 5 * designScale, mark.position.y + 5 * designScale)
+        ctx.stroke()
+
+        ctx.beginPath()
+        ctx.moveTo(mark.position.x - 5 * designScale, mark.position.y + 5 * designScale)
+        ctx.lineTo(mark.position.x + 5 * designScale, mark.position.y - 5 * designScale)
+        ctx.stroke()
+        break
+      }
     }
   }
 }

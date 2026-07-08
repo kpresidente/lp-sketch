@@ -462,6 +462,9 @@ function verticalFootageLabels(container: HTMLElement): string[] {
   ).map((entry) => entry.textContent?.trim() ?? '')
 }
 
+function appearsBefore(first: Element, second: Element): boolean {
+  return Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING)
+}
 
 describe('App interaction integration', () => {
   it('creates a line segment from two line-tool clicks', async () => {
@@ -498,6 +501,100 @@ describe('App interaction integration', () => {
     expect(line).not.toBeNull()
   })
 
+  it('reorders overlapping same-layer elements with bring-forward and send-back controls', async () => {
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 200,
+      clientY: 240,
+      pointerId: 551,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 360,
+      clientY: 240,
+      pointerId: 551,
+      pointerType: 'mouse',
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'AT' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 280,
+      clientY: 240,
+      pointerId: 552,
+      pointerType: 'mouse',
+    })
+
+    const conductorLine = () =>
+      container.querySelector('svg.overlay-layer line[stroke="#2e8b57"][stroke-dasharray]')
+    const airTerminal = () => container.querySelector('svg.overlay-layer g[data-symbol-id]')
+    const initialConductorLine = conductorLine()
+    const initialAirTerminal = airTerminal()
+    expect(initialConductorLine).not.toBeNull()
+    expect(initialAirTerminal).not.toBeNull()
+    if (!initialConductorLine || !initialAirTerminal) {
+      return
+    }
+    expect(appearsBefore(initialConductorLine, initialAirTerminal)).toBe(true)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await fireEvent.pointerDown(stage, {
+      button: 0,
+      clientX: 220,
+      clientY: 240,
+      pointerId: 553,
+      pointerType: 'mouse',
+    })
+    await fireEvent.pointerUp(stage, {
+      button: 0,
+      clientX: 220,
+      clientY: 240,
+      pointerId: 553,
+      pointerType: 'mouse',
+    })
+
+    const sendBack = screen.getByRole('button', { name: 'Send Back' }) as HTMLButtonElement
+    const bringForward = screen.getByRole('button', { name: 'Bring Forward' }) as HTMLButtonElement
+    expect(screen.getByRole('button', { name: 'Z-order help' })).toBeTruthy()
+    expect(sendBack.disabled).toBe(true)
+    expect(sendBack.getAttribute('title')).toBe('No overlapping item below in current layer')
+    expect(bringForward.disabled).toBe(false)
+    expect(bringForward.getAttribute('title')).toBe('Bring in front of next overlapping item in current layer')
+    await fireEvent.click(bringForward)
+    expect(screen.getByText('Selection brought forward.')).toBeTruthy()
+    expect(sendBack.disabled).toBe(false)
+    expect(sendBack.getAttribute('title')).toBe('Send behind next overlapping item in current layer')
+    expect(bringForward.disabled).toBe(true)
+    expect(bringForward.getAttribute('title')).toBe('No overlapping item above in current layer')
+    const broughtForwardLine = conductorLine()
+    const broughtForwardTerminal = airTerminal()
+    expect(broughtForwardLine).not.toBeNull()
+    expect(broughtForwardTerminal).not.toBeNull()
+    if (!broughtForwardLine || !broughtForwardTerminal) {
+      return
+    }
+    expect(appearsBefore(broughtForwardTerminal, broughtForwardLine)).toBe(true)
+
+    expect(sendBack.disabled).toBe(false)
+    await fireEvent.click(sendBack)
+    expect(screen.getByText('Selection sent back.')).toBeTruthy()
+    expect(sendBack.disabled).toBe(true)
+    expect(sendBack.getAttribute('title')).toBe('No overlapping item below in current layer')
+    expect(bringForward.disabled).toBe(false)
+    const sentBackLine = conductorLine()
+    const sentBackTerminal = airTerminal()
+    expect(sentBackLine).not.toBeNull()
+    expect(sentBackTerminal).not.toBeNull()
+    if (!sentBackLine || !sentBackTerminal) {
+      return
+    }
+    expect(appearsBefore(sentBackLine, sentBackTerminal)).toBe(true)
+  }, 10_000)
 
   it('supports inside-corner measure-mark input via Alt+click fallback', async () => {
     const { container } = render(() => <App />)

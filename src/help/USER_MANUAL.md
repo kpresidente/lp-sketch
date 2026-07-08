@@ -750,7 +750,7 @@ The properties bar shows different controls depending on the active tool or sele
 | Control | Description |
 |---------|-------------|
 | **Edit Labels** (button) | Opens the legend label editor dialog for the selected legend box. |
-| **Send to Back / Bring to Front** (buttons) | Controls drawing order relative to other elements on the same layer. |
+| **Send Back / Bring Forward** (buttons) | Adjusts stacking order relative to overlapping elements on the same layer. |
 
 #### General Notes (Placing) {#help-properties-notes-placing}
 
@@ -763,14 +763,14 @@ The properties bar shows different controls depending on the active tool or sele
 | Control | Description |
 |---------|-------------|
 | **Edit Notes** (button) | Opens the general notes editor dialog for the selected notes box. |
-| **Send to Back / Bring to Front** (buttons) | Controls drawing order relative to other elements on the same layer. |
+| **Send Back / Bring Forward** (buttons) | Adjusts stacking order relative to overlapping elements on the same layer. |
 
 #### Any Element (Selected) {#help-properties-selection}
 
 | Control | Description |
 |---------|-------------|
-| **Send to Back** (button) | Moves the selected element behind all others on its layer. |
-| **Bring to Front** (button) | Moves the selected element in front of all others on its layer. |
+| **Send Back** (button) | Moves the selected element behind the next overlapping element below it on the same layer. |
+| **Bring Forward** (button) | Moves the selected element in front of the next overlapping element above it on the same layer. |
 
 Additional controls appear for specific element types when selected: downlead [vertical footage](#help-properties-downlead-selected), legend [Edit Labels](#help-properties-legend-selected), and general notes [Edit Notes](#help-properties-notes-selected).
 
@@ -829,7 +829,7 @@ Double-click to edit the content of these element types:
 
 ### 10.5. Z-Ordering {#help-selection-z-order}
 
-When an element is selected, the [properties bar](#help-properties-bar) shows **Send to Back** and **Bring to Front** buttons to control drawing order relative to other elements on the same layer.
+When an element is selected, the [properties bar](#help-properties-bar) shows **Send Back** and **Bring Forward** buttons to control stacking order. Stacking order can only be altered relative to overlapping elements on the same layer; non-overlapping elements are skipped so each click is more likely to produce a visible change.
 
 ### 10.6. Deleting {#help-selection-deleting}
 

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultProject } from '../../model/defaultProject'
 import { scaledLegendMetrics, wireStrokeWidthForScale } from '../../lib/annotationScale'
 import { legendSymbolCenterOffsetY, legendSymbolScale } from '../../lib/legendSymbolScale'
+import { moveSelectionsByZStep } from '../../lib/selection/zOrder'
 import { drawProjectToContext } from './drawProject'
 import { drawSymbol } from './drawSymbol'
 
@@ -246,6 +247,41 @@ describe('drawProjectToContext', () => {
     expect(ctx.operations[legendGroundRodTranslateIndex + 1]).toEqual({ op: 'rotate', args: [0] })
   })
 
+  it('draws manually reordered elements in z-order for flattened output', () => {
+    ensurePath2DStub()
+
+    const project = createDefaultProject('Z-Ordered Export')
+    project.settings.designScale = 'small'
+    project.elements.lines.push({
+      id: 'line-1',
+      start: { x: 40, y: 80 },
+      end: { x: 120, y: 80 },
+      color: 'green',
+      class: 'class1',
+    })
+    project.elements.symbols.push({
+      id: 'symbol-1',
+      symbolType: 'air_terminal',
+      position: { x: 80, y: 80 },
+      color: 'green',
+      class: 'class1',
+    })
+
+    expect(moveSelectionsByZStep(project, [{ kind: 'line', id: 'line-1' }], 'front')).toBe(true)
+
+    const ctx = new RecordingContext()
+    drawProjectToContext(ctx as unknown as CanvasRenderingContext2D, project)
+
+    const symbolIndex = ctx.operations.findIndex(
+      (entry) => entry.op === 'translate' && entry.args[0] === 80 && entry.args[1] === 80,
+    )
+    const lineIndex = ctx.operations.findIndex(
+      (entry) => entry.op === 'moveTo' && entry.args[0] === 40 && entry.args[1] === 80,
+    )
+
+    expect(symbolIndex).toBeGreaterThanOrEqual(0)
+    expect(lineIndex).toBeGreaterThan(symbolIndex)
+  })
 
   it('shortens class2 ground rod stems in canvas rendering', () => {
     const ctx = new RecordingContext()
