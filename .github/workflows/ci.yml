@@ -75,3 +75,19 @@ jobs:
             test-results
             playwright-report
           if-no-files-found: ignore
+
+  merge_gate:
+    name: Build + Test
+    if: always()
+    runs-on: ubuntu-latest
+    needs:
+      - validate
+      - e2e
+    steps:
+      - name: Verify required jobs passed
+        env:
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+        run: |
+          test "$VALIDATE_RESULT" = "success"
+          test "$E2E_RESULT" = "success"

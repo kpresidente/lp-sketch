@@ -3,15 +3,16 @@
 ## CI and Merge Policy
 
 - CI workflow: `.github/workflows/ci.yml`
-- Required CI jobs:
-  - `Validate` (build + unit tests + prod audit gate)
-  - `E2E` (Chromium, depends on Validate)
+- CI jobs:
+  - `Build + Unit` (build + unit tests + prod audit gate)
+  - `E2E (Chromium)` (depends on Build + Unit)
+  - `Build + Test` (required aggregate check; passes only when both jobs succeed)
 - Branch protection target: `main`
 
 Required branch settings:
 
 1. Pull request required before merge
-2. Required status checks enabled (`Validate`, `E2E`)
+2. Required status checks enabled (`Build + Test`)
 3. Branch must be up to date before merge (`strict`)
 4. Force pushes disabled
 5. Deletions disabled
@@ -21,6 +22,7 @@ Required branch settings:
 - Dependabot: `.github/dependabot.yml`
   - npm updates: weekly, max 10 open PRs, prefix `deps`
   - GitHub Actions updates: weekly, max 5 open PRs, prefix `ci`
+- `pdfjs-dist` is pinned to `5.5.207`: the broader caret range includes releases affected by [GHSA-hq66-cqwq-w95j](https://github.com/advisories/GHSA-hq66-cqwq-w95j). Validate a patched release before widening this range.
 
 ## Release Process
 
