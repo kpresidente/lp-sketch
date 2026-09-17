@@ -109,20 +109,20 @@ The **Pages** section in the Project panel lets you navigate between pages of a 
 
 Each page maintains its own:
 - [Drawing scale](#help-scale-drawing-scale) and calibration
-- [PDF background brightness](#help-project-pdf-background)
+- [PDF background transparency](#help-project-pdf-background)
 - Viewport position and zoom level
 - Design elements (conductors, components, annotations)
 
 Elements placed on one page do not appear on other pages. When you switch pages, the canvas shows only the elements belonging to that page.
 
-### 2.7. PDF Background Brightness {#help-project-pdf-background}
+### 2.7. PDF Background Transparency {#help-project-pdf-background}
 
-The **PDF Background** brightness slider in the Project panel lets you dim the background PDF. This can be useful when:
+The **PDF Background** transparency slider in the Project panel lets you fade the background PDF. This can be useful when:
 - The PDF has dark line work that competes with your annotations
 - You want to emphasize the LP overlay while presenting or reviewing
 - You need better contrast for specific conductor colors
 
-The slider ranges from 0% (black) to 100% (full brightness). This setting affects only the display and does not modify the original PDF. On multi-page PDFs, brightness is set independently per page.
+The slider ranges from 0% (fully visible) to 100% (fully faded). This setting affects only the display and does not modify the original PDF. On multi-page PDFs, transparency is set independently per page.
 
 ### 2.8. Autosave {#help-project-autosave}
 
@@ -206,7 +206,7 @@ Auto-placed connectors are identical to manually placed connectors -- they can b
 
 ### 3.6. Annotation Tools {#help-tools-annotation}
 
-The **Annotation** section of the Tools panel provides tools for adding text, dimensions, arrows, legends, notes, measurements, marks, and continuation indicators to your design.
+The **Annotation** section of the Tools panel provides tools for adding text, dimensions, arrows, legends, notes, measurements, marks, and break indicators to your design.
 
 #### 3.6.1. Text {#help-tools-annotation-text}
 
@@ -218,6 +218,8 @@ The **Text** tool places free-form text annotations on the drawing.
 3. Click on the canvas to place it
 
 Text inherits the active [material](#help-material-material) color. To edit existing text, switch to [Select](#help-selection-select) mode and double-click the text element.
+
+Turn on **Background Mask** in the [properties bar](#help-properties-text) when text needs a white backing over busy PDF linework. The mask is saved with the text element and can be changed later while the text is selected.
 
 #### 3.6.2. Dimension Text {#help-tools-annotation-dimension-text}
 
@@ -308,16 +310,16 @@ The **Mark** tool combines measurement with construction mark placement. Constru
 
 Construction marks are snappable -- other tools will snap to marks just like they snap to conductor endpoints. This makes marks useful as reference points for conductor placement.
 
-#### 3.6.8. Continued {#help-tools-annotation-continued}
+#### 3.6.8. Break {#help-tools-annotation-break}
 
-The **Continued** symbol marks a point where a conductor run continues beyond the edge of the drawing -- for example, where a rooftop conductor exits the sheet and continues on an adjacent building or plan.
+The **Break** symbol marks a break in a conductor run -- for example, where a rooftop conductor exits the sheet and continues on an adjacent building or plan.
 
 **How to use:**
-1. Select the **Continued** tool from the Tools panel (Annotation section)
+1. Select the **Break** tool from the Tools panel (Annotation section)
 2. Click to set the position
 3. Click again to set the direction the conductor continues
 
-**Behavior:** The Continued symbol always renders in black regardless of the active material. It does not inherit the material color. It is assigned to the Annotation layer and does not appear in the legend.
+**Behavior:** The Break symbol uses dark note ink and does not inherit the active material color. It is assigned to the Annotation layer and does not appear in the legend.
 
 ---
 
@@ -433,7 +435,7 @@ Connection components represent the physical junction hardware in your LP system
 | **Bond** | A bonding connection point. | Single click |
 | **Mechanical** | A mechanical (cable-to-cable) splice connection. | Single click |
 | **Cadweld** | An exothermic (Cadweld) welded connection. | Single click |
-| **Connect Existing** | Indicates connection to an existing protection system. | Directional (two-click) |
+| **Steel Bond** | A bond to structural steel. | Single click |
 | **Mechanical Crossrun** | A mechanical crossrun connector for a four-way (+) conductor intersection. | Single click |
 | **Cadweld Crossrun** | An exothermic crossrun connector for a four-way (+) conductor intersection. | Single click |
 
@@ -474,7 +476,6 @@ On a finished drawing, a single downlead typically shows both symbols: a "to Roo
 | Component | Description | Placement |
 |-----------|-------------|-----------|
 | **Ground Rod** | A driven ground rod. | Directional (two-click) |
-| **Steel Bond** | A bond to existing structural steel. | Single click |
 
 Ground rods are directional -- the direction indicates which way the rod is oriented. Class I ground rods display 3 horizontal bars; Class II ground rods display 4 horizontal bars.
 
@@ -583,7 +584,7 @@ The **Layers** panel in the sidebar controls layer visibility. LP Sketch organiz
 | **Rooftop** | Rooftop conductors (non-grounding), rooftop components (air terminals, bonds, connections, penetrations, etc.) |
 | **Downleads** | All downlead components |
 | **Grounding** | Grounding conductors (red material), ground rods, steel bonds |
-| **Annotation** | Text notes, arrows, dimension texts, construction marks, legend placements, general notes placements, continued symbols |
+| **Annotation** | Text notes, arrows, dimension texts, construction marks, legend placements, general notes placements, break symbols |
 
 ### 7.2. Layer Visibility {#help-layers-visibility}
 
@@ -603,10 +604,10 @@ Elements are automatically assigned to layers based on their type and material. 
 - All other material conductors go to the **Rooftop** layer
 
 **Components:**
-- **Rooftop layer:** Air terminals, bonded air terminals, bonds, Cadweld connections, mechanical connections, crossrun connections, connect existing, through-roof-to-steel, through-wall connectors
+- **Rooftop layer:** Air terminals, bonded air terminals, bonds, Cadweld connections, mechanical connections, crossrun connections, through-roof-to-steel, through-wall connectors
 - **Downleads layer:** All four downlead types
 - **Grounding layer:** Ground rods, steel bonds
-- **Annotation layer:** [Continued](#help-tools-annotation-continued) symbols
+- **Annotation layer:** [Break](#help-tools-annotation-break) symbols
 
 **Annotations:**
 - Text, arrows, and dimension text elements can be assigned to any of the four layers (Rooftop, Downleads, Grounding, Annotation)
@@ -732,6 +733,7 @@ The properties bar shows different controls depending on the active tool or sele
 | Control | Description |
 |---------|-------------|
 | **Text** (text input) | The text content that will be placed when you click the canvas. |
+| **Background Mask** (toggle) | Adds a white backing behind text for readability over dense PDF linework. When text is selected, edits that text's saved mask setting. |
 
 #### Arrow {#help-properties-arrow}
 
@@ -956,8 +958,7 @@ Distances in LP Sketch are displayed in feet and inches format (e.g., 12' 6"). T
 | Cadweld Connection | Small square (outlined Class I, filled Class II) | Rooftop | No | I or II | Also auto-placed |
 | Mechanical Crossrun | Small circle inside larger circle | Rooftop | No | I or II | Also auto-placed at + intersections |
 | Cadweld Crossrun | Small square inside larger square | Rooftop | No | I or II | Also auto-placed at + intersections |
-| Continued | S-curve | Annotation | Yes | None | Always black; not in legend |
-| Connect Existing | S-curve with junction | Rooftop | Yes | I or II | |
+| Break | Zig-zag break mark | Annotation | Yes | None | Dark note ink; not in legend |
 | Conduit Downlead to Ground | Square with double down-chevrons | Downleads | Yes | I or II | Vertical footage |
 | Conduit Downlead to Roof | Square with single up-chevron | Downleads | Yes | I or II | Vertical footage |
 | Surface Downlead to Ground | Circle with double down-chevrons | Downleads | Yes | I or II | Vertical footage |

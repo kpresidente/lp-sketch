@@ -72,6 +72,10 @@ class RecordingContext {
     this.operations.push({ op: 'fillText', args: [text, x, y, this.fillStyle] })
   }
 
+  measureText(text: string) {
+    return { width: text.length * 7 }
+  }
+
   closePath() {
     this.operations.push({ op: 'closePath', args: [] })
   }
@@ -803,7 +807,7 @@ describe('export integration', () => {
     ).toBe(true)
   })
 
-  it('applies PDF brightness alpha when compositing the background canvas', async () => {
+  it('applies PDF transparency alpha when compositing the background canvas', async () => {
     const createdCanvases: FakeCanvas[] = []
 
     vi.stubGlobal('document', {
@@ -818,10 +822,10 @@ describe('export integration', () => {
       },
     })
 
-    const project = createDefaultProject('Background Brightness')
+    const project = createDefaultProject('Background Transparency')
     project.pdf.widthPt = 1000
     project.pdf.heightPt = 600
-    project.settings.pdfBrightness = 0.6
+    project.settings.pdfTransparency = 0.4
 
     const backgroundCanvas = { id: 'background-canvas' }
 

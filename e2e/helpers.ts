@@ -146,7 +146,7 @@ export function createProjectJsonPayload(options?: {
     displayUnits: null,
   } as const
   const project = {
-    schemaVersion: '1.9.0',
+    schemaVersion: '1.10.0',
     projectMeta: {
       id: 'project-e2e',
       name: projectName,
@@ -173,8 +173,8 @@ export function createProjectJsonPayload(options?: {
       activeColor: 'green',
       activeClass: 'class1',
       designScale: 'medium',
-      pdfBrightness: 1,
-      pdfBrightnessByPage: { 1: 1 },
+      pdfTransparency: 0,
+      pdfTransparencyByPage: { 1: 0 },
       legendDataScope: 'global',
       notesDataScope: 'global',
       snapEnabled: true,
@@ -292,7 +292,7 @@ export async function createMultiPageProjectJsonPayload(options?: {
   } as const
 
   const project = {
-    schemaVersion: '1.9.0',
+    schemaVersion: '1.10.0',
     projectMeta: {
       id: 'project-e2e-multipage',
       name: 'Loaded E2E Multi-page Project',
@@ -325,8 +325,8 @@ export async function createMultiPageProjectJsonPayload(options?: {
       activeColor: 'green',
       activeClass: 'class1',
       designScale: 'medium',
-      pdfBrightness: 1,
-      pdfBrightnessByPage: { 1: 1, 2: 1 },
+      pdfTransparency: 0,
+      pdfTransparencyByPage: { 1: 0, 2: 0 },
       legendDataScope: 'global',
       notesDataScope: notesScope,
       snapEnabled: true,

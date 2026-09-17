@@ -61,11 +61,10 @@ const SYMBOL_QUICK_OPTIONS: readonly SymbolType[] = [
   'through_wall_connector',
   'ground_rod',
   'steel_bond',
-  'continued',
-  'connect_existing',
+  'break',
 ]
 
-type QuickSettingId = 'manual_scale' | 'annotation_size' | 'pdf_brightness'
+type QuickSettingId = 'manual_scale' | 'annotation_size' | 'pdf_transparency'
 type QuickActionId =
   | 'import_pdf'
   | 'save_project'
@@ -182,7 +181,7 @@ interface QuickAccessBarProps {
   manualScaleFeetInput: string
   manualScaleDirty: boolean
   currentScaleInfo: string
-  pdfBrightness: number
+  pdfTransparency: number
   onSelectTool: (tool: Tool) => void
   onSetActiveSymbol: (symbol: SymbolType) => void
   onImportPdf: (event: Event) => void
@@ -205,8 +204,8 @@ interface QuickAccessBarProps {
   onSetManualScaleFeetInput: (value: string) => void
   onApplyManualScale: () => void
   onSetDesignScale: (value: DesignScale) => void
-  onPreviewPdfBrightness: (value: number) => void
-  onCommitPdfBrightness: (value: number) => void
+  onPreviewPdfTransparency: (value: number) => void
+  onCommitPdfTransparency: (value: number) => void
   onEditingContextChange?: (active: boolean) => void
   onRefocusCanvasFromInputCommit?: () => void
 }
@@ -344,11 +343,11 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
         settingId: 'annotation_size',
       },
       {
-        id: 'setting:pdf_brightness',
-        label: 'PDF Brightness',
+        id: 'setting:pdf_transparency',
+        label: 'PDF Transparency',
         kind: 'setting',
-        icon: 'sun',
-        settingId: 'pdf_brightness',
+        icon: 'contrast',
+        settingId: 'pdf_transparency',
       },
     ]
 
@@ -1135,26 +1134,26 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
                 </button>
               </div>
             </Show>
-            <Show when={item().settingId === 'pdf_brightness'}>
+            <Show when={item().settingId === 'pdf_transparency'}>
               <>
-                <div class="brightness-row">
+                <div class="transparency-row">
                   <input
-                    class="brightness-slider"
+                    class="transparency-slider"
                     type="range"
                     min="0"
                     max="1"
                     step="0.05"
-                    value={props.pdfBrightness}
-                    aria-label="PDF background brightness"
-                    title={props.hasPdf ? 'Adjust PDF background brightness' : 'Import a PDF to enable brightness control'}
+                    value={props.pdfTransparency}
+                    aria-label="PDF background transparency"
+                    title={props.hasPdf ? 'Adjust PDF background transparency' : 'Import a PDF to enable transparency control'}
                     disabled={!props.hasPdf}
-                    onInput={(event) => props.onPreviewPdfBrightness(Number.parseFloat(event.currentTarget.value))}
-                    onChange={(event) => props.onCommitPdfBrightness(Number.parseFloat(event.currentTarget.value))}
+                    onInput={(event) => props.onPreviewPdfTransparency(Number.parseFloat(event.currentTarget.value))}
+                    onChange={(event) => props.onCommitPdfTransparency(Number.parseFloat(event.currentTarget.value))}
                   />
-                  <span class="brightness-value">{Math.round(props.pdfBrightness * 100)}%</span>
+                  <span class="transparency-value">{Math.round(props.pdfTransparency * 100)}%</span>
                 </div>
                 <Show when={!props.hasPdf}>
-                  <div class="hint-line">Import a PDF to enable brightness control.</div>
+                  <div class="hint-line">Import a PDF to enable transparency control.</div>
                 </Show>
               </>
             </Show>

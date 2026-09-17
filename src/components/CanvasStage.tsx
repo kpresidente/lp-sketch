@@ -44,7 +44,7 @@ interface CanvasStageProps {
   measureDistanceLabel: string | null
   markSpanDistanceLabel: string | null
   linearAutoSpacingPathDistanceLabel: string | null
-  pdfBrightness: number
+  pdfTransparency: number
   manualScaleInchesInput: string
   manualScaleFeetInput: string
   manualScaleDirty: boolean
@@ -71,8 +71,8 @@ interface CanvasStageProps {
   onSetManualScaleFeetInput: (value: string) => void
   onApplyManualScale: () => void
   onSetDesignScale: (value: DesignScale) => void
-  onPreviewPdfBrightness: (value: number) => void
-  onCommitPdfBrightness: (value: number) => void
+  onPreviewPdfTransparency: (value: number) => void
+  onCommitPdfTransparency: (value: number) => void
   onQuickAccessEditingContextChange?: (active: boolean) => void
   onRefocusCanvasFromInputCommit: () => void
   setStageRef: (element: HTMLDivElement) => void
@@ -230,8 +230,8 @@ export default function CanvasStage(props: CanvasStageProps) {
                   }}
                 />
                 <div
-                  class="pdf-brightness-wash"
-                  style={{ opacity: `${Math.max(0, Math.min(1, 1 - props.pdfBrightness))}` }}
+                  class="pdf-transparency-wash"
+                  style={{ opacity: `${Math.max(0, Math.min(1, props.pdfTransparency))}` }}
                 />
               </>
             </Show>
@@ -262,7 +262,7 @@ export default function CanvasStage(props: CanvasStageProps) {
           manualScaleFeetInput={props.manualScaleFeetInput}
           manualScaleDirty={props.manualScaleDirty}
           currentScaleInfo={props.currentScaleInfo}
-          pdfBrightness={props.pdfBrightness}
+          pdfTransparency={props.pdfTransparency}
           onSelectTool={props.onSelectTool}
           onSetActiveSymbol={props.onSetActiveSymbol}
           onImportPdf={props.onImportPdf}
@@ -285,8 +285,8 @@ export default function CanvasStage(props: CanvasStageProps) {
           onSetManualScaleFeetInput={props.onSetManualScaleFeetInput}
           onApplyManualScale={props.onApplyManualScale}
           onSetDesignScale={props.onSetDesignScale}
-          onPreviewPdfBrightness={props.onPreviewPdfBrightness}
-          onCommitPdfBrightness={props.onCommitPdfBrightness}
+          onPreviewPdfTransparency={props.onPreviewPdfTransparency}
+          onCommitPdfTransparency={props.onCommitPdfTransparency}
           onEditingContextChange={props.onQuickAccessEditingContextChange}
           onRefocusCanvasFromInputCommit={props.onRefocusCanvasFromInputCommit}
         />

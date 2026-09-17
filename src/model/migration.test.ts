@@ -54,6 +54,9 @@ describe('project migration', () => {
     delete (legacyProject.settings as unknown as Record<string, unknown>).angleIncrementDeg
     delete (legacyProject.settings as unknown as Record<string, unknown>).designScale
     delete (legacyProject.settings as unknown as Record<string, unknown>).pdfBrightness
+    delete (legacyProject.settings as unknown as Record<string, unknown>).pdfBrightnessByPage
+    delete (legacyProject.settings as unknown as Record<string, unknown>).pdfTransparency
+    delete (legacyProject.settings as unknown as Record<string, unknown>).pdfTransparencyByPage
     delete (legacyProject.settings as unknown as Record<string, unknown>).autoConnectorsEnabled
     delete (legacyProject.settings as unknown as Record<string, unknown>).autoConnectorType
     delete (legacyProject as unknown as Record<string, unknown>).layers
@@ -69,17 +72,17 @@ describe('project migration', () => {
 
     expect(migration.migrated).toBe(true)
     expect(migration.fromVersion).toBe('1.0.7')
-    expect(migration.toVersion).toBe('1.9.0')
-    expect(result.schemaVersion).toBe('1.9.0')
+    expect(migration.toVersion).toBe('1.10.0')
+    expect(result.schemaVersion).toBe('1.10.0')
     expect('perpendicularSnapEnabled' in (result.settings as unknown as Record<string, unknown>)).toBe(false)
     expect(result.settings.angleIncrementDeg).toBe(15)
     expect(result.settings.designScale).toBe('small')
-    expect(result.settings.pdfBrightness).toBe(1)
+    expect(result.settings.pdfTransparency).toBe(0)
     expect(result.settings.autoConnectorsEnabled).toBe(true)
     expect(result.settings.autoConnectorType).toBe('mechanical')
     expect(result.settings.legendDataScope).toBe('global')
     expect(result.settings.notesDataScope).toBe('global')
-    expect(result.settings.pdfBrightnessByPage[1]).toBe(1)
+    expect(result.settings.pdfTransparencyByPage[1]).toBe(0)
     expect(result.pdf.pageCount).toBe(1)
     expect(result.pdf.pages).toEqual([{ page: 1, widthPt: 1000, heightPt: 800 }])
     expect(result.view.currentPage).toBe(1)
@@ -157,8 +160,8 @@ describe('project migration', () => {
     const migration = migrateProjectForLoad(current)
 
     expect(migration.migrated).toBe(false)
-    expect(migration.fromVersion).toBe('1.9.0')
-    expect(migration.toVersion).toBe('1.9.0')
+    expect(migration.fromVersion).toBe('1.10.0')
+    expect(migration.toVersion).toBe('1.10.0')
     expect(migration.project).toEqual(current)
   })
 
@@ -251,20 +254,25 @@ describe('project migration', () => {
     expect(migration.migrated).toBe(true)
   })
 
-  it('clamps invalid PDF brightness values into the supported range', () => {
+  it('migrates legacy PDF brightness values to transparency', () => {
     const legacyProject = createSchemaValidProject('Legacy Brightness')
     legacyProject.schemaVersion = '1.5.2'
     ;(legacyProject.settings as unknown as Record<string, unknown>).pdfBrightness = 1.8
+    ;(legacyProject.settings as unknown as Record<string, unknown>).pdfBrightnessByPage = { 1: 0.25 }
+    delete (legacyProject.settings as unknown as Record<string, unknown>).pdfTransparency
+    delete (legacyProject.settings as unknown as Record<string, unknown>).pdfTransparencyByPage
 
     const migration = migrateProjectForLoad(legacyProject)
     const result = migration.project as LpProject
-    expect(result.settings.pdfBrightness).toBe(1)
+    expect(result.settings.pdfTransparency).toBe(0)
+    expect(result.settings.pdfTransparencyByPage[1]).toBe(0)
+    expect('pdfBrightness' in (result.settings as unknown as Record<string, unknown>)).toBe(false)
     expect(migration.migrated).toBe(true)
 
     ;(legacyProject.settings as unknown as Record<string, unknown>).pdfBrightness = -0.5
     const secondMigration = migrateProjectForLoad(legacyProject)
     const secondResult = secondMigration.project as LpProject
-    expect(secondResult.settings.pdfBrightness).toBe(0)
+    expect(secondResult.settings.pdfTransparency).toBe(1)
     expect(secondMigration.migrated).toBe(true)
   })
 
@@ -308,5 +316,64 @@ describe('project migration', () => {
     expect(result.elements.dimensionTexts[0].showLinework).toBe(true)
     expect('showLinework' in result.elements.dimensionTexts[1]).toBe(false)
     expect(migration.migrated).toBe(true)
+  })
+
+  it('migrates legacy continued symbols to break symbols', () => {
+    const legacyProject = createSchemaValidProject('Legacy Continued')
+    legacyProject.schemaVersion = '1.9.0'
+    ;(legacyProject.elements as unknown as Record<string, unknown>).symbols = [
+      {
+        id: 'continued-1',
+        symbolType: 'continued',
+        position: { x: 10, y: 20 },
+        directionDeg: 0,
+        color: 'green',
+        class: 'none',
+      },
+    ]
+
+    const migration = migrateProjectForLoad(legacyProject)
+    const result = migration.project as LpProject
+
+    expect(result.elements.symbols[0].symbolType).toBe('break')
+    expect(migration.migrated).toBe(true)
+    expect(validateProject(result).valid).toBe(true)
+  })
+
+  it('normalizes text background mask flags', () => {
+    const legacyProject = createSchemaValidProject('Legacy Text Mask')
+    legacyProject.schemaVersion = '1.9.0'
+    ;(legacyProject.elements as unknown as Record<string, unknown>).texts = [
+      {
+        id: 'text-1',
+        position: { x: 10, y: 12 },
+        text: 'NOTE',
+        color: 'green',
+        layer: 'annotation',
+      },
+      {
+        id: 'text-2',
+        position: { x: 20, y: 24 },
+        text: 'MASKED',
+        backgroundMask: true,
+        color: 'blue',
+        layer: 'annotation',
+      },
+      {
+        id: 'text-3',
+        position: { x: 30, y: 36 },
+        text: 'BAD',
+        backgroundMask: 'yes',
+        color: 'red',
+        layer: 'annotation',
+      },
+    ]
+
+    const migration = migrateProjectForLoad(legacyProject)
+    const result = migration.project as LpProject
+
+    expect(result.elements.texts.map((entry) => entry.backgroundMask)).toEqual([false, true, false])
+    expect(migration.migrated).toBe(true)
+    expect(validateProject(result).valid).toBe(true)
   })
 })

@@ -636,34 +636,34 @@ select.select-field:focus {
   white-space: nowrap;
 }
 
-.brightness-row {
+.transparency-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
 
-.brightness-label {
+.transparency-label {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
   min-width: 64px;
 }
 
-.brightness-slider {
+.transparency-slider {
   flex: 1;
   min-width: 0;
 }
 
-.brightness-slider:not(:disabled) {
+.transparency-slider:not(:disabled) {
   cursor: pointer;
 }
 
-.brightness-slider:disabled {
+.transparency-slider:disabled {
   cursor: not-allowed;
 }
 
-.brightness-value {
+.transparency-value {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
@@ -1918,7 +1918,7 @@ select.select-field:focus {
   will-change: transform;
 }
 
-.pdf-brightness-wash {
+.pdf-transparency-wash {
   position: absolute;
   inset: 0;
   background: #ffffff;

@@ -43,7 +43,7 @@
 ## Project Schema and Migration
 
 - Canonical schema: `src/model/project-schema-v1.json`
-- Current schema version: 1.9.0
+- Current schema version: 1.10.0
 - Runtime validator: `src/model/validation.ts`
 - Migration pipeline: `src/model/migration.ts`
 
@@ -52,7 +52,7 @@ Compatibility guarantees:
 - Supported `1.x` projects are normalized before validation.
 - Invalid/missing legacy fields are clamped/defaulted to schema-safe values.
 - Migration output is deterministic for identical input.
-- Multi-page structures (per-page view, scale, brightness) are auto-normalized.
+- Multi-page structures (per-page view, scale, transparency) are auto-normalized.
 
 ## Reliability and Performance
 

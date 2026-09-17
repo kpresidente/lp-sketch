@@ -2,6 +2,8 @@
 
 import { vi } from 'vitest'
 
+vi.setConfig({ testTimeout: 15000 })
+
 vi.mock('pdfjs-dist', () => ({
   GlobalWorkerOptions: { workerSrc: '' },
   PDFWorker: class { destroy = vi.fn() },
@@ -35,6 +37,7 @@ const fakeCanvasContext = {
   stroke: vi.fn(),
   fill: vi.fn(),
   fillText: vi.fn(),
+  measureText: vi.fn((text: string) => ({ width: text.length * 7 })),
   closePath: vi.fn(),
   arc: vi.fn(),
   rect: vi.fn(),

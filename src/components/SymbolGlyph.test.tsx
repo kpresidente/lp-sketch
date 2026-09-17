@@ -137,7 +137,7 @@ describe('SymbolGlyph', () => {
         symbolType: 'cadweld_crossrun_connection',
         selector: 'rect[width="11"][height="11"]',
       },
-      { symbolType: 'continued', selector: 'path' },
+      { symbolType: 'break', selector: 'polyline' },
       { symbolType: 'connect_existing', selector: 'circle[r="3.2"]' },
       { symbolType: 'mechanical_crossrun_connection', selector: 'circle[r="6"]' },
       { symbolType: 'conduit_downlead_ground', selector: 'rect[width="10.8"][height="10.8"]' },
@@ -182,14 +182,14 @@ describe('SymbolGlyph', () => {
     expect(container.querySelector('line[x1="-13"][y1="23"][x2="13"][y2="23"]')).not.toBeNull()
   })
 
-  it('renders continued as annotation black regardless of active material color', () => {
-    const symbol = makeSymbol('continued', 'none')
+  it('renders break in note ink regardless of active material color', () => {
+    const symbol = makeSymbol('break', 'none')
     symbol.color = 'red'
 
     const { container } = renderSymbol(symbol)
-    const path = container.querySelector('path')
+    const polyline = container.querySelector('polyline')
 
-    expect(path?.getAttribute('stroke')).toBe('#111827')
+    expect(polyline?.getAttribute('stroke')).toBe('#1e293b')
   })
 
   it('renders class2 ground rod with four bars and no diamond marker', () => {

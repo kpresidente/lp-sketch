@@ -7,7 +7,7 @@ describe('layers helpers', () => {
     expect(symbolLayer('air_terminal')).toBe('rooftop')
     expect(symbolLayer('conduit_downlead_ground')).toBe('downleads')
     expect(symbolLayer('ground_rod')).toBe('grounding')
-    expect(symbolLayer('continued')).toBe('annotation')
+    expect(symbolLayer('break')).toBe('annotation')
     expect(symbolSublayer('bond')).toBe('connections')
     expect(symbolSublayer('connect_existing')).toBe('connections')
     expect(symbolSublayer('air_terminal')).toBeNull()
@@ -54,8 +54,8 @@ describe('layers helpers', () => {
         class: 'none',
       },
       {
-        id: 'sym-continued',
-        symbolType: 'continued',
+        id: 'sym-break',
+        symbolType: 'break',
         position: { x: 14, y: 14 },
         directionDeg: 90,
         color: 'green',

@@ -37,6 +37,17 @@ export default function TextsOverlay(props: TextsOverlayProps) {
 
         return (
           <g>
+            <Show when={textElement.backgroundMask}>
+              <rect
+                x={textElement.position.x - 3 * designScale()}
+                y={textElement.position.y - 2 * designScale()}
+                width={selectedWidth + 6 * designScale()}
+                height={selectedHeight + 4 * designScale()}
+                fill="#ffffff"
+                opacity={0.94}
+                rx={1.5 * designScale()}
+              />
+            </Show>
             <Show when={isSelected() || isHovered()}>
               <rect
                 x={textElement.position.x - 4 * designScale()}

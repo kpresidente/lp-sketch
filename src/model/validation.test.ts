@@ -82,14 +82,14 @@ describe('project validation', () => {
     expect(result.errors.some((entry) => entry.includes('/generalNotes'))).toBe(true)
   })
 
-  it('rejects brightness settings outside the supported range', () => {
-    const project = createSchemaValidProject('Invalid Brightness')
-    project.settings.pdfBrightness = 1.2
+  it('rejects transparency settings outside the supported range', () => {
+    const project = createSchemaValidProject('Invalid Transparency')
+    project.settings.pdfTransparency = 1.2
 
     const result = validateProject(project)
 
     expect(result.valid).toBe(false)
-    expect(result.errors.some((entry) => entry.includes('/settings/pdfBrightness'))).toBe(true)
+    expect(result.errors.some((entry) => entry.includes('/settings/pdfTransparency'))).toBe(true)
   })
 
   it('rejects unexpected additional properties', () => {

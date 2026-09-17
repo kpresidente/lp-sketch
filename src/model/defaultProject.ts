@@ -22,7 +22,7 @@ export const SYMBOL_LABELS: Record<SymbolType, string> = {
   bond: 'Bond',
   cadweld_connection: 'Cadweld connection',
   cadweld_crossrun_connection: 'Cadweld crossrun connection',
-  continued: 'Continued',
+  break: 'Break',
   connect_existing: 'Connect existing',
   conduit_downlead_ground: 'Conduit downlead to ground',
   conduit_downlead_roof: 'Conduit downlead to roof',
@@ -37,7 +37,7 @@ export const SYMBOL_LABELS: Record<SymbolType, string> = {
 }
 
 export const DIRECTIONAL_SYMBOLS = new Set<SymbolType>([
-  'continued',
+  'break',
   'connect_existing',
   'conduit_downlead_ground',
   'conduit_downlead_roof',
@@ -54,11 +54,11 @@ export const DOWNLEAD_SYMBOLS = new Set<SymbolType>([
 ])
 
 export const NO_CLASS_SYMBOLS = new Set<SymbolType>([
-  'continued',
+  'break',
 ])
 
 const ANNOTATION_STYLE_SYMBOLS = new Set<SymbolType>([
-  'continued',
+  'break',
 ])
 
 export const DEFAULT_LAYER_VISIBILITY: Record<LayerId, boolean> = {
@@ -114,7 +114,7 @@ export function createDefaultProject(name = 'LP Sketch'): LpProject {
   } as const
 
   return {
-    schemaVersion: '1.9.0',
+    schemaVersion: '1.10.0',
     projectMeta: {
       id: createElementId('project'),
       name,
@@ -138,8 +138,8 @@ export function createDefaultProject(name = 'LP Sketch'): LpProject {
       activeColor: 'green',
       activeClass: 'class1',
       designScale: 'medium',
-      pdfBrightness: 1,
-      pdfBrightnessByPage: { 1: 1 },
+      pdfTransparency: 0,
+      pdfTransparencyByPage: { 1: 0 },
       legendDataScope: 'global',
       notesDataScope: 'global',
       snapEnabled: true,

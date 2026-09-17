@@ -142,7 +142,7 @@ import {
   type ReportType,
 } from './lib/reporting'
 import {
-  clampPdfBrightness,
+  clampPdfTransparency,
   formatDistance,
   formatScaleFeet,
   normalizeNonNegativeIntegerInput,
@@ -227,8 +227,7 @@ const SYMBOL_OPTIONS: SymbolType[] = [
   'bond',
   'cadweld_connection',
   'cadweld_crossrun_connection',
-  'continued',
-  'connect_existing',
+  'break',
   'mechanical_crossrun_connection',
   'conduit_downlead_ground',
   'conduit_downlead_roof',
@@ -376,13 +375,14 @@ function App() {
   const [calibrationDistanceInput, setCalibrationDistanceInput] = createSignal('20')
   const [calibrationInputError, setCalibrationInputError] = createSignal('')
   const [textDraftInput, setTextDraftInput] = createSignal('NOTE')
+  const [textBackgroundMask, setTextBackgroundMask] = createSignal(false)
 
   const [manualScaleInchesInput, setManualScaleInchesInput] = createSignal('')
   const [manualScaleFeetInput, setManualScaleFeetInput] = createSignal('')
   const [manualScaleInputsByPage, setManualScaleInputsByPage] =
     createSignal<Record<number, ManualScaleInputSnapshot>>({})
   const [measureTargetDistanceInput, setMeasureTargetDistanceInput] = createSignal('')
-  const [pdfBrightnessPreview, setPdfBrightnessPreview] = createSignal(1)
+  const [pdfTransparencyPreview, setPdfTransparencyPreview] = createSignal(0)
   const [pdfInteractionActive, setPdfInteractionActive] = createSignal(false)
   const [downleadVerticalFootagePlacementInput, setDownleadVerticalFootagePlacementInput] = createSignal('0')
   const [downleadVerticalFootageSelectedInput, setDownleadVerticalFootageSelectedInput] = createSignal('')
@@ -453,7 +453,7 @@ function App() {
     const viewport = viewportDocRect(vp.view, dims.width, dims.height)
     return filterProjectByViewport(vp, viewport, annotationScaleFactor(project().settings.designScale))
   })
-  const effectivePdfBrightness = createMemo(() => clampPdfBrightness(pdfBrightnessPreview()))
+  const effectivePdfTransparency = createMemo(() => clampPdfTransparency(pdfTransparencyPreview()))
   const activeColor = createMemo(() => project().settings.activeColor)
 
   function preferredAtLetterForMaterial(material: MaterialColor): string {
@@ -481,9 +481,9 @@ function App() {
 
   createEffect(
     on(
-      () => project().settings.pdfBrightness,
+      () => project().settings.pdfTransparency,
       (value) => {
-        setPdfBrightnessPreview(clampPdfBrightness(value))
+        setPdfTransparencyPreview(clampPdfTransparency(value))
       },
       { defer: false },
     ),
@@ -1441,8 +1441,8 @@ function App() {
         realUnitsPerPoint: null,
         displayUnits: null,
       }
-      const nextBrightness = clampPdfBrightness(
-        prev.settings.pdfBrightnessByPage[safePage] ?? prev.settings.pdfBrightness,
+      const nextTransparency = clampPdfTransparency(
+        prev.settings.pdfTransparencyByPage[safePage] ?? prev.settings.pdfTransparency,
       )
 
       return {
@@ -1474,11 +1474,11 @@ function App() {
         },
         settings: {
           ...prev.settings,
-          pdfBrightness: nextBrightness,
-          pdfBrightnessByPage: {
-            ...prev.settings.pdfBrightnessByPage,
-            [currentPage]: clampPdfBrightness(prev.settings.pdfBrightness),
-            [safePage]: nextBrightness,
+          pdfTransparency: nextTransparency,
+          pdfTransparencyByPage: {
+            ...prev.settings.pdfTransparencyByPage,
+            [currentPage]: clampPdfTransparency(prev.settings.pdfTransparency),
+            [safePage]: nextTransparency,
           },
         },
       }
@@ -2545,6 +2545,7 @@ function App() {
       },
       downleadPlacementVerticalFootageFt,
       textDraftInput,
+      textBackgroundMask,
       arrowStart,
       setArrowStart,
       pendingCalibrationDistancePt,
@@ -3073,6 +3074,16 @@ function App() {
     return project().elements.symbols.find((entry) => entry.id === current.id)?.symbolType ?? null
   })
 
+  const selectedTextBackgroundMask = createMemo<boolean | null>(() => {
+    const current = selected()
+    if (current?.kind !== 'text') {
+      return null
+    }
+
+    const textElement = project().elements.texts.find((entry) => entry.id === current.id)
+    return textElement ? textElement.backgroundMask ?? false : null
+  })
+
   const selectedDownleadSymbol = createMemo(() => {
     const current = selected()
     if (current?.kind !== 'symbol') {
@@ -3468,6 +3479,24 @@ function App() {
     setDimensionShowLinework(enabled)
   }
 
+  function handleSetTextBackgroundMask(enabled: boolean) {
+    const current = selected()
+    if (tool() === 'select' && current?.kind === 'text') {
+      commitProjectChange((draft) => {
+        const target = draft.elements.texts.find((entry) => entry.id === current.id)
+        if (!target) {
+          return
+        }
+
+        target.backgroundMask = enabled
+      })
+      setStatus(enabled ? 'Text background mask enabled.' : 'Text background mask disabled.')
+      return
+    }
+
+    setTextBackgroundMask(enabled)
+  }
+
   function moveSelectedToZEdge(direction: 'front' | 'back') {
     const targets = selectedTargetsForZOrder()
     if (!canMoveSelectionsByZStep(project(), targets, direction)) {
@@ -3559,23 +3588,23 @@ function App() {
     setStatus(scope === 'page' ? 'General notes scope set to page.' : 'General notes scope set to global.')
   }
 
-  function handlePreviewPdfBrightness(value: number) {
-    setPdfBrightnessPreview(clampPdfBrightness(value))
+  function handlePreviewPdfTransparency(value: number) {
+    setPdfTransparencyPreview(clampPdfTransparency(value))
   }
 
-  function handleCommitPdfBrightness(value: number) {
-    const clamped = clampPdfBrightness(value)
-    setPdfBrightnessPreview(clamped)
+  function handleCommitPdfTransparency(value: number) {
+    const clamped = clampPdfTransparency(value)
+    setPdfTransparencyPreview(clamped)
 
-    if (Math.abs(project().settings.pdfBrightness - clamped) < 0.0001) {
+    if (Math.abs(project().settings.pdfTransparency - clamped) < 0.0001) {
       return
     }
 
     commitProjectChange((draft) => {
       const currentPage = draft.view.currentPage
-      draft.settings.pdfBrightness = clamped
-      draft.settings.pdfBrightnessByPage = {
-        ...draft.settings.pdfBrightnessByPage,
+      draft.settings.pdfTransparency = clamped
+      draft.settings.pdfTransparencyByPage = {
+        ...draft.settings.pdfTransparencyByPage,
         [currentPage]: clamped,
       }
     })
@@ -3907,6 +3936,12 @@ function App() {
     get textDraftInput() {
       return textDraftInput()
     },
+    get textBackgroundMask() {
+      return textBackgroundMask()
+    },
+    get selectedTextBackgroundMask() {
+      return selectedTextBackgroundMask()
+    },
     get arrowStart() {
       return arrowStart()
     },
@@ -3921,8 +3956,8 @@ function App() {
     },
     colorOptions: COLOR_OPTIONS,
     colorHex: COLOR_HEX,
-    get pdfBrightness() {
-      return effectivePdfBrightness()
+    get pdfTransparency() {
+      return effectivePdfTransparency()
     },
     get currentPage() {
       return project().view.currentPage
@@ -4014,6 +4049,7 @@ function App() {
     onSetDownleadVerticalFootageSelectedInput: handleSetDownleadVerticalFootageSelectedInput,
     onCommitDownleadVerticalFootageSelectedInput: handleCommitDownleadVerticalFootageSelectedInput,
     onSetTextDraftInput: setTextDraftInput,
+    onSetTextBackgroundMask: handleSetTextBackgroundMask,
     onSetActiveSymbolLetter: handleSetActiveSymbolLetter,
     onSetLegendCustomSuffixInput: setLegendCustomSuffixInput,
     onClearLegendCustomSuffix: handleClearLegendCustomSuffix,
@@ -4025,8 +4061,8 @@ function App() {
     onSetActiveClass: handleSetActiveClass,
     onSetActiveColor: handleSetActiveColor,
     onSetDesignScale: handleSetDesignScale,
-    onPreviewPdfBrightness: handlePreviewPdfBrightness,
-    onCommitPdfBrightness: handleCommitPdfBrightness,
+    onPreviewPdfTransparency: handlePreviewPdfTransparency,
+    onCommitPdfTransparency: handleCommitPdfTransparency,
     onGoToPreviousPage: handleGoToPreviousPage,
     onGoToNextPage: handleGoToNextPage,
     onSetSnapEnabled: handleSetSnapEnabled,
@@ -4085,7 +4121,7 @@ function App() {
           measureDistanceLabel={measureDistanceLabel()}
           markSpanDistanceLabel={markSpanDistanceLabel()}
           linearAutoSpacingPathDistanceLabel={linearAutoSpacingPathDistanceLabel()}
-          pdfBrightness={effectivePdfBrightness()}
+          pdfTransparency={effectivePdfTransparency()}
           manualScaleInchesInput={manualScaleInchesInput()}
           manualScaleFeetInput={manualScaleFeetInput()}
           currentScaleInfo={currentScaleInfo()}
@@ -4114,8 +4150,8 @@ function App() {
           onSetManualScaleFeetInput={setManualScaleFeetInput}
           onApplyManualScale={applyManualScale}
           onSetDesignScale={handleSetDesignScale}
-          onPreviewPdfBrightness={handlePreviewPdfBrightness}
-          onCommitPdfBrightness={handleCommitPdfBrightness}
+          onPreviewPdfTransparency={handlePreviewPdfTransparency}
+          onCommitPdfTransparency={handleCommitPdfTransparency}
           onQuickAccessEditingContextChange={setQuickAccessEditingContextActive}
           onRefocusCanvasFromInputCommit={refocusCanvasFromInputCommit}
           setStageRef={(element) => {

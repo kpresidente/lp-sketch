@@ -84,6 +84,10 @@ class RecordingContext {
     })
   }
 
+  measureText(text: string) {
+    return { width: text.length * 7 }
+  }
+
   closePath() {
     this.operations.push({ op: 'closePath', args: [] })
   }

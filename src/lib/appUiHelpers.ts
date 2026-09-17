@@ -37,9 +37,9 @@ export function scaleFeetPerInch(realUnitsPerPoint: number, units: ScaleDisplayU
   return feetPerPoint * 72
 }
 
-export function clampPdfBrightness(value: number): number {
+export function clampPdfTransparency(value: number): number {
   if (!Number.isFinite(value)) {
-    return 1
+    return 0
   }
 
   return Math.max(0, Math.min(1, value))

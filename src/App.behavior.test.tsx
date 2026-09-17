@@ -785,8 +785,8 @@ describe('App behavior integration', () => {
     expect(byName('Steel Bond').disabled).toBe(true)
     expect(byName('Ground Rod').disabled).toBe(true)
     expect(byName('Cadweld').disabled).toBe(true)
-    expect(byName('Continued').disabled).toBe(false)
-    expect(screen.getByRole('button', { name: /Connect\s+Existing/ }).hasAttribute('disabled')).toBe(false)
+    expect(byName('Break').disabled).toBe(false)
+    expect(screen.queryByRole('button', { name: /Connect\s+Existing/ })).toBeNull()
 
     // Grounding
     await fireEvent.click(requireMaterialItem(container, 'Grounding'))

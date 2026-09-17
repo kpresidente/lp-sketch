@@ -31,14 +31,14 @@ export default function ToolsPanel() {
   const annotationToolDisabled = (toolId: 'text' | 'dimension_text' | 'arrow' | 'legend' | 'general_notes' | 'measure' | 'measure_mark') => (
     toolDisabledReasons(toolId, props.project, props.project.settings.activeColor).length > 0
   )
-  const continuedSymbolTitle = () => (
+  const breakSymbolTitle = () => (
     formatDisabledTooltip(
-      'Continued',
-      symbolDisabledReasons('continued', props.project.settings.activeColor),
+      'Break',
+      symbolDisabledReasons('break', props.project.settings.activeColor),
     )
   )
-  const continuedSymbolDisabled = () => (
-    symbolDisabledReasons('continued', props.project.settings.activeColor).length > 0
+  const breakSymbolDisabled = () => (
+    symbolDisabledReasons('break', props.project.settings.activeColor).length > 0
   )
 
   return (
@@ -237,20 +237,20 @@ export default function ToolsPanel() {
           <i class={tablerIconClass(TOOL_ICON.measure_mark)} /> Mark
         </button>
         <button
-          class={`btn ${props.tool === 'symbol' && props.activeSymbol === 'continued' ? 'active' : ''}`}
+          class={`btn ${props.tool === 'symbol' && props.activeSymbol === 'break' ? 'active' : ''}`}
           type="button"
-          aria-pressed={props.tool === 'symbol' && props.activeSymbol === 'continued'}
-          title={continuedSymbolTitle()}
-          disabled={continuedSymbolDisabled()}
+          aria-pressed={props.tool === 'symbol' && props.activeSymbol === 'break'}
+          title={breakSymbolTitle()}
+          disabled={breakSymbolDisabled()}
           onClick={() => {
-            props.onSetActiveSymbol('continued')
+            props.onSetActiveSymbol('break')
             props.onSelectTool('symbol')
           }}
         >
-          {SYMBOL_CUSTOM_ICON.continued
-            ? <CustomIcon name={SYMBOL_CUSTOM_ICON.continued} />
-            : <i class={tablerIconClass(SYMBOL_BUTTON_ICON.continued)} />}
-          Continued
+          {SYMBOL_CUSTOM_ICON.break
+            ? <CustomIcon name={SYMBOL_CUSTOM_ICON.break} />
+            : <i class={tablerIconClass(SYMBOL_BUTTON_ICON.break)} />}
+          Break
         </button>
       </div>
     </Panel>

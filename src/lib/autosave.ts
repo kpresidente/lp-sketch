@@ -65,7 +65,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
 
-function clampBrightness(value: number | undefined, fallback: number): number {
+function clampTransparency(value: number | undefined, fallback: number): number {
   if (!Number.isFinite(value)) {
     return fallback
   }
@@ -219,13 +219,16 @@ function normalizeProjectForAutosaveStorage(project: LpProject): LpProject {
     byPage: nextScaleByPage,
   }
 
-  const fallbackBrightness = clampBrightness(normalized.settings.pdfBrightness, 1)
-  const nextBrightnessByPage: Record<number, number> = {}
+  const fallbackTransparency = clampTransparency(normalized.settings.pdfTransparency, 0)
+  const nextTransparencyByPage: Record<number, number> = {}
   for (let page = 1; page <= pageCount; page += 1) {
-    nextBrightnessByPage[page] = clampBrightness(normalized.settings.pdfBrightnessByPage[page], fallbackBrightness)
+    nextTransparencyByPage[page] = clampTransparency(
+      normalized.settings.pdfTransparencyByPage[page],
+      fallbackTransparency,
+    )
   }
-  normalized.settings.pdfBrightnessByPage = nextBrightnessByPage
-  normalized.settings.pdfBrightness = nextBrightnessByPage[preferredPage] ?? fallbackBrightness
+  normalized.settings.pdfTransparencyByPage = nextTransparencyByPage
+  normalized.settings.pdfTransparency = nextTransparencyByPage[preferredPage] ?? fallbackTransparency
 
   normalized.generalNotes.notes = normalizeNotesList(normalized.generalNotes.notes)
   const nextNotesByPage: Record<number, string[]> = {}

@@ -7,9 +7,9 @@ describe('colorForSymbol', () => {
     expect(colorForSymbol('steel_bond', 'green')).toBe('green')
   })
 
-  it('treats continued as annotation-styled and material-independent', () => {
-    expect(colorForSymbol('continued', 'blue')).toBe('green')
-    expect(colorForSymbol('continued', 'purple')).toBe('green')
+  it('treats break as annotation-styled and material-independent', () => {
+    expect(colorForSymbol('break', 'blue')).toBe('green')
+    expect(colorForSymbol('break', 'purple')).toBe('green')
   })
 })
 

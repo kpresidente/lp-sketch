@@ -1,16 +1,15 @@
 import { createContext, createSignal, useContext, type ParentProps } from 'solid-js'
 
 const STORAGE_KEY_PIN = 'lp-sketch.help.pinned.v1'
-const STORAGE_KEY_LAST_ANCHOR = 'lp-sketch.help.last-anchor.v1'
 
 export interface HelpState {
   /** Whether the help drawer is open */
   isOpen: () => boolean
   /** Whether the drawer is pinned (persists across tool switches) */
   isPinned: () => boolean
-  /** The anchor to navigate to (set on each openHelp call) */
+  /** The anchor to navigate to when a section-specific help control opens the drawer */
   targetAnchor: () => string | null
-  /** Open the drawer and navigate to a specific anchor */
+  /** Open the drawer, optionally navigating to a specific anchor */
   openHelp: (anchorId?: string) => void
   /** Close the drawer */
   closeHelp: () => void
@@ -42,22 +41,6 @@ function savePinState(pinned: boolean): void {
   }
 }
 
-function loadLastAnchor(): string | null {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY_LAST_ANCHOR)
-  } catch {
-    return null
-  }
-}
-
-function saveLastAnchor(anchorId: string): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY_LAST_ANCHOR, anchorId)
-  } catch {
-    // Ignore storage errors
-  }
-}
-
 /** Create help drawer state. Call once in App() and pass the result to HelpProvider. */
 export function createHelpState(): HelpState {
   const [isOpen, setIsOpen] = createSignal(false)
@@ -70,9 +53,7 @@ export function createHelpState(): HelpState {
     targetAnchor,
 
     openHelp(anchorId?: string) {
-      const anchor = anchorId ?? loadLastAnchor() ?? 'help-top'
-      setTargetAnchor(anchor)
-      saveLastAnchor(anchor)
+      setTargetAnchor(anchorId ?? null)
       setIsOpen(true)
     },
 

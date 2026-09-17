@@ -22,6 +22,9 @@ class MinimalContext {
   stroke(_: unknown = undefined) {}
   fill(_: unknown = undefined) {}
   fillText(_: string, __: number, ___: number) {}
+  measureText(text: string) {
+    return { width: text.length * 7 }
+  }
   closePath() {}
   arc(_: number, __: number, ___: number, ____: number, _____: number) {}
   rect(_: number, __: number, ___: number, ____: number) {}

@@ -65,7 +65,7 @@ test.describe('LP Sketch smoke flows', () => {
     const drawingStage = await stage(page)
 
     await page.getByRole('button', { name: /^\S+\sText$/ }).click()
-    await page.getByLabel('Text').fill('E2E NOTE')
+    await page.getByRole('textbox', { name: 'Text' }).fill('E2E NOTE')
     await clickStage(drawingStage, 350, 220)
 
     await expect(page.getByText('Text note placed.')).toBeVisible()

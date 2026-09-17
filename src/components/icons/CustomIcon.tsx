@@ -124,6 +124,20 @@ function ConnectExistingIcon(): JSX.Element {
   )
 }
 
+function BreakIcon(): JSX.Element {
+  return (
+    <svg viewBox="-12 -12 24 24" fill="none" aria-hidden="true">
+      <polyline
+        points="-9.72,0 -5.4,0 -2.2,-5.76 2.2,5.76 5.4,0 9.72,0"
+        stroke="currentColor"
+        stroke-width="2.4"
+        stroke-linecap="round"
+        stroke-linejoin="miter"
+      />
+    </svg>
+  )
+}
+
 function MechanicalCrossrunConnectionIcon(): JSX.Element {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -151,6 +165,8 @@ export function CustomIcon(props: CustomIconProps): JSX.Element {
         return <CadweldConnectionIcon />
       case 'connect-existing':
         return <ConnectExistingIcon />
+      case 'break':
+        return <BreakIcon />
       case 'mechanical-crossrun-connection':
         return <MechanicalCrossrunConnectionIcon />
       case 'cadweld-crossrun-connection':

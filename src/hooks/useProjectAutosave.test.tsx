@@ -149,7 +149,7 @@ describe('useProjectAutosave', () => {
         reason: 'validation-failed',
         degraded: false,
         storage_key_present: true,
-        schema_version: '1.9.0',
+        schema_version: '1.10.0',
       }),
     )
   })
@@ -171,7 +171,7 @@ describe('useProjectAutosave', () => {
       'Autosave failed due to a local storage error.',
       expect.objectContaining({
         reason: 'error',
-        schema_version: '1.9.0',
+        schema_version: '1.10.0',
       }),
     )
 

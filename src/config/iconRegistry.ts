@@ -4,6 +4,7 @@ export type TablerIconName = string
 export type CustomIconName =
   | 'at-arc'
   | 'steel-bond-filled'
+  | 'break'
   | 'multi-select-hand-plus'
   | 'cadweld-connection'
   | 'connect-existing'
@@ -28,7 +29,7 @@ export const COMMAND_ICON = {
 export const MISC_FEATURE_ICON = {
   selectedSymbol: 'circle-dashed',
   autoConnectors: 'circles', // fallback: circles-filled is not available in webfont set
-  continued: 'ease-in-out',
+  break: 'zigzag',
   connectExisting: 'ease-out-control-point', // fallback: ease-out-control-point-filled is not available
 } as const
 
@@ -74,7 +75,7 @@ export const SYMBOL_BUTTON_ICON: Record<SymbolType, TablerIconName> = {
   bond: 'square-rotated',
   cadweld_connection: 'square',
   cadweld_crossrun_connection: 'squares',
-  continued: 'ease-in-out',
+  break: 'zigzag',
   connect_existing: 'ease-out-control-point',
   cable_to_cable_connection: 'point',
   mechanical_crossrun_connection: 'circles-relation',
@@ -93,6 +94,7 @@ export const SYMBOL_CLASS2_CUSTOM_ICON: Partial<Record<SymbolType, CustomIconNam
 }
 
 export const SYMBOL_CUSTOM_ICON: Partial<Record<SymbolType, CustomIconName>> = {
+  break: 'break',
   cadweld_connection: 'cadweld-connection',
   connect_existing: 'connect-existing',
   mechanical_crossrun_connection: 'mechanical-crossrun-connection',

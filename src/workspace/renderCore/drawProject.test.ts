@@ -59,11 +59,19 @@ class RecordingContext {
     this.operations.push({ op: 'fill', args: [this.fillStyle] })
   }
 
+  fillRect(x: number, y: number, w: number, h: number) {
+    this.operations.push({ op: 'fillRect', args: [x, y, w, h, this.fillStyle] })
+  }
+
   fillText(text: string, x: number, y: number) {
     this.operations.push({
       op: 'fillText',
       args: [text, x, y, this.fillStyle, this.font, this.textAlign, this.textBaseline],
     })
+  }
+
+  measureText(text: string) {
+    return { width: text.length * 7 }
   }
 
   closePath() {
@@ -204,6 +212,35 @@ describe('drawProjectToContext', () => {
         (args) => args[0] === conductorSampleStartX + 20 && args[1] === firstLegendRowCenterY,
       ),
     ).toBe(true)
+  })
+
+  it('draws a white background mask behind masked text', () => {
+    ensurePath2DStub()
+
+    const project = createDefaultProject('Masked Text')
+    project.settings.designScale = 'small'
+    project.elements.texts.push({
+      id: 'text-mask-1',
+      position: { x: 40, y: 132 },
+      text: 'MASKED',
+      color: 'blue',
+      layer: 'annotation',
+      backgroundMask: true,
+    })
+
+    const ctx = new RecordingContext()
+
+    drawProjectToContext(ctx as unknown as CanvasRenderingContext2D, project)
+
+    const maskIndex = ctx.operations.findIndex(
+      (entry) => entry.op === 'fillRect' && entry.args[4] === 'rgba(255, 255, 255, 0.94)',
+    )
+    const textIndex = ctx.operations.findIndex(
+      (entry) => entry.op === 'fillText' && entry.args[0] === 'MASKED',
+    )
+
+    expect(maskIndex).toBeGreaterThanOrEqual(0)
+    expect(textIndex).toBeGreaterThan(maskIndex)
   })
 
   it('centers ground rod symbols in rendered legend rows', () => {

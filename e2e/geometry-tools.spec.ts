@@ -52,7 +52,7 @@ test.describe('geometry and annotation tools', () => {
     const tools = panelRegion(page, 'Tools')
 
     await tools.getByRole('button', { name: /Text$/ }).first().click()
-    await page.getByLabel('Text').fill('E2E NOTE')
+    await page.getByRole('textbox', { name: 'Text' }).fill('E2E NOTE')
     await clickStage(page, { x: 340, y: 220 })
     await expectStatus(page, 'Text note placed.')
     await expect(page.locator('svg.overlay-layer text', { hasText: 'E2E NOTE' })).toHaveCount(1)

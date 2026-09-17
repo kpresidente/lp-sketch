@@ -517,7 +517,7 @@ exports[`export regression fixtures > matches golden canvas operations for dimen
   },
   {
     "args": [
-      179.8,
+      181.5,
       212,
     ],
     "op": "lineTo",
@@ -538,7 +538,7 @@ exports[`export regression fixtures > matches golden canvas operations for dimen
   },
   {
     "args": [
-      230.2,
+      228.5,
       212,
     ],
     "op": "moveTo",
