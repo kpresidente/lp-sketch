@@ -1,0 +1,26 @@
+{
+  "name": "@lp-sketch/editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css",
+    "./help/vite-plugin": "./src/help/vite-plugin-help.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kobalte/core": "^0.13.11",
+    "@lp-sketch/core": "0.0.0",
+    "@tabler/icons-webfont": "^3.44.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "5.5.207",
+    "solid-js": "^1.9.12"
+  },
+  "devDependencies": {
+    "markdown-it": "^14.1.1",
+    "markdown-it-attrs": "^4.3.1"
+  }
+}

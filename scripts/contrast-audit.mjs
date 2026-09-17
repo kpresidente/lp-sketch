@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const appCssPath = resolve(process.cwd(), 'src/App.css')
+const appCssPath = resolve(import.meta.dirname, '../packages/editor/src/App.css')
 const css = readFileSync(appCssPath, 'utf8')
 
 function parseRootVariables(content) {
   const rootMatch = content.match(/:root\s*\{([\s\S]*?)\}/)
   if (!rootMatch) {
-    throw new Error('Could not locate :root block in src/App.css')
+    throw new Error('Could not locate :root block in packages/editor/src/App.css')
   }
 
   const values = new Map()

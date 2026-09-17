@@ -7,6 +7,10 @@ Lightning protection design sketch tool. Users draw annotations over a locked PD
 ```bash
 npm run dev          # Start Vite dev server
 npm run build        # TypeScript check + Vite build
+npm run typecheck    # Check shared packages and browser app
+npm run mobile:build # TypeScript check + bundled mobile interface
+npm run mobile:sync  # Build mobile interface and sync Capacitor iOS assets
+npm run test:ios-config # Python signing-input/profile validation tests
 npm test             # Vitest unit/integration tests
 npm run test:e2e     # Playwright e2e (Chromium)
 npm run audit:prod:gate  # npm audit policy gate (prod deps only)
@@ -26,22 +30,33 @@ Validate before merge: `npm run build && npm test && npm run test:e2e`
 
 ## Architecture
 
-- `src/App.tsx` — App orchestration, tool state, pointer workflows
-- `src/components/` — UI: sidebar panels, canvas stage, overlay branches, dialogs
-- `src/lib/` — Pure logic: geometry, snapping, spacing, export, legend, layers, autosave
-- `src/model/` — Project state: schema validation, migration, history, sync
-- `src/controllers/` — Pointer event controllers
-- `src/hooks/` — SolidJS reactive hooks (autosave, PDF renderer, dialogs, shortcuts)
-- `src/context/` — Context providers (app controller, help drawer)
-- `src/config/` — Constants, runtime limits, icon registry
-- `src/types/` — TypeScript types (project schema, app runtime)
-- `src/help/` — User manual source and Vite build plugin
+The repository uses npm workspaces. Run development, build, test, and audit commands from the repository root.
+
+- `apps/web/` — Browser entry point, static public assets, Vite configuration
+- `apps/mobile/` — Capacitor iPad entry point, bundled assets, and native Xcode project
+- `packages/core/src/model/` — Project schema, validation, migration, history, sync
+- `packages/core/src/types/` — Shared project and interaction types
+- `packages/core/src/lib/` — Pure geometry, snapping, spacing, legend, layers, and project calculations
+- `packages/editor/src/App.tsx` — Shared editor orchestration, tool state, pointer workflows
+- `packages/editor/src/components/` — Sidebar panels, canvas, overlays, dialogs
+- `packages/editor/src/controllers/` — Pointer event controllers
+- `packages/editor/src/hooks/` — SolidJS reactive hooks
+- `packages/editor/src/lib/` — Browser-dependent rendering helpers, exports, autosave, file handling, reporting
+- `packages/editor/src/workspace/` — Shared canvas export renderer
+- `packages/editor/src/context/` and `config/` — Providers, runtime limits, icon registry
+- `packages/editor/src/help/` — Shared manual and help build plugin
+- `api/` — Existing browser reporting API
+- `scripts/ios/` — Native build/signing scripts and Windows certificate helpers
+
+Native builds use the shared `App` Xcode scheme and Swift Package Manager. Keep Apple signing material out of source control. TestFlight uploads are manual; unsigned PR validation needs no Apple credentials. See `docs/TESTFLIGHT.md`.
+
+Applications consume `@lp-sketch/editor`; the editor consumes `@lp-sketch/core`. Use package exports across workspace boundaries. Core must not depend on editor, applications, SolidJS, or Capacitor. Preserve the shared project format. Existing browser storage and file hooks remain in editor until platform services are introduced with the mobile implementation.
 
 ## Conventions
 
 - SolidJS reactive patterns: signals, stores, createEffect, createMemo
 - Prefer fine-grained reactivity over re-renders
-- Pure logic in `src/lib/`, reactive wrappers in `src/hooks/`
+- Pure domain logic in `packages/core/src/lib/`, reactive wrappers in `packages/editor/src/hooks/`
 - Tests co-located with source files (`foo.test.ts` next to `foo.ts`)
 - Domain colors: green=Copper, blue=Aluminum, red=Grounding, purple=Bimetallic, cyan=Tinned
 - Layers: rooftop, downleads, grounding, annotation

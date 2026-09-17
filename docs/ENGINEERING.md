@@ -11,6 +11,19 @@
 
 ## Architecture
 
+### Workspaces
+
+- `apps/web`: browser startup, HTML, public assets, and Vite configuration.
+- `apps/mobile`: Capacitor iPad application, separate bundled web assets, and native Xcode project. The first package reuses the existing editor; native file/storage services and Pencil behavior remain separate work.
+- `packages/core`: shared project format and pure domain calculations.
+- `packages/editor`: shared SolidJS editor, browser rendering, and reactive workflows.
+
+Dependencies flow from applications to editor to core. Cross-package imports use `@lp-sketch/editor` and `@lp-sketch/core` package exports. Private packages export TypeScript source for Vite to compile; they do not require separate publishing or JavaScript builds.
+
+Browser file dialogs and local-storage autosave remain in editor for this structural migration. Native storage, file handling, and lifecycle services will be introduced at the application boundary during mobile implementation. Mouse/pen/touch behavior is shared and should not be selected solely by browser versus native packaging.
+
+Root scripts preserve the existing development workflow. Vite loads environment files from the repository root and emits root `dist/`, keeping the Azure deployment configuration valid. Help is built from the shared manual into the consuming application's public directory.
+
 ### Render Model
 
 1. PDF page is rendered to an off-screen canvas via a shared PDF.js worker.
@@ -19,33 +32,35 @@
 
 ### Core Modules
 
-- `src/App.tsx`
+- `packages/editor/src/App.tsx`
   - App orchestration, tool state, pointer workflows
-- `src/components/`
+- `packages/editor/src/components/`
   - Sidebar panels, quick-access toolbar, canvas stage, overlay branches, dialogs, help drawer
-- `src/lib/`
-  - Geometry, snapping, spacing, export, legend, telemetry, reporting, layer filtering, text layout
-- `src/model/`
+- `packages/core/src/lib/`
+  - Geometry, snapping, spacing, legend, layer filtering, text layout, project calculations
+- `packages/editor/src/lib/`
+  - Font measurement, annotation hit testing, export, browser files/autosave, telemetry, reporting
+- `packages/core/src/model/`
   - Default project creation, schema migration, validation, history transactions
-- `src/controllers/pointer/`
+- `packages/editor/src/controllers/pointer/`
   - Pointer event controllers: placement, select, measure, gesture
-- `src/hooks/`
+- `packages/editor/src/hooks/`
   - SolidJS reactive hooks (autosave, PDF renderer, file actions, shortcuts)
-- `src/context/`
+- `packages/editor/src/context/`
   - Context providers: AppControllerContext (sidebar), HelpContext (help drawer)
-- `src/config/`
-  - Constants, runtime limits, icon registry
-- `src/types/`
+- `packages/core/src/config/` and `packages/editor/src/config/`
+  - Domain constants in core; runtime limits and icon registry in editor
+- `packages/core/src/types/`
   - TypeScript types (project schema, app runtime)
-- `src/help/`
+- `packages/editor/src/help/`
   - User manual source (Markdown), Vite plugin for Markdown-to-HTML build
 
 ## Project Schema and Migration
 
-- Canonical schema: `src/model/project-schema-v1.json`
+- Canonical schema: `packages/core/src/model/project-schema-v1.json`
 - Current schema version: 1.10.0
-- Runtime validator: `src/model/validation.ts`
-- Migration pipeline: `src/model/migration.ts`
+- Runtime validator: `packages/core/src/model/validation.ts`
+- Migration pipeline: `packages/core/src/model/migration.ts`
 
 Compatibility guarantees:
 
@@ -59,7 +74,7 @@ Compatibility guarantees:
 ### Runtime Reliability
 
 - Autosave + startup recovery with safe fallback behavior
-- Defensive import/load limits (`src/config/runtimeLimits.ts`)
+- Defensive import/load limits (`packages/editor/src/config/runtimeLimits.ts`)
 - Root error boundary with telemetry reporting
 
 ### Performance
@@ -98,10 +113,12 @@ Keyboard and safety rules:
 
 Primary suites:
 
-- Unit and integration: `npm test` (Vitest, node environment)
+- Unit and integration: `npm test` (Vitest, node environment by default and jsdom for UI suites; one worker on Windows for reliable startup)
 - E2E: `npm run test:e2e` (Playwright, Chromium)
-- Export regression: `src/lib/export.regression.test.ts` with snapshots
+- Export regression: `packages/editor/src/lib/export.regression.test.ts` with snapshots
 - Coverage thresholds: 30% lines/functions/statements, 25% branches
+
+Tests stay beside their implementation in each shared package. The root Vitest configuration discovers tests across all workspaces. Browser E2E tests remain in root `e2e/` and exercise the application through the root dev command. Root `npm run typecheck` checks core, editor, web, and build/test configuration.
 
 Recommended local validation before merge:
 

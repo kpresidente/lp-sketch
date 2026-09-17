@@ -3,37 +3,44 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
+    "dev": "npm run dev --workspace @lp-sketch/web --",
+    "build": "npm run typecheck && npm run build --workspace @lp-sketch/web",
+    "typecheck": "tsc -b",
+    "preview": "npm run preview --workspace @lp-sketch/web --",
+    "mobile:dev": "npm run dev --workspace @lp-sketch/mobile --",
+    "mobile:build": "npm run typecheck && npm run build --workspace @lp-sketch/mobile",
+    "mobile:preview": "npm run preview --workspace @lp-sketch/mobile --",
+    "mobile:sync": "npm run mobile:build && npm run sync:ios --workspace @lp-sketch/mobile",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:ios-config": "python -m unittest discover -s scripts/ios -p test_*.py",
     "test:e2e": "node scripts/run-playwright.mjs test",
+    "test:e2e:mobile": "npm run mobile:build && node scripts/run-playwright.mjs test --config playwright.mobile.config.ts",
     "test:e2e:headed": "node scripts/run-playwright.mjs test --headed",
     "audit:prod": "npm audit --omit=dev",
     "audit:full": "npm audit",
     "audit:prod:gate": "node scripts/audit-prod-gate.mjs",
     "audit:contrast": "node scripts/contrast-audit.mjs"
   },
-  "dependencies": {
-    "@kobalte/core": "^0.13.11",
-    "@tabler/icons-webfont": "^3.44.0",
-    "ajv": "^8.20.0",
-    "ajv-formats": "^3.0.1",
-    "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "5.5.207",
-    "solid-js": "^1.9.12"
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.2",
     "@playwright/test": "^1.51.1",
     "@solidjs/testing-library": "^0.8.10",
     "@types/node": "^25.5.0",
     "@vitest/coverage-v8": "^4.1.2",
     "jsdom": "^29.0.1",
-    "markdown-it": "^14.1.1",
-    "markdown-it-attrs": "^4.3.1",
+    "pdf-lib": "^1.17.1",
     "typescript": "~6.0.2",
     "vite": "^8.0.3",
     "vite-plugin-solid": "^2.11.11",

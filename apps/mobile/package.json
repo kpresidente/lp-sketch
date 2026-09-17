@@ -1,0 +1,21 @@
+{
+  "name": "@lp-sketch/mobile",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Capacitor iPad application using the shared LP Sketch editor.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sync:ios": "cap sync ios",
+    "open:ios": "cap open ios",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "@lp-sketch/editor": "0.0.0",
+    "solid-js": "^1.9.12"
+  }
+}
