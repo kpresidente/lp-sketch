@@ -6,6 +6,7 @@ import type {
   SymbolElement,
   WireClass,
 } from '../types/project'
+import { isSymbolDisabledForMaterial } from './componentAvailability'
 import {
   distance,
   distanceToSegment,
@@ -395,6 +396,27 @@ function autoConnectorId(
   return `auto-connector-p${page}-${x}-${y}-${color}-${junction}-${mode}`
 }
 
+function buildAutoConnectorSymbol(
+  node: AutoConnectorNode,
+  connectorType: AutoConnectorType,
+): SymbolElement {
+  const requestedSymbolType = autoConnectorSymbolType(connectorType, node.junction)
+  const effectiveConnectorType =
+    connectorType === 'cadweld' && isSymbolDisabledForMaterial(requestedSymbolType, node.color)
+      ? 'mechanical'
+      : connectorType
+
+  return {
+    id: autoConnectorId(node.position, node.color, node.page, node.junction, effectiveConnectorType),
+    symbolType: autoConnectorSymbolType(effectiveConnectorType, node.junction),
+    position: node.position,
+    page: node.page,
+    color: node.color,
+    class: node.connectorClass,
+    autoConnector: true,
+  }
+}
+
 function hasConnectorNear(
   symbols: readonly SymbolElement[],
   position: Point,
@@ -484,15 +506,7 @@ export function buildAutoConnectorSymbols(
 ): SymbolElement[] {
   const nodes = computeAutoConnectorNodes(project)
 
-  return nodes.map((node) => ({
-    id: autoConnectorId(node.position, node.color, node.page, node.junction, connectorType),
-    symbolType: autoConnectorSymbolType(connectorType, node.junction),
-    position: node.position,
-    page: node.page,
-    color: node.color,
-    class: node.connectorClass,
-    autoConnector: true,
-  }))
+  return nodes.map((node) => buildAutoConnectorSymbol(node, connectorType))
 }
 
 export function buildAutoConnectorSymbolsForAddedConductors(
@@ -545,15 +559,7 @@ export function buildAutoConnectorSymbolsForAddedConductors(
         continue
       }
 
-      pending.push({
-        id: autoConnectorId(node.position, node.color, node.page, node.junction, connectorType),
-        symbolType: autoConnectorSymbolType(connectorType, node.junction),
-        position: node.position,
-        page: node.page,
-        color: node.color,
-        class: node.connectorClass,
-        autoConnector: true,
-      })
+      pending.push(buildAutoConnectorSymbol(node, connectorType))
     }
   }
 

@@ -7,6 +7,48 @@ import {
   stripAutoConnectorSymbols,
 } from './autoConnectors'
 
+const incompatibleCadweldCases = [
+  {
+    name: 'all-aluminum',
+    horizontalColor: 'blue',
+    verticalColor: 'blue',
+    expectedColor: 'blue',
+    expectedId: 'auto-connector-p1-500-500-blue-crossrun-m',
+  },
+  {
+    name: 'mixed aluminum and copper',
+    horizontalColor: 'blue',
+    verticalColor: 'green',
+    expectedColor: 'purple',
+    expectedId: 'auto-connector-p1-500-500-purple-crossrun-m',
+  },
+] as const
+
+function createCrossingProject(
+  horizontalColor: 'blue',
+  verticalColor: 'blue' | 'green',
+) {
+  const project = createDefaultProject('Cadweld material compatibility')
+  project.settings.autoConnectorsEnabled = true
+  project.elements.lines.push(
+    {
+      id: 'line-h',
+      start: { x: 0, y: 50 },
+      end: { x: 100, y: 50 },
+      color: horizontalColor,
+      class: 'class1',
+    },
+    {
+      id: 'line-v',
+      start: { x: 50, y: 0 },
+      end: { x: 50, y: 100 },
+      color: verticalColor,
+      class: 'class1',
+    },
+  )
+  return project
+}
+
 describe('auto connector classifier', () => {
   it('does not place a connector for a simple L-corner bend', () => {
     const project = createDefaultProject('L-corner')
@@ -199,6 +241,42 @@ describe('auto connector classifier', () => {
     expect(cadweld).toHaveLength(1)
     expect(cadweld[0].symbolType).toBe('cadweld_crossrun_connection')
   })
+
+  it.each(incompatibleCadweldCases)(
+    'falls back to a mechanical connector for a $name junction during full generation',
+    ({ horizontalColor, verticalColor, expectedColor, expectedId }) => {
+      const project = createCrossingProject(horizontalColor, verticalColor)
+
+      const symbols = buildAutoConnectorSymbols(project, 'cadweld')
+
+      expect(symbols).toHaveLength(1)
+      expect(symbols[0]).toMatchObject({
+        id: expectedId,
+        symbolType: 'mechanical_crossrun_connection',
+        color: expectedColor,
+      })
+    },
+  )
+
+  it.each(incompatibleCadweldCases)(
+    'falls back to a mechanical connector for a $name junction during incremental generation',
+    ({ horizontalColor, verticalColor, expectedColor, expectedId }) => {
+      const project = createCrossingProject(horizontalColor, verticalColor)
+
+      const symbols = buildAutoConnectorSymbolsForAddedConductors(
+        project,
+        [{ kind: 'line', id: 'line-v' }],
+        'cadweld',
+      )
+
+      expect(symbols).toHaveLength(1)
+      expect(symbols[0]).toMatchObject({
+        id: expectedId,
+        symbolType: 'mechanical_crossrun_connection',
+        color: expectedColor,
+      })
+    },
+  )
 
   it('adds connectors only for newly added conductors and deduplicates against existing connector symbols', () => {
     const project = createDefaultProject('Placement-time connectors')
