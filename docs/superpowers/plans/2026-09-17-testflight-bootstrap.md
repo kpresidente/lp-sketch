@@ -49,8 +49,8 @@ Files: `docs/TESTFLIGHT.md`, `apps/mobile/README.md`, root/current architecture 
 - [x] Document first-install and second-build update checks and the current prototype limitations.
 - [x] Run browser/mobile builds, relevant tests, production audit, and diff checks serially to avoid the machine's prior memory pressure.
 - [x] Obtain an independent review of build/signing changes and resolve actionable findings.
-- [ ] Commit/push the prepared branch and create a draft pull request for native validation if authorized repository access works; do not merge.
-- [ ] Observe the hosted Mac result and report any remaining account-dependent work accurately.
+- [x] Commit/push the prepared branch and create a draft pull request for native validation if authorized repository access works; do not merge.
+- [x] Observe the hosted Mac result and report any remaining account-dependent work accurately.
 
 ## Verification evidence
 
@@ -58,5 +58,7 @@ Files: `docs/TESTFLIGHT.md`, `apps/mobile/README.md`, root/current architecture 
 - 49 unit/integration files and 368 tests pass; all 26 browser E2E cases and all 5 packaged-mobile smoke cases pass.
 - Six signing configuration tests, actionlint, script syntax checks, production/full dependency audits, contrast audit, and staged diff checks pass.
 - Independent review identified an OpenSSL/Apple PKCS12 compatibility issue. The export helper now uses compatible algorithms, and the macOS workflow exercises the real helper before Security import.
+- [Draft PR #27](https://github.com/kpresidente/lp-sketch/pull/27) contains the implementation. All checks passed for implementation commit `59987e5ad47167f1966b452472e808dc18048a4c`, including browser CI and its Azure preview.
+- [Hosted Mac run 35269419754](https://github.com/kpresidente/lp-sketch/actions/runs/35269419754) passed the unsigned iPad archive on Xcode 26.3 and imported the P12 produced by the Windows certificate helper into a macOS keychain. The signed upload job was skipped as intended.
 - A certificate request was generated in the ignored, user-restricted .local-signing directory and its self-signature verified. No signing material is tracked.
 - Apple enrollment is pending. No signed archive, Apple upload, device install, or native runtime check has occurred.
