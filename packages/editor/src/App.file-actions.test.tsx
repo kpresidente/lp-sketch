@@ -72,7 +72,7 @@ vi.mock('./lib/telemetry', () => ({
   reportHandledOperationTelemetry: reportHandledOperationTelemetryMock,
 }))
 
-import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library'
+import { cleanup, fireEvent, render, screen, waitFor } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   AUTOSAVE_STORAGE_KEY,
@@ -235,6 +235,49 @@ function requireOverlayLayer(container: HTMLElement): SVGSVGElement {
 }
 
 describe('App file actions integration', () => {
+  it('delivers PNG, JPG, PDF and project files through the supplied platform exporter', async () => {
+    const exportFile = vi.fn().mockResolvedValue('completed')
+    render(() => <App exportFile={exportFile} />)
+
+    for (const button of ['PNG', 'JPG', 'PDF', 'Save']) {
+      await fireEvent.click(screen.getByRole('button', { name: button }))
+    }
+
+    await waitFor(() => expect(exportFile).toHaveBeenCalledTimes(4))
+    expect(exportFile.mock.calls.map(([filename]) => filename)).toEqual([
+      'LP-Sketch.png', 'LP-Sketch.jpg', 'LP-Sketch.pdf', 'LP Sketch.lps',
+    ])
+    expect(exportFile.mock.calls[2][1].type).toBe('application/pdf')
+    expect(exportFile.mock.calls[3][1].type).toBe('application/json')
+    expect(downloadBlobMock).not.toHaveBeenCalled()
+    expect(downloadTextFileMock).not.toHaveBeenCalled()
+  })
+
+  it('waits for platform delivery and does not report a cancelled export as successful', async () => {
+    let finishExport!: (result: 'completed' | 'cancelled') => void
+    const exportFile = vi.fn(() => new Promise<'completed' | 'cancelled'>((resolve) => {
+      finishExport = resolve
+    }))
+    render(() => <App exportFile={exportFile} />)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
+    await waitFor(() => expect(exportFile).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText('Exported PDF output.')).toBeNull()
+    finishExport('cancelled')
+    await waitFor(() => expect(screen.getByText('Export cancelled.')).toBeTruthy())
+    expect(screen.queryByText('Exported PDF output.')).toBeNull()
+    expect(downloadBlobMock).not.toHaveBeenCalled()
+  })
+
+  it('shows native delivery failures instead of reporting a successful export', async () => {
+    const exportFile = vi.fn().mockRejectedValue(new Error('Unable to write the export file.'))
+    render(() => <App exportFile={exportFile} />)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
+    expect(await screen.findByText('Unable to write the export file.')).toBeTruthy()
+    expect(screen.queryByText('Exported PDF output.')).toBeNull()
+  })
+
   it('saves project and invokes export actions with normalized filename base', async () => {
     render(() => <App />)
 

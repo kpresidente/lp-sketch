@@ -11,6 +11,7 @@ import { clearAutosaveDraft } from '../lib/autosave'
 import { cloneProject } from '@lp-sketch/core/lib/projectState'
 import { arrayBufferToBase64, downloadBlob, downloadTextFile, sha256Hex } from '../lib/files'
 import { renderProjectImageBlob, renderProjectPdfBlob } from '../lib/export'
+import type { FileExporter } from '../lib/fileExport'
 import { projectElementCount } from '@lp-sketch/core/lib/projectLimits'
 import { reportHandledOperationTelemetry } from '../lib/telemetry'
 import { migrateProjectForLoad } from '@lp-sketch/core/model/migration'
@@ -48,6 +49,7 @@ interface UseProjectFileActionsOptions {
   setStatus: (message: string) => void
   setError: (message: string) => void
   getPdfCanvas: () => HTMLCanvasElement | undefined
+  exportFile?: FileExporter
   confirmDiscardExistingDrawing?: (elementCount: number) => boolean | Promise<boolean>
 }
 
@@ -539,17 +541,17 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
     }
   }
 
-  function handleSaveProject() {
-    const data = JSON.stringify(options.project(), null, 2)
-    const filename = `${options.project().projectMeta.name || 'lp-sketch'}.${PROJECT_SAVE_EXTENSION}`
-    if (!supportsNativeFileDialogs) {
-      downloadTextFile(filename, data)
-      options.setStatus(`Saved ${filename}`)
-      return
-    }
-
-    void (async () => {
-      try {
+  async function handleSaveProject() {
+    try {
+      const data = JSON.stringify(options.project(), null, 2)
+      const filename = `${options.project().projectMeta.name || 'lp-sketch'}.${PROJECT_SAVE_EXTENSION}`
+      if (options.exportFile) {
+        const result = await options.exportFile(filename, new Blob([data], { type: 'application/json' }))
+        if (result === 'cancelled') {
+          options.setStatus('Export cancelled.')
+          return
+        }
+      } else if (supportsNativeFileDialogs) {
         const handle = await openSaveHandle({
           suggestedName: filename,
           types: [
@@ -564,15 +566,17 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
           return
         }
         await writeHandleText(handle, data)
-        options.setStatus(`Saved ${filename}`)
-      } catch (error) {
-        if (isPickerAbortError(error)) {
-          return
-        }
-        const message = error instanceof Error ? error.message : 'Unable to save project file.'
-        options.setError(message)
+      } else {
+        downloadTextFile(filename, data)
       }
-    })()
+      options.setStatus(`Saved ${filename}`)
+    } catch (error) {
+      if (isPickerAbortError(error)) {
+        return
+      }
+      const message = error instanceof Error ? error.message : 'Unable to save project file.'
+      options.setError(message)
+    }
   }
 
   async function handleExportImage(format: 'png' | 'jpg') {
@@ -583,7 +587,12 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         options.getPdfCanvas(),
       )
 
-      if (supportsNativeFileDialogs) {
+      if (options.exportFile) {
+        if (await options.exportFile(`${normalizedFilenameBase()}.${format}`, blob) === 'cancelled') {
+          options.setStatus('Export cancelled.')
+          return
+        }
+      } else if (supportsNativeFileDialogs) {
         const handle = await openSaveHandle({
           suggestedName: `${normalizedFilenameBase()}.${format}`,
           types: [
@@ -622,7 +631,12 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         options.getPdfCanvas(),
       )
 
-      if (supportsNativeFileDialogs) {
+      if (options.exportFile) {
+        if (await options.exportFile(`${normalizedFilenameBase()}.pdf`, blob) === 'cancelled') {
+          options.setStatus('Export cancelled.')
+          return
+        }
+      } else if (supportsNativeFileDialogs) {
         const handle = await openSaveHandle({
           suggestedName: `${normalizedFilenameBase()}.pdf`,
           types: [

@@ -8,4 +8,6 @@ The Xcode scheme is `App`, device family is iPad, and preview bundle identifier 
 
 See [the TestFlight guide](../../docs/TESTFLIGHT.md) for account setup, signing from Windows, GitHub credentials, installation, and update testing.
 
-Pencil gestures, palm rejection, native file services, durable field storage, and Android packaging remain separate work. File import/export and recovery need physical-iPad verification. Mobile environment files live in this directory and are separate from the browser's root environment files.
+On native platforms, the mobile entry supplies a file exporter to the shared editor. PDF, PNG, JPG, and `.lps` project Save use Capacitor Filesystem and Share to offer the native share sheet, including **Save to Files**. Files are staged in a private export cache; completed shares are retained for receiving apps and directories older than one day are cleaned up during later exports. Browser previews retain browser file delivery. The iOS privacy manifest declares the Filesystem plugin's file timestamp access.
+
+The account owner verified PDF import, drawing, and offline reopening with the PDF and annotations restored in the first TestFlight build. That build's exports failed; the native delivery change still requires physical-iPad verification. Pencil gestures, palm rejection, durable field storage, and Android packaging remain separate work. Mobile environment files live in this directory and are separate from the browser's root environment files.

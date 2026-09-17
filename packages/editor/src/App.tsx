@@ -25,6 +25,7 @@ import { useGeneralNotesDialog } from './hooks/useGeneralNotesDialog'
 import { useLegendLabelDialog } from './hooks/useLegendLabelDialog'
 import { usePdfCanvasRenderer } from './hooks/usePdfCanvasRenderer'
 import { useProjectFileActions } from './hooks/useProjectFileActions'
+import type { FileExporter } from './lib/fileExport'
 import { useProjectAutosave } from './hooks/useProjectAutosave'
 import { useDialogResizeSync } from './hooks/useDialogResizeSync'
 import { useGlobalAppShortcuts } from './hooks/useGlobalAppShortcuts'
@@ -323,7 +324,11 @@ interface QueuedToolPointerMoveEvent {
   preventDefault: () => void
 }
 
-function App() {
+interface AppProps {
+  exportFile?: FileExporter
+}
+
+function App(props: AppProps) {
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
     past: [],
@@ -588,6 +593,7 @@ function App() {
     setStatus,
     setError,
     getPdfCanvas: () => pdfCanvasRef,
+    exportFile: props.exportFile,
   })
 
   useProjectAutosave({
