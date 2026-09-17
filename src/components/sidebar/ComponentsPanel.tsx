@@ -101,7 +101,7 @@ export default function ComponentsPanel() {
         {symbolBtn('cadweld_connection', 'Cadweld')}
       </div>
       <div class="btn-grid-3">
-        {symbolBtn('connect_existing', 'Connect\nExisting', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Connect Existing')}
+        {symbolBtn('steel_bond', 'Steel Bond', 'btn-connections-secondary')}
         {symbolBtn('mechanical_crossrun_connection', 'Mechanical\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Mechanical Crossrun')}
         {symbolBtn('cadweld_crossrun_connection', 'Cadweld\nCrossrun', 'btn-multiline btn-connections-secondary', 'btn-text-stack', 'Cadweld Crossrun')}
       </div>
@@ -125,7 +125,6 @@ export default function ComponentsPanel() {
       <div class="section-label">Grounding <SectionHelp anchor="help-components-grounding" /></div>
       <div class="btn-grid-3">
         {symbolBtn('ground_rod', 'Ground Rod')}
-        {symbolBtn('steel_bond', 'Steel Bond')}
       </div>
     </Panel>
   )

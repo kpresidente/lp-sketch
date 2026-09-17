@@ -1,5 +1,5 @@
 const SUPPORTED_SCHEMA_MAJOR = 1
-export const LATEST_SCHEMA_VERSION = '1.9.0'
+export const LATEST_SCHEMA_VERSION = '1.10.0'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -126,12 +126,20 @@ function normalizeVerticalFootageValue(value: unknown): number {
   return Math.max(0, Math.min(999, Math.round(value)))
 }
 
-function normalizePdfBrightness(value: unknown): number {
+function normalizeUnitValue(value: unknown, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return 1
+    return fallback
   }
 
   return Math.max(0, Math.min(1, value))
+}
+
+function legacyPdfBrightnessToTransparency(value: unknown, fallback = 0): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return fallback
+  }
+
+  return 1 - normalizeUnitValue(value, 1)
 }
 
 function normalizeSymbolLetter(value: unknown): string | undefined {
@@ -510,9 +518,15 @@ export function migrateProjectForLoad(input: unknown): MigrationResult {
         continue
       }
 
-      const symbolType = symbol.symbolType
-      if (typeof symbolType !== 'string') {
+      if (typeof symbol.symbolType !== 'string') {
         continue
+      }
+      let symbolType = symbol.symbolType
+
+      if (symbolType === 'continued') {
+        symbol.symbolType = 'break'
+        symbolType = 'break'
+        migrated = true
       }
 
       if (!DOWNLEAD_SYMBOL_TYPES.has(symbolType)) {
@@ -577,6 +591,12 @@ export function migrateProjectForLoad(input: unknown): MigrationResult {
       const normalizedLayer = normalizeLayerId(textElement.layer) ?? 'annotation'
       if (textElement.layer !== normalizedLayer) {
         textElement.layer = normalizedLayer
+        migrated = true
+      }
+
+      const normalizedBackgroundMask = normalizeOptionalBoolean(textElement.backgroundMask) ?? false
+      if (textElement.backgroundMask !== normalizedBackgroundMask) {
+        textElement.backgroundMask = normalizedBackgroundMask
         migrated = true
       }
     }
@@ -782,9 +802,13 @@ export function migrateProjectForLoad(input: unknown): MigrationResult {
   ) || migrated
   migrated = ensureLiteralBoolean(settingsResult.record, 'angleSnapEnabled', true) || migrated
   migrated = ensureLiteralNumber(settingsResult.record, 'angleIncrementDeg', 15) || migrated
-  const normalizedPdfBrightness = normalizePdfBrightness(settingsResult.record.pdfBrightness)
-  if (settingsResult.record.pdfBrightness !== normalizedPdfBrightness) {
-    settingsResult.record.pdfBrightness = normalizedPdfBrightness
+  const legacyPdfBrightness = settingsResult.record.pdfBrightness
+  const normalizedPdfTransparency = normalizeUnitValue(
+    settingsResult.record.pdfTransparency,
+    legacyPdfBrightnessToTransparency(legacyPdfBrightness),
+  )
+  if (settingsResult.record.pdfTransparency !== normalizedPdfTransparency) {
+    settingsResult.record.pdfTransparency = normalizedPdfTransparency
     migrated = true
   }
   migrated = ensureOneOfString(
@@ -799,23 +823,47 @@ export function migrateProjectForLoad(input: unknown): MigrationResult {
     ['page', 'global'],
     'global',
   ) || migrated
-  const originalPdfBrightnessByPage = isRecord(settingsResult.record.pdfBrightnessByPage)
-    ? structuredClone(settingsResult.record.pdfBrightnessByPage)
+  const originalPdfTransparencyByPage = isRecord(settingsResult.record.pdfTransparencyByPage)
+    ? structuredClone(settingsResult.record.pdfTransparencyByPage)
     : null
-  const normalizedBrightnessByPage: Record<string, number> = {}
-  if (isRecord(settingsResult.record.pdfBrightnessByPage)) {
+  const legacyPdfBrightnessByPage = isRecord(settingsResult.record.pdfBrightnessByPage)
+    ? settingsResult.record.pdfBrightnessByPage
+    : {}
+  const normalizedTransparencyByPage: Record<string, number> = {}
+  if (isRecord(settingsResult.record.pdfTransparencyByPage)) {
+    for (const [pageKey, transparency] of Object.entries(settingsResult.record.pdfTransparencyByPage)) {
+      const numericPage = normalizePositiveInteger(Number.parseInt(pageKey, 10), Number.NaN)
+      if (!Number.isFinite(numericPage) || numericPage > normalizedPageCount) {
+        continue
+      }
+
+      normalizedTransparencyByPage[String(numericPage)] = normalizeUnitValue(
+        transparency,
+        legacyPdfBrightnessToTransparency(legacyPdfBrightnessByPage[pageKey], normalizedPdfTransparency),
+      )
+    }
+  } else if (isRecord(settingsResult.record.pdfBrightnessByPage)) {
     for (const [pageKey, brightness] of Object.entries(settingsResult.record.pdfBrightnessByPage)) {
       const numericPage = normalizePositiveInteger(Number.parseInt(pageKey, 10), Number.NaN)
       if (!Number.isFinite(numericPage) || numericPage > normalizedPageCount) {
         continue
       }
 
-      normalizedBrightnessByPage[String(numericPage)] = normalizePdfBrightness(brightness)
+      normalizedTransparencyByPage[String(numericPage)] = legacyPdfBrightnessToTransparency(
+        brightness,
+        normalizedPdfTransparency,
+      )
     }
   }
-  normalizedBrightnessByPage[String(normalizedCurrentPage)] = normalizedPdfBrightness
-  settingsResult.record.pdfBrightnessByPage = normalizedBrightnessByPage
-  if (JSON.stringify(originalPdfBrightnessByPage) !== JSON.stringify(normalizedBrightnessByPage)) {
+  normalizedTransparencyByPage[String(normalizedCurrentPage)] = normalizedPdfTransparency
+  settingsResult.record.pdfTransparencyByPage = normalizedTransparencyByPage
+  if (JSON.stringify(originalPdfTransparencyByPage) !== JSON.stringify(normalizedTransparencyByPage)) {
+    migrated = true
+  }
+  if (removeProperty(settingsResult.record, 'pdfBrightness')) {
+    migrated = true
+  }
+  if (removeProperty(settingsResult.record, 'pdfBrightnessByPage')) {
     migrated = true
   }
   migrated = ensureOneOfString(

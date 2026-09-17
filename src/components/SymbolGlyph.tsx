@@ -5,7 +5,7 @@ import { resolvedSymbolClass } from '../lib/symbolClass'
 
 const SYMBOL_SIZE = 14
 const HALF = SYMBOL_SIZE / 2
-const ANNOTATION_SYMBOL_COLOR = '#111827'
+const BREAK_SYMBOL_COLOR = '#1e293b'
 const LETTERED_AIR_TERMINAL_SYMBOLS = new Set<SymbolElement['symbolType']>([
   'air_terminal',
   'bonded_air_terminal',
@@ -36,8 +36,8 @@ function classStrokeWidth(className: SymbolElement['class'], scale: number) {
 
 function commonStyle(symbol: SymbolElement, scale: number) {
   const className = resolvedSymbolClass(symbol)
-  const color = symbol.symbolType === 'continued'
-    ? ANNOTATION_SYMBOL_COLOR
+  const color = symbol.symbolType === 'break'
+    ? BREAK_SYMBOL_COLOR
     : COLOR_HEX[symbol.color]
   return {
     className,
@@ -321,18 +321,16 @@ function symbolShape(
       )
     }
 
-    case 'continued':
+    case 'break':
       return (
-        <>
-          <path
-            d={`M${-6 * scale} ${5.333 * scale}c${5.333 * scale} 0 ${6.667 * scale} ${-10.667 * scale} ${12 * scale} ${-10.667 * scale}`}
-            fill="none"
-            stroke={style.color}
-            stroke-width={1.55 * scale}
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </>
+        <polyline
+          points={`${-9.72 * scale},0 ${-5.4 * scale},0 ${-2.2 * scale},${-5.76 * scale} ${2.2 * scale},${5.76 * scale} ${5.4 * scale},0 ${9.72 * scale},0`}
+          fill="none"
+          stroke={style.color}
+          stroke-width={2.2 * scale}
+          stroke-linecap="round"
+          stroke-linejoin="miter"
+        />
       )
 
     case 'connect_existing':

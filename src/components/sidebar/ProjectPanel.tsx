@@ -8,7 +8,7 @@ export default function ProjectPanel() {
   const props = useAppController()
   let importPdfInput: HTMLInputElement | undefined
   let loadProjectInput: HTMLInputElement | undefined
-  const brightnessPercent = () => `${Math.round(props.pdfBrightness * 100)}%`
+  const transparencyPercent = () => `${Math.round(props.pdfTransparency * 100)}%`
   const handleEnterBlur = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
     if (event.key !== 'Enter') {
       return
@@ -149,26 +149,26 @@ export default function ProjectPanel() {
       </div>
 
       <div class="section-label" style={{ "margin-top": "10px" }}>PDF Background <SectionHelp anchor="help-project-pdf-background" /></div>
-      <div class="brightness-row">
-        <span class="brightness-label">Brightness</span>
+      <div class="transparency-row">
+        <span class="transparency-label">Transparency</span>
         <input
-          class="brightness-slider"
+          class="transparency-slider"
           type="range"
           min="0"
           max="1"
           step="0.05"
-          value={props.pdfBrightness}
-          aria-label="PDF background brightness"
-          title={props.hasPdf ? 'Adjust PDF background brightness' : 'Import a PDF to enable brightness control'}
+          value={props.pdfTransparency}
+          aria-label="PDF background transparency"
+          title={props.hasPdf ? 'Adjust PDF background transparency' : 'Import a PDF to enable transparency control'}
           disabled={!props.hasPdf}
-          onInput={(event) => props.onPreviewPdfBrightness(Number.parseFloat(event.currentTarget.value))}
-          onChange={(event) => props.onCommitPdfBrightness(Number.parseFloat(event.currentTarget.value))}
+          onInput={(event) => props.onPreviewPdfTransparency(Number.parseFloat(event.currentTarget.value))}
+          onChange={(event) => props.onCommitPdfTransparency(Number.parseFloat(event.currentTarget.value))}
         />
-        <span class="brightness-value">{brightnessPercent()}</span>
+        <span class="transparency-value">{transparencyPercent()}</span>
       </div>
       {!props.hasPdf && (
         <div class="hint-line" style={{ "margin-bottom": "2px" }}>
-          Import a PDF to enable brightness control.
+          Import a PDF to enable transparency control.
         </div>
       )}
     </Panel>

@@ -34,8 +34,8 @@ const SYMBOL_TYPES: SymbolType[] = [
   'bond',
   'cadweld_connection',
   'cadweld_crossrun_connection',
-  'continued',
   'connect_existing',
+  'break',
   'mechanical_crossrun_connection',
   'conduit_downlead_ground',
   'conduit_downlead_roof',
@@ -69,6 +69,7 @@ describe('icon registry coverage', () => {
     expect(TOOL_CUSTOM_ICON.arc_auto_spacing).toBe('at-arc')
     expect(TOOL_CUSTOM_ICON.multi_select).toBe('multi-select-hand-plus')
     expect(SYMBOL_CLASS2_CUSTOM_ICON.steel_bond).toBe('steel-bond-filled')
+    expect(SYMBOL_CUSTOM_ICON.break).toBe('break')
     expect(SYMBOL_CUSTOM_ICON.cadweld_connection).toBe('cadweld-connection')
     expect(SYMBOL_CUSTOM_ICON.connect_existing).toBe('connect-existing')
     expect(SYMBOL_CUSTOM_ICON.mechanical_crossrun_connection).toBe('mechanical-crossrun-connection')

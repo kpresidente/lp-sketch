@@ -349,15 +349,30 @@ export function drawProjectToContext(
         break
       case 'text': {
         const text = entry.item
-        ctx.fillStyle = colorFor(text.color)
         ctx.font = `${textFontSizePx}px Segoe UI, Arial, sans-serif`
         ctx.textBaseline = 'top'
         const lines = splitTextIntoLines(text.text)
+        const lineHeight = textLineHeightPxForScale(designScale)
+        if (text.backgroundMask) {
+          const textWidth = lines.reduce(
+            (max, line) => Math.max(max, ctx.measureText(line && line.length > 0 ? line : ' ').width),
+            0,
+          )
+          const textHeight = Math.max(lineHeight, lines.length * lineHeight)
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.94)'
+          ctx.fillRect(
+            text.position.x - 3 * designScale,
+            text.position.y - 2 * designScale,
+            textWidth + 6 * designScale,
+            textHeight + 4 * designScale,
+          )
+        }
+        ctx.fillStyle = colorFor(text.color)
         for (let i = 0; i < lines.length; i += 1) {
           ctx.fillText(
             lines[i] && lines[i].length > 0 ? lines[i] : ' ',
             text.position.x,
-            text.position.y + i * textLineHeightPxForScale(designScale),
+            text.position.y + i * lineHeight,
           )
         }
         break

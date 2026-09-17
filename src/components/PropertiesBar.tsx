@@ -196,7 +196,7 @@ export default function PropertiesBar(props: PropertiesBarProps) {
             title="Open help"
             onClick={(e) => {
               e.stopPropagation()
-              help.openHelp('help-top')
+              help.openHelp()
             }}
           >
             <i class={tablerIconClass('help')} />

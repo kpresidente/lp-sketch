@@ -16,13 +16,13 @@ test.describe('project operations', () => {
     await chooserPromise
   })
 
-  test('importing a PDF enables background brightness control', async ({ page }) => {
+  test('importing a PDF enables background transparency control', async ({ page }) => {
     await gotoApp(page)
-    const brightness = page.getByLabel('PDF background brightness')
-    await expect(brightness).toBeDisabled()
+    const transparency = page.getByLabel('PDF background transparency')
+    await expect(transparency).toBeDisabled()
 
-    await importPdfFromProjectPanel(page, 'brightness-check.pdf')
-    await expect(brightness).toBeEnabled()
+    await importPdfFromProjectPanel(page, 'transparency-check.pdf')
+    await expect(transparency).toBeEnabled()
   })
 
   test('save and load project file', async ({ page }) => {

@@ -18,8 +18,8 @@ export const SYMBOL_SIDEBAR_ORDER: SymbolType[] = [
   'mechanical_crossrun_connection',
   'cadweld_connection',
   'cadweld_crossrun_connection',
-  'continued',
   'connect_existing',
+  'break',
   'conduit_downlead_ground',
   'conduit_downlead_roof',
   'surface_downlead_ground',
@@ -31,7 +31,7 @@ export const SYMBOL_SIDEBAR_ORDER: SymbolType[] = [
 ]
 
 const NON_LEGEND_SYMBOLS = new Set<SymbolType>([
-  'continued',
+  'break',
 ])
 
 const SYMBOL_ORDER_INDEX = new Map(SYMBOL_SIDEBAR_ORDER.map((type, index) => [type, index]))

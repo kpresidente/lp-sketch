@@ -46,6 +46,9 @@ class NoopContext2D {
   stroke() {}
   fill() {}
   fillText() {}
+  measureText(text: string) {
+    return { width: text.length * 7 }
+  }
   closePath() {}
   arc() {}
   rect() {}
@@ -335,17 +338,17 @@ describe('export wrapper integration', () => {
     expect((downloadBlobMock.mock.calls[0][1] as Blob).type).toBe('application/pdf')
   })
 
-  it('applies a white wash overlay to source PDF pages when brightness is reduced', async () => {
-    const project = createDefaultProject('Wrapper PDF Brightness')
+  it('applies a white wash overlay to source PDF pages when transparency is increased', async () => {
+    const project = createDefaultProject('Wrapper PDF Transparency')
     project.pdf.dataBase64 = 'QQ=='
-    project.settings.pdfBrightness = 0.6
+    project.settings.pdfTransparency = 0.4
 
     const source = createPdfMocks()
     const output = createPdfMocks()
     pdfLoadMock.mockResolvedValue(source.document)
     pdfCreateMock.mockResolvedValue(output.document)
 
-    await exportProjectPdf(project, 'wrapper-brightness')
+    await exportProjectPdf(project, 'wrapper-transparency')
 
     expect(pdfLoadMock).toHaveBeenCalledTimes(1)
     expect(pdfCreateMock).toHaveBeenCalledTimes(1)

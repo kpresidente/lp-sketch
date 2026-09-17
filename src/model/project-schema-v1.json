@@ -95,7 +95,7 @@
         "bond",
         "cadweld_connection",
         "cadweld_crossrun_connection",
-        "continued",
+        "break",
         "connect_existing",
         "conduit_downlead_ground",
         "conduit_downlead_roof",
@@ -444,8 +444,8 @@
         "activeColor",
         "activeClass",
         "designScale",
-        "pdfBrightness",
-        "pdfBrightnessByPage",
+        "pdfTransparency",
+        "pdfTransparencyByPage",
         "legendDataScope",
         "notesDataScope",
         "snapEnabled",
@@ -469,12 +469,12 @@
             "large"
           ]
         },
-        "pdfBrightness": {
+        "pdfTransparency": {
           "type": "number",
           "minimum": 0,
           "maximum": 1
         },
-        "pdfBrightnessByPage": {
+        "pdfTransparencyByPage": {
           "type": "object",
           "propertyNames": {
             "pattern": "^[1-9][0-9]*$"
@@ -754,7 +754,7 @@
             "properties": {
               "symbolType": {
                 "enum": [
-                  "continued",
+                  "break",
                   "connect_existing",
                   "conduit_downlead_roof",
                   "surface_downlead_roof",
@@ -774,7 +774,7 @@
             "properties": {
               "symbolType": {
                 "enum": [
-                  "continued",
+                  "break",
                   "through_wall_connector",
                   "steel_bond"
                 ]
@@ -938,6 +938,9 @@
         },
         "text": {
           "type": "string"
+        },
+        "backgroundMask": {
+          "type": "boolean"
         },
         "color": {
           "$ref": "#/$defs/materialColor"

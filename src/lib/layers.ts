@@ -13,7 +13,7 @@ const GROUNDING_SYMBOLS = new Set<SymbolType>([
 ])
 
 const ANNOTATION_SYMBOLS = new Set<SymbolType>([
-  'continued',
+  'break',
 ])
 
 const CONNECTION_SYMBOLS = new Set<SymbolType>([

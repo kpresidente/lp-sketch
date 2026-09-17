@@ -55,6 +55,7 @@ interface HandlePlacementPointerDownContext {
   rememberAtLetterPlacement: (material: LpProject['settings']['activeColor'], letter: string) => void
   downleadPlacementVerticalFootageFt: () => number
   textDraftInput: () => string
+  textBackgroundMask: () => boolean
   arrowStart: () => Point | null
   setArrowStart: (point: Point | null) => void
   pendingCalibrationDistancePt: () => number | null
@@ -436,6 +437,7 @@ export function handlePlacementPointerDown(
         position: resolvedPoint,
         text: nextTextRaw,
         page: draft.view.currentPage,
+        backgroundMask: context.textBackgroundMask(),
         color: draft.settings.activeColor,
         layer: 'annotation',
       })

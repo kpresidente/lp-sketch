@@ -146,9 +146,15 @@ describe('useProjectFileActions import PDF', () => {
     expect(harness.project().scale.byPage[1].isSet).toBe(false)
     expect(harness.project().scale.byPage[2].isSet).toBe(false)
     expect(harness.project().scale.byPage[3].isSet).toBe(false)
-    expect(harness.project().settings.pdfBrightnessByPage[1]).toBe(harness.project().settings.pdfBrightness)
-    expect(harness.project().settings.pdfBrightnessByPage[2]).toBe(harness.project().settings.pdfBrightness)
-    expect(harness.project().settings.pdfBrightnessByPage[3]).toBe(harness.project().settings.pdfBrightness)
+    expect(harness.project().settings.pdfTransparencyByPage[1]).toBe(
+      harness.project().settings.pdfTransparency,
+    )
+    expect(harness.project().settings.pdfTransparencyByPage[2]).toBe(
+      harness.project().settings.pdfTransparency,
+    )
+    expect(harness.project().settings.pdfTransparencyByPage[3]).toBe(
+      harness.project().settings.pdfTransparency,
+    )
     expect(mockPdf.getPage).toHaveBeenCalledTimes(totalPages)
     expect(mockPdf.destroy).toHaveBeenCalledOnce()
     expect(harness.selected()).toBeNull()

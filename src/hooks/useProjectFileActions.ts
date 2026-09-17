@@ -109,9 +109,9 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
     return pickerWindow.showSaveFilePicker(options)
   }
 
-  function clampPdfBrightness(value: number): number {
+  function clampPdfTransparency(value: number): number {
     if (!Number.isFinite(value)) {
-      return 1
+      return 0
     }
 
     return Math.max(0, Math.min(1, value))
@@ -154,10 +154,10 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
     return byPage
   }
 
-  function createBrightnessByPage(pageCount: number, brightness: number): Record<number, number> {
+  function createTransparencyByPage(pageCount: number, transparency: number): Record<number, number> {
     const byPage: Record<number, number> = {}
     for (let page = 1; page <= pageCount; page += 1) {
-      byPage[page] = brightness
+      byPage[page] = transparency
     }
     return byPage
   }
@@ -322,10 +322,10 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
       const previous = options.project()
       const firstPage = pages[0]
       const pageCount = pages.length
-      const defaultBrightness = clampPdfBrightness(previous.settings.pdfBrightness)
+      const defaultTransparency = clampPdfTransparency(previous.settings.pdfTransparency)
       const viewByPage = createDefaultViewByPage(pageCount)
       const scaleByPage = createDefaultScaleByPage(pageCount)
-      const brightnessByPage = createBrightnessByPage(pageCount, defaultBrightness)
+      const transparencyByPage = createTransparencyByPage(pageCount, defaultTransparency)
 
       const nextProject: LpProject = {
         ...cloneProject(previous),
@@ -354,8 +354,8 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
         },
         settings: {
           ...previous.settings,
-          pdfBrightness: defaultBrightness,
-          pdfBrightnessByPage: brightnessByPage,
+          pdfTransparency: defaultTransparency,
+          pdfTransparencyByPage: transparencyByPage,
         },
         view: {
           currentPage: 1,

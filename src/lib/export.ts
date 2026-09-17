@@ -31,10 +31,10 @@ function activePdfDimensions(project: LpProject): { widthPt: number; heightPt: n
   }
 }
 
-function normalizedPdfBrightness(project: LpProject): number {
-  const value = project.settings.pdfBrightness
+function normalizedPdfTransparency(project: LpProject): number {
+  const value = project.settings.pdfTransparency
   if (!Number.isFinite(value)) {
-    return 1
+    return 0
   }
 
   return Math.max(0, Math.min(1, value))
@@ -83,7 +83,7 @@ export async function renderProjectCanvas(
   const currentPage = normalizedCurrentPage(project)
   const pageScopedProject = filterProjectByCurrentPage(project, currentPage)
   const visibleProject = filterProjectByVisibleLayers(pageScopedProject)
-  const pdfBrightness = normalizedPdfBrightness(visibleProject)
+  const pdfTransparency = normalizedPdfTransparency(visibleProject)
   const { widthPt, heightPt } = activePdfDimensions(visibleProject)
   const pixelRatio = options.pixelRatio ?? 2
 
@@ -105,7 +105,7 @@ export async function renderProjectCanvas(
 
     if (options.backgroundCanvas) {
       ctx.save()
-      ctx.globalAlpha = pdfBrightness
+      ctx.globalAlpha = 1 - pdfTransparency
       ctx.drawImage(options.backgroundCanvas, 0, 0, widthPt, heightPt)
       ctx.restore()
     }
@@ -147,7 +147,7 @@ export async function renderProjectPdfBlob(
   backgroundCanvas?: HTMLCanvasElement | null,
 ): Promise<Blob> {
   const visibleProject = filterProjectByVisibleLayers(project)
-  const pdfBrightness = normalizedPdfBrightness(visibleProject)
+  const pdfTransparency = normalizedPdfTransparency(visibleProject)
   const hasSourcePdf = Boolean(visibleProject.pdf.dataBase64)
   const currentPage = normalizedCurrentPage(visibleProject)
   const { widthPt: activeWidthPt, heightPt: activeHeightPt } = activePdfDimensions(visibleProject)
@@ -258,7 +258,7 @@ export async function renderProjectPdfBlob(
     })
   }
 
-  if (hasSourcePdf && pdfBrightness < 1) {
+  if (hasSourcePdf && pdfTransparency > 0) {
     page.drawRectangle({
       x: 0,
       y: 0,
@@ -266,7 +266,7 @@ export async function renderProjectPdfBlob(
       height: page.getHeight(),
       color: hexToPdfRgb('#ffffff'),
       borderWidth: 0,
-      opacity: 1 - pdfBrightness,
+      opacity: pdfTransparency,
     })
   }
 

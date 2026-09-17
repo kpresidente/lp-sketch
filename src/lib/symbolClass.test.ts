@@ -14,7 +14,7 @@ describe('symbol class helpers', () => {
 
   it('preserves none class for class-optional symbols', () => {
     expect(
-      resolvedSymbolClass({ symbolType: 'continued', class: 'none' }),
+      resolvedSymbolClass({ symbolType: 'break', class: 'none' }),
     ).toBe('none')
   })
 

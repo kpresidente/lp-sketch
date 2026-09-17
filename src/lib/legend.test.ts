@@ -120,12 +120,12 @@ describe('legend utilities', () => {
     expect(key).toBe('ground_rod|blue|none|')
   })
 
-  it('excludes annotation-only continued symbols from legend items', () => {
+  it('excludes annotation-only break symbols from legend items', () => {
     const project = createDefaultProject()
     project.elements.symbols.push(
       {
-        id: 'continued-1',
-        symbolType: 'continued',
+        id: 'break-1',
+        symbolType: 'break',
         position: { x: 10, y: 10 },
         color: 'green',
         class: 'none',

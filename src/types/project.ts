@@ -17,7 +17,7 @@ export type SymbolType =
   | 'bond'
   | 'cadweld_connection'
   | 'cadweld_crossrun_connection'
-  | 'continued'
+  | 'break'
   | 'connect_existing'
   | 'conduit_downlead_ground'
   | 'conduit_downlead_roof'
@@ -81,8 +81,8 @@ export interface SettingsState {
   activeColor: MaterialColor
   activeClass: WireClass
   designScale: DesignScale
-  pdfBrightness: number
-  pdfBrightnessByPage: Record<number, number>
+  pdfTransparency: number
+  pdfTransparencyByPage: Record<number, number>
   legendDataScope: DataScope
   notesDataScope: DataScope
   snapEnabled: boolean
@@ -158,6 +158,7 @@ export interface TextElement {
   text: string
   page?: number
   zIndex?: number
+  backgroundMask?: boolean
   color: MaterialColor
   layer: LayerId
 }

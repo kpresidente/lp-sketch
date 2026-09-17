@@ -2,7 +2,7 @@ import { COLOR_HEX } from '../../model/defaultProject'
 import { resolvedSymbolClass } from '../../lib/symbolClass'
 import type { SymbolElement } from '../../types/project'
 
-const ANNOTATION_SYMBOL_COLOR = '#111827'
+const BREAK_SYMBOL_COLOR = '#1e293b'
 const LETTERED_AIR_TERMINAL_SYMBOLS = new Set<SymbolElement['symbolType']>([
   'air_terminal',
   'bonded_air_terminal',
@@ -121,8 +121,8 @@ export function drawSymbol(
   designScale: number,
 ) {
   const className = resolvedSymbolClass(symbol)
-  const color = symbol.symbolType === 'continued'
-    ? ANNOTATION_SYMBOL_COLOR
+  const color = symbol.symbolType === 'break'
+    ? BREAK_SYMBOL_COLOR
     : colorFor(symbol.color)
   const fill = classFill(className, color)
   const strokeWidth = classStrokeWidth(className, designScale)
@@ -311,22 +311,19 @@ export function drawSymbol(
       break
     }
 
-    case 'continued': {
+    case 'break': {
       ctx.strokeStyle = color
-      ctx.lineWidth = 1.55 * designScale
+      ctx.lineWidth = 2.2 * designScale
       ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
+      ctx.lineJoin = 'miter'
 
       ctx.beginPath()
-      ctx.moveTo(-6 * designScale, 5.333 * designScale)
-      ctx.bezierCurveTo(
-        -0.667 * designScale,
-        5.333 * designScale,
-        0.667 * designScale,
-        -5.334 * designScale,
-        6 * designScale,
-        -5.334 * designScale,
-      )
+      ctx.moveTo(-9.72 * designScale, 0)
+      ctx.lineTo(-5.4 * designScale, 0)
+      ctx.lineTo(-2.2 * designScale, -5.76 * designScale)
+      ctx.lineTo(2.2 * designScale, 5.76 * designScale)
+      ctx.lineTo(5.4 * designScale, 0)
+      ctx.lineTo(9.72 * designScale, 0)
       ctx.stroke()
       break
     }

@@ -45,13 +45,15 @@ export interface AppSidebarProps {
   symbolOptions: SymbolType[]
   symbolLabels: Record<SymbolType, string>
   textDraftInput: string
+  textBackgroundMask: boolean
+  selectedTextBackgroundMask: boolean | null
   arrowStart: { x: number; y: number } | null
   symbolDirectionStart: { x: number; y: number } | null
   selectedLegendPlacement: LegendPlacement | null
   selectedGeneralNotesPlacement: GeneralNotePlacement | null
   colorOptions: MaterialColor[]
   colorHex: Record<MaterialColor, string>
-  pdfBrightness: number
+  pdfTransparency: number
   currentPage: number
   pageCount: number
   canGoToPreviousPage: boolean
@@ -100,6 +102,7 @@ export interface AppSidebarProps {
   onSetDownleadVerticalFootageSelectedInput: (value: string) => void
   onCommitDownleadVerticalFootageSelectedInput: () => void
   onSetTextDraftInput: (value: string) => void
+  onSetTextBackgroundMask: (value: boolean) => void
   onSetActiveSymbolLetter: (value: string) => void
   onSetLegendCustomSuffixInput: (value: string) => void
   onClearLegendCustomSuffix: () => void
@@ -111,8 +114,8 @@ export interface AppSidebarProps {
   onSetActiveClass: (value: 'class1' | 'class2') => void
   onSetActiveColor: (value: MaterialColor) => void
   onSetDesignScale: (value: DesignScale) => void
-  onPreviewPdfBrightness: (value: number) => void
-  onCommitPdfBrightness: (value: number) => void
+  onPreviewPdfTransparency: (value: number) => void
+  onCommitPdfTransparency: (value: number) => void
   onGoToPreviousPage: () => void
   onGoToNextPage: () => void
   onSetSnapEnabled: (value: boolean) => void

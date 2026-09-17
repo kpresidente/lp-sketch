@@ -32,7 +32,7 @@ describe('component availability by material', () => {
     expect(isSymbolDisabledForMaterial('bonded_air_terminal', 'purple')).toBe(true)
     expect(isSymbolDisabledForMaterial('steel_bond', 'purple')).toBe(true)
     expect(isSymbolDisabledForMaterial('cadweld_crossrun_connection', 'purple')).toBe(true)
-    expect(isSymbolDisabledForMaterial('continued', 'purple')).toBe(false)
+    expect(isSymbolDisabledForMaterial('break', 'purple')).toBe(false)
     expect(isSymbolDisabledForMaterial('connect_existing', 'purple')).toBe(false)
     expect(isSymbolDisabledForMaterial('air_terminal', 'red')).toBe(true)
     expect(isSymbolDisabledForMaterial('bonded_air_terminal', 'red')).toBe(true)
@@ -44,7 +44,7 @@ describe('component availability by material', () => {
     expect(isToolSelectionAllowedForMaterial('line', 'air_terminal', 'green')).toBe(true)
     expect(isToolSelectionAllowedForMaterial('symbol', 'air_terminal', 'red')).toBe(false)
     expect(isToolSelectionAllowedForMaterial('symbol', 'bond', 'red')).toBe(true)
-    expect(isToolSelectionAllowedForMaterial('symbol', 'continued', 'purple')).toBe(true)
+    expect(isToolSelectionAllowedForMaterial('symbol', 'break', 'purple')).toBe(true)
   })
 
   it('includes scale-dependent disable reasons for scale-required tools', () => {

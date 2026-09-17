@@ -23,10 +23,10 @@ LP Sketch is a fast communication tool for lightning protection design. Users dr
   - Linear AT auto-spacing, Arc AT auto-spacing
 - Symbol/component placement:
   - Air terminals (with letter labels), bonded AT
-  - Bond, cable-to-cable connection, mechanical crossrun, cadweld, cadweld crossrun, connect-existing
+  - Bond, cable-to-cable connection, mechanical crossrun, cadweld, cadweld crossrun, steel bond
   - Conduit/surface downleads (roof and ground variants), through-wall, through-roof
   - Steel bond, ground rod
-  - Continued-line indicator
+  - Break-line indicator
 - Drafting assists:
   - Snap-to-points toggle
   - Angle snap (15-degree increments) toggle
@@ -36,7 +36,7 @@ LP Sketch is a fast communication tool for lightning protection design. Users dr
   - Undo/redo with visible history counts
   - Layer and sublayer visibility
   - Drawing scale with display units (ft-in, decimal-ft, meters)
-  - PDF brightness (per-page), annotation size (small/medium/large)
+  - PDF transparency (per-page), annotation size (small/medium/large)
   - Page navigation (previous/next, page counter)
   - Quick-access toolbar with customizable tool/setting slots
   - Built-in help drawer with context-sensitive links

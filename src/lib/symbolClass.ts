@@ -1,7 +1,7 @@
 import type { SymbolElement } from '../types/project'
 
 const CLASS_OPTIONAL_SYMBOLS = new Set<SymbolElement['symbolType']>([
-  'continued',
+  'break',
 ])
 
 export function resolvedSymbolClass(

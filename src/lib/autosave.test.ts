@@ -73,7 +73,7 @@ describe('autosave storage', () => {
     project.view.byPage = {} as LpProject['view']['byPage']
 
     project.scale.byPage = {} as LpProject['scale']['byPage']
-    project.settings.pdfBrightnessByPage = { 1: 0.25 } as Record<number, number>
+    project.settings.pdfTransparencyByPage = { 1: 0.75 } as Record<number, number>
     project.generalNotes.notesByPage = { 1: ['  Page one  '] } as Record<number, string[]>
     project.generalNotes.notes = ['  Global note  ', '']
 
@@ -93,7 +93,7 @@ describe('autosave storage', () => {
     expect(restored.view.currentPage).toBe(3)
     expect(Object.keys(restored.view.byPage).sort()).toEqual(['1', '2', '3'])
     expect(Object.keys(restored.scale.byPage).sort()).toEqual(['1', '2', '3'])
-    expect(Object.keys(restored.settings.pdfBrightnessByPage).sort()).toEqual(['1', '2', '3'])
+    expect(Object.keys(restored.settings.pdfTransparencyByPage).sort()).toEqual(['1', '2', '3'])
     expect(restored.generalNotes.notes).toEqual(['Global note'])
     expect(restored.generalNotes.notesByPage[1]).toEqual(['Page one'])
     expect(restored.generalNotes.notesByPage[2]).toEqual([])

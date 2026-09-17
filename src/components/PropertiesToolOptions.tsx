@@ -134,6 +134,7 @@ export default function PropertiesToolOptions() {
 
   const markToolActive = () => props.tool === 'measure_mark'
   const markSelectedInSelectMode = () => props.tool === 'select' && props.selectedKind === 'mark'
+  const textSelectedInSelectMode = () => props.tool === 'select' && props.selectedKind === 'text'
   const legendSelected = () => !!props.selectedLegendPlacement
   const generalNotesSelected = () => !!props.selectedGeneralNotesPlacement
   const downleadPlacementOptionsVisible = () =>
@@ -536,6 +537,18 @@ export default function PropertiesToolOptions() {
             />
           </div>
           <div class="tb-sep" />
+          <div class="tb-switch-wrap">
+            <span class="tb-check-label">Background Mask</span>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Text background mask"
+              aria-checked={props.textBackgroundMask}
+              class={`tb-switch ${props.textBackgroundMask ? 'on' : ''}`}
+              onClick={() => props.onSetTextBackgroundMask(!props.textBackgroundMask)}
+            />
+          </div>
+          <div class="tb-sep" />
           <span class="tb-hint">Click to place. Supports multiline text. Double-click in Select mode to edit.</span>
         </div>
       )
@@ -640,6 +653,29 @@ export default function PropertiesToolOptions() {
           {zOrderControls()}
           <div class="tb-sep" />
           <span class="tb-hint">Press Enter or blur to apply.</span>
+        </div>
+      )
+    }
+
+    if (textSelectedInSelectMode()) {
+      const maskEnabled = () => props.selectedTextBackgroundMask ?? false
+      return (
+        <div class="properties-tool-options-inline">
+          <div class="tb-switch-wrap">
+            <span class="tb-check-label">Background Mask</span>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Selected text background mask"
+              aria-checked={maskEnabled()}
+              class={`tb-switch ${maskEnabled() ? 'on' : ''}`}
+              onClick={() => props.onSetTextBackgroundMask(!maskEnabled())}
+            />
+          </div>
+          <div class="tb-sep" />
+          {zOrderControls()}
+          <div class="tb-sep" />
+          <span class="tb-hint">Double-click text to edit</span>
         </div>
       )
     }
