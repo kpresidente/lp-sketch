@@ -19,6 +19,9 @@ Required branch settings:
 
 ## Dependency Automation
 
+- Development and CI use Node 24. Capacitor CLI requires Node 22 or newer.
+- The root `xcode → uuid` override pins `uuid` to `11.1.1` for GHSA-w5hq-g745-h8pq. Capacitor's CLI uses xcode's UUID v4 generation, which remains compatible. Remove the scoped override when upstream adopts a patched version.
+
 - Dependabot: `.github/dependabot.yml`
   - npm updates: weekly, max 10 open PRs, prefix `deps`
   - GitHub Actions updates: weekly, max 5 open PRs, prefix `ci`
@@ -41,6 +44,8 @@ Required branch settings:
 ### Deploy
 
 - Hosting: Azure Static Web Apps (`.github/workflows/azure-static-web-apps-*.yml`)
+- Build from the repository root: npm installs all workspaces and `npm run build` builds `apps/web` into root `dist/`. Keep `app_location: "/"`, `api_location: "api"`, and `output_location: "dist"` in the deployment workflow.
+- Browser environment files remain at the repository root; mobile environment files live in `apps/mobile`. Mobile builds are separate from browser deployment. See [TestFlight setup](TESTFLIGHT.md) for iOS build and signing instructions.
 - Automatic deploy on push to `main`; staging environments on PRs.
 - Post-deploy: execute smoke checks (below) and monitor telemetry for at least 30 minutes.
 
@@ -97,7 +102,7 @@ Rules:
 
 ## User Reporting
 
-- In-app bug/feature reporting via `src/lib/reporting.ts`.
+- In-app bug/feature reporting via `packages/editor/src/lib/reporting.ts`.
 - Submits to `/api/report` endpoint with title, description, and project summary metadata.
 - No PDF or drawing data included by default.
 
@@ -106,6 +111,7 @@ Rules:
 ```bash
 npm run dev              # Vite dev server
 npm run build            # TypeScript check + Vite build
+npm run typecheck        # Shared packages, browser app, and build/test configuration
 npm run preview          # Preview production build
 npm test                 # Vitest unit/integration
 npm run test:watch       # Vitest watch mode

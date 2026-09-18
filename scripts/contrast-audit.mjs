@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const appCssPath = resolve(process.cwd(), 'src/App.css')
+const appCssPath = resolve(import.meta.dirname, '../packages/editor/src/App.css')
 const css = readFileSync(appCssPath, 'utf8')
 
 function parseRootVariables(content) {
   const rootMatch = content.match(/:root\s*\{([\s\S]*?)\}/)
   if (!rootMatch) {
-    throw new Error('Could not locate :root block in src/App.css')
+    throw new Error('Could not locate :root block in packages/editor/src/App.css')
   }
 
   const values = new Map()
@@ -57,7 +57,7 @@ function hexToRgb(hex) {
 
 function relativeLuminance(channel) {
   const normalized = channel / 255
-  if (normalized <= 0.03928) {
+  if (normalized <= 0.04045) {
     return normalized / 12.92
   }
   return ((normalized + 0.055) / 1.055) ** 2.4
@@ -119,7 +119,7 @@ const checks = [
   },
   {
     name: 'Panel headers',
-    fg: 'var(--text-secondary)',
+    fg: 'var(--text-primary)',
     bg: 'var(--bg-panel-header)',
     min: 4.5,
   },
@@ -147,10 +147,60 @@ const checks = [
     bg: 'var(--bg-card)',
     min: 4.5,
   },
+  ...['--bg-card', '--bg-input', '--bg-sidebar', '--bg-panel-header', '--bg-hover'].map((bg) => ({
+    name: `Control outlines against ${bg}`,
+    fg: 'var(--border-btn)',
+    bg: `var(${bg})`,
+    min: 3,
+  })),
+  ...['--bg-card', '--bg-sidebar', '--bg-panel-header'].map((bg) => ({
+    name: `Focus indicator against ${bg}`,
+    fg: 'var(--border-focus)',
+    bg: `var(${bg})`,
+    min: 3,
+  })),
+  {
+    name: 'Enabled control icons',
+    fg: 'var(--text-secondary)',
+    bg: 'var(--bg-card)',
+    min: 4.5,
+  },
+  {
+    name: 'Selected material outline and checkmark',
+    fg: 'var(--accent)',
+    bg: 'var(--accent-light)',
+    min: 3,
+  },
+  {
+    name: 'Off switch track against cards',
+    fg: 'var(--switch-off)',
+    bg: 'var(--bg-card)',
+    min: 3,
+  },
+  {
+    name: 'Off switch thumb against track',
+    fg: '#ffffff',
+    bg: 'var(--switch-off)',
+    min: 3,
+  },
+  {
+    name: 'On switch thumb against track',
+    fg: '#ffffff',
+    bg: 'var(--accent)',
+    min: 3,
+  },
+  {
+    // Disabled controls are WCAG-exempt; keep their labels readable by design.
+    name: 'Disabled control labels and icons',
+    fg: 'var(--text-disabled)',
+    bg: 'var(--bg-disabled)',
+    min: 4.5,
+  },
 ]
 
 let failures = 0
-console.log('[contrast-audit] Checking WCAG AA contrast pairs')
+// Token checks cover intended pairs, not the entire rendered UI or outdoor legibility.
+console.log('[contrast-audit] Checking shared text and functional control contrast pairs')
 for (const check of checks) {
   const fg = resolveColor(check.fg, tokens)
   const bg = resolveColor(check.bg, tokens)

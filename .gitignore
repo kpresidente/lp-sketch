@@ -26,6 +26,15 @@ playwright-report/
 test-results/
 coverage/
 
-# Generated help files (built from src/help/USER_MANUAL.md)
-public/help.html
-public/help-glossary.json
+# Local iOS signing material and build artifacts
+.local-signing/
+*.p12
+*.p8
+*.mobileprovision
+*.xcarchive/
+*.ipa
+__pycache__/
+
+# Generated help files (built from packages/editor/src/help/USER_MANUAL.md)
+apps/*/public/help.html
+apps/*/public/help-glossary.json

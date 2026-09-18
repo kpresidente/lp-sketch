@@ -8,6 +8,27 @@ import {
 } from './helpers'
 
 test.describe('selection and symbols', () => {
+  test('browser mouse selection still moves immediately with a two-pixel drag', async ({ page }) => {
+    const stage = await gotoApp(page)
+    await panelRegion(page, 'Components').getByRole('button', { name: /Linear$/ }).click()
+    await clickStage(page, { x: 180, y: 200 })
+    await clickStage(page, { x: 340, y: 200 })
+    await page.getByRole('button', { name: 'Quick select mode' }).click()
+    const line = page.locator('svg.overlay-layer line[stroke="#2e8b57"][stroke-linecap="round"]')
+    const before = Number(await line.getAttribute('x1'))
+    const bounds = await stage.boundingBox()
+    if (!bounds) throw new Error('Canvas has no bounds')
+    await page.keyboard.down('Control')
+    await page.keyboard.down('Shift')
+    await page.mouse.move(bounds.x + 260, bounds.y + 200)
+    await page.mouse.down()
+    await page.mouse.move(bounds.x + 262, bounds.y + 200)
+    await expect.poll(async () => Number(await line.getAttribute('x1'))).toBe(before + 2)
+    await page.mouse.up()
+    await page.keyboard.up('Shift')
+    await page.keyboard.up('Control')
+  })
+
   test('selecting a line exposes endpoint handles and supports endpoint drag', async ({ page }) => {
     await gotoApp(page)
     const components = panelRegion(page, 'Components')
