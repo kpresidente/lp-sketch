@@ -19,9 +19,6 @@ export interface AppSidebarProps {
   project: LpProject
   hasPdf: boolean
   supportsNativeFileDialogs: boolean
-  touchNavigationOnly: boolean
-  oneFingerPanEnabled: boolean
-  onSetOneFingerPanEnabled: (enabled: boolean) => void
   tool: Tool
   selectedKind: Selection['kind'] | null
   multiSelectionCount: number

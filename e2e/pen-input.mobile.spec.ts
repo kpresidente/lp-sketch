@@ -3,38 +3,34 @@ import { gotoApp } from './helpers'
 
 test.use({ hasTouch: true })
 
-test('optional one-finger pan moves the mobile view, preserves zoom, and survives reload', async ({ page, context }) => {
+test('one-finger pan works without a switch before and after reload, even with an old off preference', async ({ page, context }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('lp-sketch.input.one-finger-pan.v1', 'false')
+  })
   const stage = await gotoApp(page)
-  const toggle = page.getByRole('switch', { name: 'One-finger pan' })
-  await expect(toggle).toHaveAttribute('aria-checked', 'false')
-  await toggle.tap()
-  await expect(toggle).toHaveAttribute('aria-checked', 'true')
-
   const camera = page.locator('.camera-layer')
   const view = () => camera.evaluate((element) => {
     const transform = new DOMMatrix(getComputedStyle(element).transform)
     return { zoom: transform.a, x: transform.e, y: transform.f }
   })
-  const before = await view()
-  const bounds = await stage.boundingBox()
-  if (!bounds) throw new Error('Canvas has no bounds')
   const input = await context.newCDPSession(page)
-  const point = (x: number, y = 180) => ({ id: 0, x: bounds.x + x, y: bounds.y + y })
-  await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(180)] })
-  await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(182)] })
-  expect(await view()).toEqual(before)
-  await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(280, 220)] })
-  await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-  await expect.poll(view).toEqual({ zoom: before.zoom, x: before.x + 100, y: before.y + 40 })
-  await expect(page.getByRole('button', { name: 'Quick undo' })).toBeDisabled()
+  for (const reload of [false, true]) {
+    if (reload) await page.reload()
+    await expect(stage).toBeVisible()
+    await expect(page.getByRole('switch', { name: 'One-finger pan' })).toHaveCount(0)
+    const before = await view()
+    const bounds = await stage.boundingBox()
+    if (!bounds) throw new Error('Canvas has no bounds')
+    const point = (x: number, y = 180) => ({ id: 0, x: bounds.x + x, y: bounds.y + y })
+    await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(180)] })
+    await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(182)] })
+    expect(await view()).toEqual(before)
+    await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(280, 220)] })
+    await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await expect.poll(view).toEqual({ zoom: before.zoom, x: before.x + 100, y: before.y + 40 })
+    await expect(page.getByRole('button', { name: 'Quick undo' })).toBeDisabled()
+  }
   await input.detach()
-
-  await page.reload()
-  await expect(toggle).toHaveAttribute('aria-checked', 'true')
-  await toggle.tap()
-  await expect(toggle).toHaveAttribute('aria-checked', 'false')
-  await page.reload()
-  await expect(toggle).toHaveAttribute('aria-checked', 'false')
 })
 
 test('mobile bundle separates pen editing from finger navigation and toolbar taps', async ({ page, context }) => {
@@ -115,7 +111,7 @@ test('mobile bundle separates pen editing from finger navigation and toolbar tap
   await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(0, 100)] })
   await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(0, 200)] })
   await endTouch()
-  await expect(camera).toHaveAttribute('style', afterGesture!)
+  await expect(camera).not.toHaveAttribute('style', afterGesture!)
   await expect(lines).toHaveCount(1)
 
   await input.detach()

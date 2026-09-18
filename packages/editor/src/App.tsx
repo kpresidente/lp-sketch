@@ -14,7 +14,6 @@ import AppSidebar from './components/AppSidebar'
 import CanvasStage from './components/CanvasStage'
 import { createPenInputGuard } from './controllers/pointer/penInputGuard'
 import { createSingleFingerPan } from './controllers/pointer/singleFingerPan'
-import { useTouchNavigationPreferences } from './hooks/useTouchNavigationPreferences'
 import OverlayLayer from './components/OverlayLayer'
 import PropertiesToolOptions from './components/PropertiesToolOptions'
 import { createSidebarController } from './components/sidebar/createSidebarController'
@@ -330,7 +329,7 @@ interface QueuedToolPointerMoveEvent {
 
 interface AppProps {
   exportFile?: FileExporter
-  /** Disable touch editing and expose mobile touch-navigation preferences. */
+  /** Set false for pen editing with one-finger pan and two-finger pan/zoom. */
   touchDrawingEnabled?: boolean
 }
 
@@ -421,7 +420,6 @@ function App(props: AppProps) {
   const activeTouchPoints = new Map<number, Point>()
   const penInputGuard = createPenInputGuard()
   const singleFingerPan = createSingleFingerPan()
-  const { oneFingerPanEnabled, setOneFingerPanEnabled } = useTouchNavigationPreferences()
   const touchNavigationOnly = () => props.touchDrawingEnabled === false
 
   onMount(() => {
@@ -991,7 +989,7 @@ function App(props: AppProps) {
 
     if (touchNavigationOnly() && event.pointerType === 'touch') {
       const point = activeTouchPoints.get(event.pointerId)
-      if (oneFingerPanEnabled() && activeTouchPoints.size === 1 && point) {
+      if (activeTouchPoints.size === 1 && point) {
         const pan = singleFingerPan.move(event.pointerId, point)
         if (pan) updateView((view) => ({ ...view, pan }))
       }
@@ -1339,16 +1337,9 @@ function App(props: AppProps) {
 
   function beginSingleFingerPanFromActivePointers() {
     singleFingerPan.clear()
-    if (!touchNavigationOnly() || !oneFingerPanEnabled() || activeTouchPoints.size !== 1) return
+    if (!touchNavigationOnly() || activeTouchPoints.size !== 1) return
     const [pointerId, point] = activeTouchPoints.entries().next().value!
     singleFingerPan.begin(pointerId, point, project().view.pan)
-  }
-
-  function handleSetOneFingerPanEnabled(enabled: boolean) {
-    activeTouchPoints.clear()
-    penInputGuard.suppressTouches()
-    clearTouchGesture()
-    setOneFingerPanEnabled(enabled)
   }
 
   function setLegendCustomSuffixInput(value: string) {
@@ -4003,13 +3994,6 @@ function App(props: AppProps) {
     get supportsNativeFileDialogs() {
       return supportsNativeFileDialogs
     },
-    get touchNavigationOnly() {
-      return touchNavigationOnly()
-    },
-    get oneFingerPanEnabled() {
-      return oneFingerPanEnabled()
-    },
-    onSetOneFingerPanEnabled: handleSetOneFingerPanEnabled,
     get tool() {
       return tool()
     },
