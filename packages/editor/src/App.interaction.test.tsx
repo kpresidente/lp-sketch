@@ -471,6 +471,17 @@ function appearsBefore(first: Element, second: Element): boolean {
 
 describe('pen canvas input', () => {
   const lineSelector = 'svg.overlay-layer line[stroke="#2e8b57"][stroke-linecap="round"]'
+  const panPreferenceKey = 'lp-sketch.input.one-finger-pan.v1'
+
+  beforeEach(() => window.localStorage.removeItem(panPreferenceKey))
+  afterEach(() => window.localStorage.removeItem(panPreferenceKey))
+
+  async function enableOneFingerPan() {
+    const toggle = screen.getByRole('switch', { name: 'One-finger pan' })
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+    await fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+  }
 
   function pointer(
     stage: HTMLDivElement,
@@ -554,9 +565,10 @@ describe('pen canvas input', () => {
     expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
   })
 
-  it('ignores a palm before the pen without creating or completing a line', async () => {
+  it.each([false, true])('ignores a palm before the pen without creating or completing a line (one-finger pan: %s)', async (panEnabled) => {
     const { container } = render(() => <App touchDrawingEnabled={false} />)
     const stage = requireDrawingStage(container)
+    if (panEnabled) await enableOneFingerPan()
     await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
     await pointer(stage, 'down', 'touch', 1, 100)
     await tap(stage, 'pen', 10, 220)
@@ -571,9 +583,10 @@ describe('pen canvas input', () => {
     expect(parseNumericAttr(lines[0], 'x2')).toBeCloseTo(screenToOverlayDoc(container, { x: 420, y: 220 }).x)
   })
 
-  it('preserves a pen endpoint drag when two palm contacts arrive and commits one undo step', async () => {
+  it.each([false, true])('preserves a pen endpoint drag when two palm contacts arrive and commits one undo step (one-finger pan: %s)', async (panEnabled) => {
     const { container } = render(() => <App touchDrawingEnabled={false} />)
     const stage = requireDrawingStage(container)
+    if (panEnabled) await enableOneFingerPan()
     await drawLine(stage)
     await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
     await tap(stage, 'pen', 10, 320)
@@ -622,9 +635,10 @@ describe('pen canvas input', () => {
     expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
   })
 
-  it('does not let finger double-clicks finish a pen line', async () => {
+  it.each([false, true])('does not let finger double-clicks finish a pen line (one-finger pan: %s)', async (panEnabled) => {
     const { container } = render(() => <App touchDrawingEnabled={false} />)
     const stage = requireDrawingStage(container)
+    if (panEnabled) await enableOneFingerPan()
     await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
     await tap(stage, 'pen', 10, 220)
     await tap(stage, 'touch', 1, 600)
@@ -671,6 +685,166 @@ describe('pen canvas input', () => {
     await pointer(stage, 'up', 'touch', 1, 400)
     expect(cameraViewFromContainer(container)).toEqual(before)
   })
+
+  it('one-finger pan is opt-in, ignores small movements, and preserves zoom and geometry', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    const before = cameraViewFromContainer(container)
+    await pointer(stage, 'down', 'touch', 1, 200)
+    await pointer(stage, 'move', 'touch', 1, 300)
+    await pointer(stage, 'up', 'touch', 1, 300)
+    expect(cameraViewFromContainer(container)).toEqual(before)
+
+    await enableOneFingerPan()
+    await pointer(stage, 'down', 'touch', 2, 200)
+    await pointer(stage, 'move', 'touch', 2, 202, 223)
+    expect(cameraViewFromContainer(container)).toEqual(before)
+    await pointer(stage, 'move', 'touch', 2, 260, 250)
+    expect(cameraViewFromContainer(container)).toEqual({
+      zoom: before.zoom, panX: before.panX + 60, panY: before.panY + 30,
+    })
+    await pointer(stage, 'move', 'touch', 2, 203, 220)
+    expect(cameraViewFromContainer(container).panX).toBeCloseTo(before.panX + 3)
+    await pointer(stage, 'up', 'touch', 2, 203, 220)
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+    expect((screen.getByRole('button', { name: 'Quick undo' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('one-finger pan persists on the device and can be disabled without affecting browser touch editing', async () => {
+    let app = render(() => <App touchDrawingEnabled={false} />)
+    await enableOneFingerPan()
+    app.unmount()
+    app = render(() => <App touchDrawingEnabled={false} />)
+    const toggle = screen.getByRole('switch', { name: 'One-finger pan' })
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+    const stage = requireDrawingStage(app.container)
+    await fireEvent.click(toggle)
+    const before = cameraViewFromContainer(app.container)
+    await pointer(stage, 'down', 'touch', 1, 200)
+    await pointer(stage, 'move', 'touch', 1, 400)
+    await pointer(stage, 'up', 'touch', 1, 400)
+    expect(cameraViewFromContainer(app.container)).toEqual(before)
+    app.unmount()
+    app = render(() => <App touchDrawingEnabled={false} />)
+    expect(screen.getByRole('switch', { name: 'One-finger pan' }).getAttribute('aria-checked')).toBe('false')
+    await enableOneFingerPan()
+    app.unmount()
+
+    app = render(() => <App />)
+    expect(screen.queryByRole('switch', { name: 'One-finger pan' })).toBeNull()
+    const webStage = requireDrawingStage(app.container)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await tap(webStage, 'touch', 1, 220)
+    await tap(webStage, 'touch', 1, 420)
+    expect(app.container.querySelectorAll(lineSelector)).toHaveLength(1)
+  })
+
+  it('one-finger pan preserves a pending conductor endpoint and does not add an undo step', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await enableOneFingerPan()
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    const start = screenToOverlayDoc(container, { x: 220, y: 220 })
+    await tap(stage, 'pen', 10, 220)
+    await pointer(stage, 'down', 'touch', 1, 500)
+    await pointer(stage, 'move', 'touch', 1, 600)
+    await pointer(stage, 'up', 'touch', 1, 600)
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+    const end = screenToOverlayDoc(container, { x: 420, y: 220 })
+    await tap(stage, 'pen', 10, 420)
+    const line = container.querySelector(lineSelector)!
+    expect(parseNumericAttr(line, 'x1')).toBeCloseTo(start.x)
+    expect(parseNumericAttr(line, 'x2')).toBeCloseTo(end.x)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+    expect((screen.getByRole('button', { name: 'Quick undo' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('one-finger pan rebases without a jump when a second finger joins and leaves', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await enableOneFingerPan()
+    await pointer(stage, 'down', 'touch', 1, 200)
+    await pointer(stage, 'move', 'touch', 1, 260)
+    const single = cameraViewFromContainer(container)
+    await pointer(stage, 'down', 'touch', 2, 360)
+    expect(cameraViewFromContainer(container)).toEqual(single)
+    await pointer(stage, 'move', 'touch', 2, 460)
+    expect(cameraViewFromContainer(container).zoom).toBeCloseTo(single.zoom * 2)
+    const pinch = cameraViewFromContainer(container)
+    await pointer(stage, 'up', 'touch', 2, 460)
+    expect(cameraViewFromContainer(container)).toEqual(pinch)
+    await pointer(stage, 'move', 'touch', 1, 270)
+    expect(cameraViewFromContainer(container)).toEqual({ ...pinch, panX: pinch.panX + 10 })
+    await pointer(stage, 'up', 'touch', 1, 270)
+    await pointer(stage, 'move', 'touch', 1, 500)
+    expect(cameraViewFromContainer(container).panX).toBeCloseTo(pinch.panX + 10)
+  })
+
+  it('one-finger pan yields to the pen and requires suppressed hand contacts to lift before resuming', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await enableOneFingerPan()
+    await pointer(stage, 'down', 'touch', 1, 200)
+    await pointer(stage, 'move', 'touch', 1, 300)
+    const beforePen = cameraViewFromContainer(container)
+    await pointer(stage, 'down', 'pen', 10, 700)
+    await pointer(stage, 'down', 'touch', 2, 500)
+    await pointer(stage, 'move', 'touch', 1, 400)
+    await pointer(stage, 'up', 'pen', 10, 700)
+    await pointer(stage, 'move', 'touch', 2, 600)
+    await pointer(stage, 'down', 'touch', 3, 200)
+    await pointer(stage, 'move', 'touch', 3, 300)
+    expect(cameraViewFromContainer(container)).toEqual(beforePen)
+    for (const id of [1, 2, 3]) await pointer(stage, 'up', 'touch', id)
+    await pointer(stage, 'down', 'touch', 4, 200)
+    await pointer(stage, 'move', 'touch', 4, 250)
+    expect(cameraViewFromContainer(container)).toEqual({ ...beforePen, panX: beforePen.panX + 50 })
+  })
+
+  it.each(['cancel', 'lostpointercapture', 'blur', 'tool change', 'toggle off'] as const)(
+    'one-finger pan cancels on %s without resuming a held contact', async (interruption) => {
+      const { container } = render(() => <App touchDrawingEnabled={false} />)
+      const stage = requireDrawingStage(container)
+      await enableOneFingerPan()
+      await pointer(stage, 'down', 'touch', 1, 200)
+      await pointer(stage, 'move', 'touch', 1, 220)
+      const before = cameraViewFromContainer(container)
+      if (interruption === 'blur') await fireEvent(window, new Event('blur'))
+      else if (interruption === 'tool change') await fireEvent.click(screen.getByRole('button', { name: 'Pan' }))
+      else if (interruption === 'toggle off') await fireEvent.click(screen.getByRole('switch', { name: 'One-finger pan' }))
+      else await pointer(stage, interruption, 'touch', 1, 220)
+      await pointer(stage, 'move', 'touch', 1, 500)
+      await pointer(stage, 'up', 'touch', 1, 500)
+      expect(cameraViewFromContainer(container)).toEqual(before)
+      if (interruption === 'toggle off') await enableOneFingerPan()
+      await pointer(stage, 'down', 'touch', 2, 500)
+      await pointer(stage, 'move', 'touch', 2, 520)
+      expect(cameraViewFromContainer(container)).toEqual({ ...before, panX: before.panX + 20 })
+    },
+  )
+
+  it.each(['cancel', 'lostpointercapture'] as const)(
+    'one-finger pan suppresses the surviving pinch contact after %s', async (interruption) => {
+      const { container } = render(() => <App touchDrawingEnabled={false} />)
+      const stage = requireDrawingStage(container)
+      await enableOneFingerPan()
+      await pointer(stage, 'down', 'touch', 1, 200)
+      await pointer(stage, 'down', 'touch', 2, 300)
+      await pointer(stage, 'move', 'touch', 2, 400)
+      const before = cameraViewFromContainer(container)
+      await pointer(stage, interruption, 'touch', 2, 400)
+      await pointer(stage, 'move', 'touch', 1, 100)
+      expect(cameraViewFromContainer(container)).toEqual(before)
+      await pointer(stage, 'down', 'touch', 3, 500)
+      await pointer(stage, 'move', 'touch', 3, 600)
+      expect(cameraViewFromContainer(container)).toEqual(before)
+      for (const id of [1, 3]) await pointer(stage, 'up', 'touch', id)
+      await pointer(stage, 'down', 'touch', 4, 200)
+      await pointer(stage, 'move', 'touch', 4, 240)
+      expect(cameraViewFromContainer(container)).toEqual({ ...before, panX: before.panX + 40 })
+    },
+  )
 
   it('cancels a mouse drag on lost capture in the mobile editor', async () => {
     const { container } = render(() => <App touchDrawingEnabled={false} />)

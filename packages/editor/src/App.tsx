@@ -13,6 +13,8 @@ import './App.css'
 import AppSidebar from './components/AppSidebar'
 import CanvasStage from './components/CanvasStage'
 import { createPenInputGuard } from './controllers/pointer/penInputGuard'
+import { createSingleFingerPan } from './controllers/pointer/singleFingerPan'
+import { useTouchNavigationPreferences } from './hooks/useTouchNavigationPreferences'
 import OverlayLayer from './components/OverlayLayer'
 import PropertiesToolOptions from './components/PropertiesToolOptions'
 import { createSidebarController } from './components/sidebar/createSidebarController'
@@ -328,7 +330,7 @@ interface QueuedToolPointerMoveEvent {
 
 interface AppProps {
   exportFile?: FileExporter
-  /** Disable touch editing while retaining two-finger canvas navigation. */
+  /** Disable touch editing and expose mobile touch-navigation preferences. */
   touchDrawingEnabled?: boolean
 }
 
@@ -418,6 +420,8 @@ function App(props: AppProps) {
   let lastDragPreviewDelta: Point | null = null
   const activeTouchPoints = new Map<number, Point>()
   const penInputGuard = createPenInputGuard()
+  const singleFingerPan = createSingleFingerPan()
+  const { oneFingerPanEnabled, setOneFingerPanEnabled } = useTouchNavigationPreferences()
   const touchNavigationOnly = () => props.touchDrawingEnabled === false
 
   onMount(() => {
@@ -985,7 +989,15 @@ function App(props: AppProps) {
       return
     }
 
-    if (touchNavigationOnly() && event.pointerType === 'touch') return
+    if (touchNavigationOnly() && event.pointerType === 'touch') {
+      const point = activeTouchPoints.get(event.pointerId)
+      if (oneFingerPanEnabled() && activeTouchPoints.size === 1 && point) {
+        const pan = singleFingerPan.move(event.pointerId, point)
+        if (pan) updateView((view) => ({ ...view, pan }))
+      }
+      event.preventDefault()
+      return
+    }
 
     const currentTool = tool()
     const activeDrag = dragState()
@@ -1297,6 +1309,7 @@ function App(props: AppProps) {
       return false
     }
 
+    singleFingerPan.clear()
     const entries = [...activeTouchPoints.entries()]
     const [firstId, firstPoint] = entries[0]
     const [secondId, secondPoint] = entries[1]
@@ -1321,6 +1334,21 @@ function App(props: AppProps) {
 
   function clearTouchGesture() {
     setTouchGesture(null)
+    singleFingerPan.clear()
+  }
+
+  function beginSingleFingerPanFromActivePointers() {
+    singleFingerPan.clear()
+    if (!touchNavigationOnly() || !oneFingerPanEnabled() || activeTouchPoints.size !== 1) return
+    const [pointerId, point] = activeTouchPoints.entries().next().value!
+    singleFingerPan.begin(pointerId, point, project().view.pan)
+  }
+
+  function handleSetOneFingerPanEnabled(enabled: boolean) {
+    activeTouchPoints.clear()
+    penInputGuard.suppressTouches()
+    clearTouchGesture()
+    setOneFingerPanEnabled(enabled)
   }
 
   function setLegendCustomSuffixInput(value: string) {
@@ -2488,6 +2516,7 @@ function App(props: AppProps) {
     }
 
     if (touchNavigationOnly() && event.pointerType === 'touch') {
+      beginSingleFingerPanFromActivePointers()
       event.preventDefault()
       return
     }
@@ -2684,15 +2713,18 @@ function App(props: AppProps) {
       return
     }
 
-    if (handleTouchPointerEndForGesture({
+    const endedTouchGesture = handleTouchPointerEndForGesture({
       event,
       activeTouchPoints,
       touchGesture,
       clearTouchGesture,
       beginTouchGestureFromActivePointers,
-    })) {
+    })
+    if (touchNavigationOnly() && event.pointerType === 'touch') {
+      beginSingleFingerPanFromActivePointers()
       return
     }
+    if (endedTouchGesture) return
 
     const drag = dragState()
 
@@ -2731,6 +2763,14 @@ function App(props: AppProps) {
     const event = normalizePointerEvent(incomingEvent)
     if (touchNavigationOnly() && !penInputGuard.pointerEnd(event)) return
     clearPendingToolPointerMove(event.pointerId)
+    if (touchNavigationOnly() && event.pointerType === 'touch') {
+      // Cancellation interrupts the whole gesture. Unlike a normal finger lift,
+      // it must not promote a still-held contact into a new pan or pinch.
+      activeTouchPoints.clear()
+      penInputGuard.suppressTouches()
+      clearTouchGesture()
+      return
+    }
     if (event.pointerType === 'touch') {
       activeTouchPoints.delete(event.pointerId)
     }
@@ -3963,6 +4003,13 @@ function App(props: AppProps) {
     get supportsNativeFileDialogs() {
       return supportsNativeFileDialogs
     },
+    get touchNavigationOnly() {
+      return touchNavigationOnly()
+    },
+    get oneFingerPanEnabled() {
+      return oneFingerPanEnabled()
+    },
+    onSetOneFingerPanEnabled: handleSetOneFingerPanEnabled,
     get tool() {
       return tool()
     },

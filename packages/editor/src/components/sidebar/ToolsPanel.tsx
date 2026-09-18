@@ -1,3 +1,4 @@
+import { Show } from 'solid-js'
 import Panel from './Panel'
 import {
   COMMAND_ICON,
@@ -73,6 +74,24 @@ export default function ToolsPanel() {
           {renderToolIcon('pan')} Pan
         </button>
       </div>
+
+      <Show when={props.touchNavigationOnly}>
+        <div class="toggle-row">
+          <span class="toggle-label">One-finger pan</span>
+          <button
+            type="button"
+            role="switch"
+            aria-label="One-finger pan"
+            aria-describedby="one-finger-pan-hint"
+            aria-checked={props.oneFingerPanEnabled}
+            class={`toggle-switch ${props.oneFingerPanEnabled ? 'on' : ''}`}
+            onClick={() => props.onSetOneFingerPanEnabled(!props.oneFingerPanEnabled)}
+          />
+        </div>
+        <div id="one-finger-pan-hint" class="hint-line" style={{ "margin-bottom": "10px" }}>
+          Pan with a finger or thumb. Two fingers always pan and zoom.
+        </div>
+      </Show>
 
       <div class="history-bar">
         <button

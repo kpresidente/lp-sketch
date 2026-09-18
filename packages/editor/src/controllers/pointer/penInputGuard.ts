@@ -25,7 +25,9 @@ export function createPenInputGuard() {
         pens.add(event.pointerId)
         suppressTouches()
       } else if (event.pointerType === 'touch') {
-        touches.set(event.pointerId, pens.size === 0)
+        // A resting hand can report additional contacts between pen taps.
+        // Wait until all suppressed contacts lift before admitting fresh touches.
+        touches.set(event.pointerId, pens.size === 0 && ![...touches.values()].includes(false))
       }
       return allowsMove(event)
     },

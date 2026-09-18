@@ -886,8 +886,13 @@ When enabled via the [Angle Snap](#help-tools-angle-snap) toggle, angles are con
 - **Middle mouse button drag** -- Pan the view from any tool
 - **[Pan tool](#help-tools-mode)** -- Click and drag to pan
 - **Two-finger drag** -- Pan on touch devices
+- **One-finger pan (iPad app)** -- Enable **One-finger pan** in the Tools panel to drag the view with a finger or thumb from any tool. It starts off and remembers your choice on this device. Small movements are ignored, and panning does not change zoom or add an Undo step. Turn it off to return to two-finger navigation only.
 
 ### 12.3. Touch Gestures {#help-canvas-navigation-touch}
+
+In the **iPad app**, use the Pencil to place, select, and edit objects. Fingers operate controls and navigate the canvas. Two-finger pan/zoom is always available; one-finger canvas panning requires the optional Tools setting above. Pencil contact stops touch navigation, and resting hand contacts remain ignored until lifted. Lift your hand before starting a new finger gesture. If your hand moves the view before the Pencil touches down, turn off One-finger pan. The two-tap conductor workflow is unchanged, including when you pan between endpoint taps.
+
+In the **browser app**, touch editing remains available:
 
 | Gesture | Action |
 |---------|--------|
