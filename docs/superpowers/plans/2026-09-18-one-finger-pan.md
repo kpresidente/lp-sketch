@@ -39,4 +39,4 @@
 - [x] Run `npm run build`, `npm test`, `npm run test:e2e`, and `npm run test:e2e:mobile`. Inspect tablet UI, relevant console output, and a screenshot. Both builds, 413 unit/integration tests, 26 browser E2E, seven mobile E2E, and 1180 × 820 rendered checks passed. The cancellation fix was independently re-reviewed.
 - [x] Request an independent read-only review of the diff against `cb21eab`; resolve actionable findings.
 - [x] Update device-testing instructions and record the user's successful Delete control test.
-- [ ] Commit this feature separately, push the feature branch, and run the existing TestFlight upload. Verify processing and group availability; report any account step that requires the user.
+- [x] Commit this feature separately, push the feature branch, and run the existing TestFlight upload. Implementation commit `492c7b9`; workflow `35354553061` successfully uploaded `0.1.0 (20.1)`. Apple processing and the previously approved encryption answers are complete. The API confirms `IN_BETA_TESTING` in the existing iPad Development group. Physical one-finger pan testing remains with the user.
