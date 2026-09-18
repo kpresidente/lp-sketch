@@ -70,7 +70,7 @@ await Share.share({ files: [uri], title: filename, dialogTitle: 'Export file' })
 - [x] Obtain focused code review of native delivery, cache scope, cancellation, editor integration, and native plugin packaging; address material findings.
 - [x] Record the reported offline/PDF recovery success and the failed exports in the TestFlight guide, distinguishing user-observed results from automated checks.
 - [x] Commit and push the patch, run the signed workflow for version `0.1.0`, verify Apple processing, and assign the new build to the existing internal group.
-- [x] Prepare the device handoff for build `0.1.0 (9.1)`: update through TestFlight, test Save to Files for PDF/PNG/JPG and project Save, and reopen the results. The user subsequently confirmed successful PDF export; the other device checks remain pending.
+- [x] Prepare the device handoff for build `0.1.0 (9.1)`: update through TestFlight, test Save to Files for PDF/PNG/JPG and project Save, and reopen the results. The user subsequently confirmed successful PDF, JPG, and PNG exports; project Save/reload, cancellation, and offline export remain pending.
 
 ## Verification evidence
 
@@ -82,4 +82,4 @@ await Share.share({ files: [uri], title: filename, dialogTitle: 'Export file' })
 - [Hosted workflow 35285508431](https://github.com/kpresidente/lp-sketch/actions/runs/35285508431) passed from commit `6a47d47363cd0c2dc88223aa8022f9bb2f154fc5`, building and uploading `0.1.0 (9.1)`. Both Xcode archives and IPA export passed, and Apple reported no errors validating or uploading the archive. The build log confirms the privacy manifest was copied into the app. All PR CI checks also passed for this implementation commit.
 - Apple completed processing and accepted the previously approved encryption answers. App Store Connect lists `0.1.0 (9.1)` as **Testing** in the existing `iPad Development` group, with one tester and two builds. Build resource ID: `a03d1ab3-4b83-4137-b094-54f8135ed03e`.
 - On September 18, 2026, following delivery of build `0.1.0 (9.1)`, the user confirmed PDF export succeeded on the physical iPad with all drawing elements present.
-- PNG/JPG output, project Save/reload, cancellation, and offline export remain pending user verification. The PDF result does not establish those separate paths.
+- The user subsequently confirmed successful JPG and PNG exports. Project Save/reload, cancellation, and offline export remain pending user verification.
