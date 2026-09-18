@@ -52,7 +52,7 @@ expect(container.querySelectorAll('svg.overlay-layer line[stroke="#2e8b57"][stro
 - [x] Exercise the actual mobile entry in Chromium: touch cannot place a line, pen can place a line, and two touch points change the camera. Use real browser input where supported; desktop simulation is not an iPad palm test.
 - [x] Run `npm run build`, `npm run mobile:build`, `npm test`, `npm run test:e2e`, and `npm run test:e2e:mobile` serially.
 - [x] Request a focused independent review of the change against this contract, fix substantive findings, and repeat affected checks.
-- [ ] Commit and push the feature branch; manually dispatch the existing iOS workflow with `upload_to_testflight=true` and `app_version=0.1.0`.
+- [x] Commit and push the feature branch; manually dispatch the existing iOS workflow with `upload_to_testflight=true` and `app_version=0.1.0`.
 - [ ] Verify signed upload, Apple processing, and assignment to the existing iPad Development group. Report the actual build number and ask for physical Apple Pencil checks, with Insignia as an additional compatibility test.
 
 ## Evidence
@@ -61,3 +61,5 @@ expect(container.querySelectorAll('svg.overlay-layer line[stroke="#2e8b57"][stro
 - Browser and mobile builds passed. All six packaged-mobile Chromium cases passed, including pen input, finger-operated tools/Undo/Redo, and two-finger navigation. Chromium's raw injected touch gestures swallow the next simulated tap even on a plain HTML button without app event handlers; the regression checks toolbar taps before injecting navigation gestures. This simulation limitation requires no application workaround.
 - The full local suites passed: 395 unit/integration tests across 50 files and all 26 browser E2E cases. Existing help-glossary/chunk-size build warnings and the existing jsdom canvas warning remain unrelated to this change.
 - The reviewer verified the capture-loss fix and found no remaining actionable issues. Physical Apple Pencil and Insignia behavior is still unverified.
+- Implementation commit `b8e092e5392b99615d38d325a1276504c88168c2` is pushed; all PR checks passed. [Manual workflow 35335767694](https://github.com/kpresidente/lp-sketch/actions/runs/35335767694) successfully compiled both archives, exported, validated, and uploaded `0.1.0 (13.1)`.
+- Apple processed build `13.1` successfully (`VALID`, resource `fb98df54-6687-4a78-88b0-e025e946e541`). Delivery is awaiting the encryption declaration and existing-group assignment. The App Store Connect browser session expired; the existing Developer API key can read status, but Apple denied the encryption-setting update. The user has been asked to sign back in so the previously approved answers can be applied without changing credential permissions.
