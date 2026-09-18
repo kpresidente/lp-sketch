@@ -780,7 +780,7 @@ Additional controls appear for specific element types when selected: downlead [v
 
 ## 9. Quick-Access Toolbar {#help-quick-access}
 
-The quick-access toolbar is a vertical bar that hovers on the right side of the workspace. It provides fast access to frequently used tools and settings, and always includes Select, Multi-Select, Pan, Undo, and Redo buttons.
+The quick-access toolbar is a vertical bar that hovers on the right side of the workspace. It provides fast access to frequently used tools and settings, and always includes Select, Multi-Select, Pan, Undo, Redo, and Delete buttons. Delete is disabled until an object is selected in Select mode or one or more objects are selected in Multi-Select mode. It is also disabled while an editing dialog or quick-access editor is open.
 
 The quick-access toolbar is fully customizable. Click the gear icon to open the customizer, where you can add or remove any tool, component, setting, toggle, or action button. Your customization is saved per device.
 
@@ -809,7 +809,7 @@ The **Multi-Select** tool lets you select and move multiple elements at once.
 - Click elements to add them to the selection
 - **Ctrl+click** (or Cmd+click on Mac) toggles an element in or out of the selection
 - Click and drag to move all selected elements together
-- Press **Delete** or **Backspace** to delete all selected elements
+- Tap the **Delete** trash button in the quick-access toolbar, or press **Delete** or **Backspace**, to delete all selected elements
 
 ### 10.3. Editing Handles {#help-selection-handles}
 
@@ -835,7 +835,7 @@ When an element is selected, the [properties bar](#help-properties-bar) shows **
 
 ### 10.6. Deleting {#help-selection-deleting}
 
-Press **Delete** or **Backspace** to delete the selected element(s).
+Tap the **Delete** trash button below Undo/Redo in the quick-access toolbar, or press **Delete** or **Backspace**, to delete the selected element(s). The button stays visible and is disabled when there is no active selection. Deletion is immediate; use **Undo** to restore the deleted element(s).
 
 ---
 

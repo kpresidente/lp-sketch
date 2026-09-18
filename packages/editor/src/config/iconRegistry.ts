@@ -24,6 +24,7 @@ export const MISC_ICON = {
 export const COMMAND_ICON = {
   undo: 'arrow-back-up',
   redo: 'arrow-forward-up',
+  delete: 'trash',
 } as const
 
 export const MISC_FEATURE_ICON = {

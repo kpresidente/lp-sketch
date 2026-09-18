@@ -193,6 +193,8 @@ interface QuickAccessBarProps {
   onExportPdf: () => void
   onUndo: () => void
   onRedo: () => void
+  canDeleteSelection: boolean
+  onDeleteSelection: () => void
   onSetSnapEnabled: (value: boolean) => void
   onSetAngleSnapEnabled: (value: boolean) => void
   onSetAutoConnectorsEnabled: (value: boolean) => void
@@ -1017,6 +1019,18 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
         onClick={props.onRedo}
       >
         <i class={tablerIconClass(COMMAND_ICON.redo)} />
+      </button>
+
+      <div class="quick-access-separator" role="separator" />
+      <button
+        type="button"
+        class="quick-access-btn"
+        aria-label="Delete selected objects"
+        title="Delete selected objects"
+        disabled={!props.canDeleteSelection}
+        onClick={props.onDeleteSelection}
+      >
+        <i class={tablerIconClass(COMMAND_ICON.delete)} aria-hidden="true" />
       </button>
 
       <For each={entriesWithItems()}>

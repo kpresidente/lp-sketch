@@ -498,6 +498,62 @@ describe('pen canvas input', () => {
     await tap(stage, 'pen', 10, 420)
   }
 
+  it.each([true, false])('quick delete follows the active selection and supports undo/redo (touch drawing: %s)', async (touchDrawingEnabled) => {
+    const { container } = render(() => <App touchDrawingEnabled={touchDrawingEnabled} />)
+    const stage = requireDrawingStage(container)
+    const deleteButton = screen.getByRole('button', { name: 'Delete selected objects' }) as HTMLButtonElement
+    expect(deleteButton.disabled).toBe(true)
+
+    await drawLine(stage)
+    expect(deleteButton.disabled).toBe(true)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick select mode' }))
+    await tap(stage, 'pen', 10, 320)
+    expect(deleteButton.disabled).toBe(false)
+
+    await tap(stage, 'pen', 10, 600, 400)
+    expect(deleteButton.disabled).toBe(true)
+    await tap(stage, 'pen', 10, 320)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    expect(deleteButton.disabled).toBe(true)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick select mode' }))
+    await tap(stage, 'pen', 10, 320)
+    expect(deleteButton.disabled).toBe(false)
+
+    await fireEvent.click(deleteButton)
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+    expect(deleteButton.disabled).toBe(true)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(1)
+    expect(deleteButton.disabled).toBe(true)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick redo' }))
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+  })
+
+  it('quick delete removes a multi-selection as one undoable operation', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    const deleteButton = screen.getByRole('button', { name: 'Delete selected objects' }) as HTMLButtonElement
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await tap(stage, 'pen', 10, 220, 320)
+    await tap(stage, 'pen', 10, 420, 320)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick multi-select mode' }))
+    expect(deleteButton.disabled).toBe(true)
+    await tap(stage, 'pen', 10, 320)
+    expect(deleteButton.disabled).toBe(false)
+    await tap(stage, 'pen', 10, 320, 320)
+    expect(container.querySelectorAll('svg.overlay-layer line[stroke="#111827"]')).toHaveLength(2)
+
+    await fireEvent.click(deleteButton)
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+    expect(deleteButton.disabled).toBe(true)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(2)
+    expect(deleteButton.disabled).toBe(true)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick redo' }))
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+  })
+
   it('ignores a palm before the pen without creating or completing a line', async () => {
     const { container } = render(() => <App touchDrawingEnabled={false} />)
     const stage = requireDrawingStage(container)
@@ -892,9 +948,12 @@ describe('App interaction integration', () => {
     })
 
     const clearButton = screen.getByRole('button', { name: 'Clear All Marks' })
+    const deleteButton = screen.getByRole('button', { name: 'Delete selected objects' }) as HTMLButtonElement
+    expect(deleteButton.disabled).toBe(false)
     expect(clearButton).toBeTruthy()
     await fireEvent.click(clearButton)
     expect(screen.getByText('Cleared marks on this page.')).toBeTruthy()
+    expect(deleteButton.disabled).toBe(true)
   })
 
   it('uses touch corner-mode toggle fallback for auto-spacing taps', async () => {

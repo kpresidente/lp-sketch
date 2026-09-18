@@ -1842,6 +1842,27 @@ function App(props: AppProps) {
     setMultiSelection([])
   }
 
+  const canDeleteSelection = createMemo(() => (
+    !isEditingContextActive() && (
+      tool() === 'select'
+        ? hasSelection(selected())
+        : tool() === 'multi_select' && multiSelection().length > 0
+    )
+  ))
+
+  function handleDeleteSelectedObjects() {
+    if (!canDeleteSelection()) {
+      return
+    }
+
+    clearTransientToolState()
+    if (tool() === 'multi_select') {
+      deleteMultiSelection()
+    } else {
+      deleteSelection()
+    }
+  }
+
   function editDialogScreenFromDocPoint(point: Point): Point {
     const p = visibleProject()
     const stageRect = stageRef?.getBoundingClientRect()
@@ -2016,8 +2037,10 @@ function App(props: AppProps) {
 
   function handleClearAllMarks() {
     const currentPage = project().view.currentPage
-    const hasMarksOnPage = project().construction.marks.some((mark) => (mark.page ?? 1) === currentPage)
-    if (!hasMarksOnPage) {
+    const removedMarkIds = new Set(project().construction.marks
+      .filter((mark) => (mark.page ?? 1) === currentPage)
+      .map((mark) => mark.id))
+    if (removedMarkIds.size === 0) {
       return
     }
 
@@ -2025,6 +2048,10 @@ function App(props: AppProps) {
       draft.construction.marks = draft.construction.marks.filter((mark) => (mark.page ?? 1) !== currentPage)
     })
 
+    setSelected((current) => current?.kind === 'mark' && removedMarkIds.has(current.id) ? null : current)
+    setMultiSelection((current) => current.filter(
+      (selection) => selection.kind !== 'mark' || !removedMarkIds.has(selection.id),
+    ))
     setStatus('Cleared marks on this page.')
   }
 
@@ -4184,6 +4211,8 @@ function App(props: AppProps) {
           onSelectTool={handleSelectTool}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          canDeleteSelection={canDeleteSelection()}
+          onDeleteSelection={handleDeleteSelectedObjects}
           stageCursor={stageCursor()}
           selectionDebugEnabled={selectionDebugEnabled()}
           onSetSelectionDebugEnabled={setSelectionDebugEnabled}

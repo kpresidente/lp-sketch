@@ -35,6 +35,8 @@ interface CanvasStageProps {
   onSelectTool: (tool: Tool) => void
   onUndo: () => void
   onRedo: () => void
+  canDeleteSelection: boolean
+  onDeleteSelection: () => void
   stageCursor: string
   selectionDebugEnabled: boolean
   onSetSelectionDebugEnabled: (enabled: boolean) => void
@@ -276,6 +278,8 @@ export default function CanvasStage(props: CanvasStageProps) {
           onExportPdf={props.onExportPdf}
           onUndo={props.onUndo}
           onRedo={props.onRedo}
+          canDeleteSelection={props.canDeleteSelection}
+          onDeleteSelection={props.onDeleteSelection}
           onSetSnapEnabled={props.onSetSnapEnabled}
           onSetAngleSnapEnabled={props.onSetAngleSnapEnabled}
           onSetAutoConnectorsEnabled={props.onSetAutoConnectorsEnabled}
