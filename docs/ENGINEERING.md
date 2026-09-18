@@ -89,7 +89,9 @@ Compatibility guarantees:
 
 - Kobalte primitives provide ARIA roles/states for panels, dialogs, and controls
 - Keyboard-operable critical controls with focus-visible styles
-- WCAG AA contrast checks automated by `scripts/contrast-audit.mjs` (11 color pairs)
+- Shared text and functional control color pairs checked by `scripts/contrast-audit.mjs`: text at 4.5:1, essential outlines/focus/selection cues and switch thumbs at 3:1. Disabled labels also target 4.5:1 as a readability choice.
+- Keep decorative dividers (`--border`) quieter than control boundaries (`--border-btn`). Shared styles apply to browser and iPad; selected materials also use a checkmark, and disabled controls use explicit colors rather than reducing whole-control opacity.
+- Token audits do not verify every rendered state or outdoor readability. Review desktop/tablet screenshots and verify field readability on a physical iPad.
 
 ## Commit Conventions
 

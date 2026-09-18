@@ -34,6 +34,9 @@ jobs:
       - name: Run security audit policy gate
         run: npm run audit:prod:gate
 
+      - name: Check shared UI contrast
+        run: npm run audit:contrast
+
       - name: Build
         run: npm run build
 
