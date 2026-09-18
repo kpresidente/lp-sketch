@@ -38,6 +38,8 @@ LP Sketch is a lightning protection system design communication tool. It allows 
 
 Use **Collapse sidebar** in the sidebar heading to give the drawing more space. The compact sidebar has six section buttons: **Project**, **Tools**, **Components**, **Material**, **Scale**, and **Layers**. This layout is available in both the browser and iPad app, and your collapse/expand choice is remembered on the device.
 
+The sidebar stays on the left in both portrait and landscape, whether expanded or collapsed. Rotating the tablet or narrowing the browser window does not move it above the workspace.
+
 Tap a section button to open its panel beside the sidebar. Tap another section to switch panels, or tap the same section again to close it. The panel scrolls when its controls do not fit on screen.
 
 - Choosing a tool or component closes the panel so you can work on the drawing.
