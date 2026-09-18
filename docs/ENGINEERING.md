@@ -22,6 +22,8 @@ Dependencies flow from applications to editor to core. Cross-package imports use
 
 Browser file dialogs and local-storage autosave remain in editor for this structural migration. Native storage, file handling, and lifecycle services will be introduced at the application boundary during mobile implementation. Mouse/pen/touch behavior is shared and should not be selected solely by browser versus native packaging.
 
+The mobile entry point opts into `penSelectionDragThresholdPx={8}`. Pencil selection is immediate, but object/group/handle previews wait for 8 CSS pixels of displacement from contact. The gate uses raw screen coordinates before snapping and animation-frame coalescing, then stays active for fine positioning until the gesture ends. Existing drag cleanup clears pending activation; taps do not change geometry or history. The prop defaults to zero, preserving browser pen/touch/mouse behavior, and does not affect mouse input in the mobile app.
+
 Root scripts preserve the existing development workflow. Vite loads environment files from the repository root and emits root `dist/`, keeping the Azure deployment configuration valid. Help is built from the shared manual into the consuming application's public directory.
 
 ### Render Model

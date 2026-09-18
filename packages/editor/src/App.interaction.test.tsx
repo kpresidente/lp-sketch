@@ -595,11 +595,12 @@ describe('pen canvas input', () => {
     id: number,
     x = 220,
     y = 220,
+    options: PointerEventInit = {},
   ) {
     return fireEvent(stage, new PointerEvent(
       phase === 'lostpointercapture' ? phase : `pointer${phase}`,
       { bubbles: true, cancelable: true, pointerType: type, pointerId: id,
-        clientX: x, clientY: y, button: 0, ctrlKey: true, shiftKey: true },
+        clientX: x, clientY: y, button: 0, ctrlKey: true, shiftKey: true, ...options },
     ))
   }
 
@@ -613,6 +614,166 @@ describe('pen canvas input', () => {
     await tap(stage, 'pen', 10, 220)
     await tap(stage, 'pen', 10, 420)
   }
+
+  function lineCoordinates(container: HTMLElement) {
+    return Array.from(container.querySelectorAll(lineSelector), (line) =>
+      ['x1', 'y1', 'x2', 'y2'].map((name) => parseNumericAttr(line, name)),
+    )
+  }
+
+  it.each([0.5, 1, 2])('selection drag ignores Pencil tap jitter at zoom %s without adding history', async (zoom) => {
+    const { container } = render(() => <App touchDrawingEnabled={false} penSelectionDragThresholdPx={8} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.wheel(stage, { clientX: 320, clientY: 220, deltaY: -Math.log(zoom) / 0.0015 })
+    expect(cameraViewFromContainer(container).zoom).toBeCloseTo(zoom)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick select mode' }))
+    const before = lineCoordinates(container)
+
+    // Repeated taps on an already selected object need the same protection.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await pointer(stage, 'down', 'pen', 10, 320)
+      expect((screen.getByRole('button', { name: 'Delete selected objects' }) as HTMLButtonElement).disabled).toBe(false)
+      for (const [x, y] of [[323, 222], [317, 218], [326, 222]]) {
+        await pointer(stage, 'move', 'pen', 10, x, y)
+        expect(lineCoordinates(container)).toEqual(before)
+      }
+      await pointer(stage, 'up', 'pen', 10, 326, 222)
+      expect(lineCoordinates(container)).toEqual(before)
+    }
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+    expect(lineCoordinates(container)).toEqual([])
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick redo' }))
+    expect(lineCoordinates(container)).toEqual(before)
+  })
+
+  it('selection drag ignores canvas layout shifts when measuring Pencil tap jitter', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} penSelectionDragThresholdPx={8} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    const before = lineCoordinates(container)
+    await pointer(stage, 'down', 'pen', 10, 320)
+    const bounds = stage.getBoundingClientRect()
+    vi.spyOn(stage, 'getBoundingClientRect').mockReturnValue({ ...bounds, y: 20, top: 20, bottom: 820 })
+    await pointer(stage, 'move', 'pen', 10, 323, 222)
+    expect(lineCoordinates(container)).toEqual(before)
+    await pointer(stage, 'up', 'pen', 10, 323, 222)
+    expect(lineCoordinates(container)).toEqual(before)
+  })
+
+  it('selection drag latches before frame coalescing and permits fine movement after activation', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} penSelectionDragThresholdPx={8} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    const before = lineCoordinates(container)[0]
+    const frames = installManualAnimationFrameController()
+    try {
+      await pointer(stage, 'down', 'pen', 10, 320)
+      await pointer(stage, 'move', 'pen', 10, 340)
+      // Return inside the threshold before the frame renders: this is still a drag.
+      await pointer(stage, 'move', 'pen', 10, 323)
+      frames.flush()
+      expect(lineCoordinates(container)[0]).toEqual([before[0] + 3, before[1], before[2] + 3, before[3]])
+      await pointer(stage, 'up', 'pen', 10, 323)
+      await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+      expect(lineCoordinates(container)[0]).toEqual(before)
+      await fireEvent.click(screen.getByRole('button', { name: 'Quick redo' }))
+      expect(lineCoordinates(container)[0][0]).toBe(before[0] + 3)
+    } finally {
+      frames.restore()
+    }
+  })
+
+  it('selection drag protects a nearby endpoint tap before snapping and still allows endpoint editing', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} penSelectionDragThresholdPx={8} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await tap(stage, 'pen', 10, 320)
+    const before = lineCoordinates(container)[0]
+    await pointer(stage, 'down', 'pen', 10, 223, 221)
+    // Enable normal snapping for this near-handle tap.
+    await pointer(stage, 'move', 'pen', 10, 225, 223, { ctrlKey: false, shiftKey: false })
+    expect(lineCoordinates(container)[0]).toEqual(before)
+    await pointer(stage, 'up', 'pen', 10, 225, 223)
+    expect(lineCoordinates(container)[0]).toEqual(before)
+
+    await pointer(stage, 'down', 'pen', 10, 220)
+    await pointer(stage, 'move', 'pen', 10, 220, 250)
+    await pointer(stage, 'up', 'pen', 10, 220, 250)
+    expect(lineCoordinates(container)[0]).toEqual([before[0], before[1] + 30, before[2], before[3]])
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+    expect(lineCoordinates(container)[0]).toEqual(before)
+  })
+
+  it('selection drag protects a group tap and moves the whole group on deliberate drag', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} penSelectionDragThresholdPx={8} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await tap(stage, 'pen', 10, 220, 320)
+    await tap(stage, 'pen', 10, 420, 320)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick multi-select mode' }))
+    await tap(stage, 'pen', 10, 320)
+    await tap(stage, 'pen', 10, 320, 320)
+    const before = lineCoordinates(container)
+    await pointer(stage, 'down', 'pen', 10, 320, 220, { ctrlKey: false })
+    await pointer(stage, 'move', 'pen', 10, 322, 221)
+    await pointer(stage, 'up', 'pen', 10, 322, 221)
+    expect(lineCoordinates(container)).toEqual(before)
+    await pointer(stage, 'down', 'pen', 10, 320, 220, { ctrlKey: false })
+    await pointer(stage, 'move', 'pen', 10, 350, 240)
+    await pointer(stage, 'up', 'pen', 10, 350, 240)
+    expect(lineCoordinates(container)).toEqual(before.map(([x1, y1, x2, y2]) => [x1 + 30, y1 + 20, x2 + 30, y2 + 20]))
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+    expect(lineCoordinates(container)).toEqual(before)
+  })
+
+  it.each([
+    { label: 'browser mouse', touchDrawingEnabled: undefined, threshold: undefined, type: 'mouse' as const },
+    { label: 'browser pen', touchDrawingEnabled: undefined, threshold: undefined, type: 'pen' as const },
+    { label: 'browser touch', touchDrawingEnabled: undefined, threshold: undefined, type: 'touch' as const },
+    { label: 'mobile mouse', touchDrawingEnabled: false, threshold: 8, type: 'mouse' as const },
+  ])('selection drag remains immediate for $label', async ({ touchDrawingEnabled, threshold, type }) => {
+    const { container } = render(() => <App touchDrawingEnabled={touchDrawingEnabled} penSelectionDragThresholdPx={threshold} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    const before = lineCoordinates(container)[0]
+    await pointer(stage, 'down', type, 10, 320)
+    await pointer(stage, 'move', type, 10, 322)
+    expect(lineCoordinates(container)[0]).toEqual([before[0] + 2, before[1], before[2] + 2, before[3]])
+    await pointer(stage, 'up', type, 10, 322)
+  })
+
+  it.each(['cancel', 'lostpointercapture', 'blur', 'tool change'] as const)(
+    'selection drag clears a pending Pencil tap on %s', async (interruption) => {
+      const { container } = render(() => <App touchDrawingEnabled={false} penSelectionDragThresholdPx={8} />)
+      const stage = requireDrawingStage(container)
+      await drawLine(stage)
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      const before = lineCoordinates(container)
+      await pointer(stage, 'down', 'pen', 10, 320)
+      await pointer(stage, 'move', 'pen', 10, 323)
+      if (interruption === 'blur') await fireEvent(window, new Event('blur'))
+      else if (interruption === 'tool change') await fireEvent.click(screen.getByRole('button', { name: 'Pan' }))
+      else await pointer(stage, interruption, 'pen', 10, 323)
+      await pointer(stage, 'up', 'pen', 10, 323)
+      expect(lineCoordinates(container)).toEqual(before)
+
+      // A new contact can drag normally, without inheriting the old start point.
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await pointer(stage, 'down', 'pen', 11, 350)
+      await pointer(stage, 'move', 'pen', 11, 353)
+      expect(lineCoordinates(container)).toEqual(before)
+      await pointer(stage, 'move', 'pen', 11, 370)
+      await pointer(stage, 'up', 'pen', 11, 370)
+      expect(lineCoordinates(container)[0][0]).toBe(before[0][0] + 20)
+    },
+  )
 
   it.each([true, false])('quick delete follows the active selection and supports undo/redo (touch drawing: %s)', async (touchDrawingEnabled) => {
     const { container } = render(() => <App touchDrawingEnabled={touchDrawingEnabled} />)

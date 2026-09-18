@@ -3,6 +3,58 @@ import { gotoApp } from './helpers'
 
 test.use({ hasTouch: true })
 
+test('Pencil tap jitter selects without moving; deliberate selection drags remain undoable', async ({ page, context }) => {
+  const stage = await gotoApp(page)
+  const input = await context.newCDPSession(page)
+  const bounds = await stage.boundingBox()
+  if (!bounds) throw new Error('Canvas has no bounds')
+  const pen = async (type: 'mousePressed' | 'mouseMoved' | 'mouseReleased', x: number, y = 200) => {
+    return input.send('Input.dispatchMouseEvent', {
+      type, x: bounds.x + x, y: bounds.y + y, pointerType: 'pen',
+      button: 'left', buttons: type === 'mouseReleased' ? 0 : 1,
+      clickCount: type === 'mouseMoved' ? 0 : 1, force: type === 'mouseReleased' ? 0 : 0.5,
+      modifiers: 10, // Ctrl + Shift bypass snapping so exact drag deltas can be checked.
+    })
+  }
+  const lines = page.locator('svg.overlay-layer line[stroke="#2e8b57"][stroke-linecap="round"]')
+  const geometry = () => lines.evaluateAll((elements) => elements.map((line) =>
+    ['x1', 'y1', 'x2', 'y2'].map((name) => Number(line.getAttribute(name))),
+  ))
+
+  await page.getByRole('button', { name: /Linear$/ }).click()
+  for (const x of [180, 340]) {
+    await pen('mousePressed', x)
+    await pen('mouseReleased', x)
+  }
+  await expect(lines).toHaveCount(1)
+  const before = await geometry()
+  await page.getByRole('button', { name: 'Quick select mode' }).click()
+  await pen('mousePressed', 260)
+  await expect(page.getByRole('button', { name: 'Delete selected objects' })).toBeEnabled()
+  await pen('mouseMoved', 263, 202)
+  expect(await geometry()).toEqual(before)
+  await pen('mouseReleased', 263, 202)
+  expect(await geometry()).toEqual(before)
+
+  const undo = page.getByRole('button', { name: 'Quick undo' })
+  await undo.click()
+  await expect(lines).toHaveCount(0)
+  await page.getByRole('button', { name: 'Quick redo' }).click()
+  expect(await geometry()).toEqual(before)
+
+  // Establish selection first so the toolbar and canvas bounds stay fixed
+  // while checking the intentional drag's document-space displacement.
+  await pen('mousePressed', 260)
+  await pen('mouseReleased', 260)
+  await pen('mousePressed', 260)
+  await pen('mouseMoved', 290, 220)
+  await pen('mouseReleased', 290, 220)
+  expect(await geometry()).toEqual([[before[0][0] + 30, before[0][1] + 20, before[0][2] + 30, before[0][3] + 20]])
+  await undo.click()
+  expect(await geometry()).toEqual(before)
+  await input.detach()
+})
+
 test('one-finger pan works without a switch before and after reload, even with an old off preference', async ({ page, context }) => {
   await page.addInitScript(() => {
     localStorage.setItem('lp-sketch.input.one-finger-pan.v1', 'false')

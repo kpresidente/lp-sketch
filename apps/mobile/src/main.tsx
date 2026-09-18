@@ -13,6 +13,7 @@ render(
     <AppErrorBoundary>
       <App
         touchDrawingEnabled={false}
+        penSelectionDragThresholdPx={8}
         exportFile={Capacitor.isNativePlatform() ? exportNativeFile : undefined}
       />
     </AppErrorBoundary>

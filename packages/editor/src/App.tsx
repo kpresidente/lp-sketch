@@ -332,6 +332,8 @@ interface AppProps {
   exportFile?: FileExporter
   /** Set false for pen editing with one-finger pan and two-finger pan/zoom. */
   touchDrawingEnabled?: boolean
+  /** Screen-space movement before a pen selection becomes a drag; defaults to immediate. */
+  penSelectionDragThresholdPx?: number
 }
 
 function App(props: AppProps) {
@@ -419,6 +421,7 @@ function App(props: AppProps) {
   let queuedToolPointerMove: QueuedToolPointerMoveEvent | null = null
   let queuedToolPointerFrame: number | null = null
   let lastDragPreviewDelta: Point | null = null
+  let pendingPenSelectionDrag: { pointerId: number; startScreen: Point; thresholdPx: number } | null = null
   const activeTouchPoints = new Map<number, Point>()
   const penInputGuard = createPenInputGuard()
   const singleFingerPan = createSingleFingerPan()
@@ -955,21 +958,29 @@ function App(props: AppProps) {
 
   function clearDragPreviewState() {
     lastDragPreviewDelta = null
+    pendingPenSelectionDrag = null
     setDragPreviewProject(null)
   }
 
-  function primeDragPreviewIfNeeded(pointerId: number) {
+  function primeDragPreviewIfNeeded(event: PointerEvent) {
+    clearDragPreviewState()
     const drag = dragState()
     if (
       !drag ||
-      drag.pointerId !== pointerId ||
+      drag.pointerId !== event.pointerId ||
       (drag.kind !== 'move' && drag.kind !== 'edit-handle')
     ) {
-      clearDragPreviewState()
       return
     }
 
-    clearDragPreviewState()
+    const thresholdPx = props.penSelectionDragThresholdPx ?? 0
+    if (event.pointerType === 'pen' && thresholdPx > 0) {
+      pendingPenSelectionDrag = {
+        pointerId: event.pointerId,
+        startScreen: { x: event.clientX, y: event.clientY },
+        thresholdPx,
+      }
+    }
   }
 
   function processToolPointerMove(event: QueuedToolPointerMoveEvent) {
@@ -2575,7 +2586,7 @@ function App(props: AppProps) {
       setError,
       setStatus,
     })) {
-      primeDragPreviewIfNeeded(event.pointerId)
+      primeDragPreviewIfNeeded(event)
       return
     }
 
@@ -2672,6 +2683,17 @@ function App(props: AppProps) {
     if (touchNavigationOnly() && !penInputGuard.allowsMove(event)) {
       event.preventDefault()
       return
+    }
+    if (pendingPenSelectionDrag?.pointerId === event.pointerId) {
+      // Client coordinates keep selection-driven canvas layout changes out of
+      // the activation distance, just as zoom and snapping are kept out.
+      const currentScreen = { x: event.clientX, y: event.clientY }
+      if (distance(currentScreen, pendingPenSelectionDrag.startScreen) < pendingPenSelectionDrag.thresholdPx) {
+        return
+      }
+      // Latch before frame coalescing so a deliberate drag can return inside
+      // the threshold for fine positioning. Snapping only starts after this.
+      pendingPenSelectionDrag = null
     }
     if (event.pointerType === 'touch') {
       processToolPointerMove(snapshotToolPointerMoveEvent(event))
