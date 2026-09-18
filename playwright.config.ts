@@ -6,6 +6,7 @@ const isWindows = process.platform === 'win32'
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/*.mobile.spec.ts',
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,

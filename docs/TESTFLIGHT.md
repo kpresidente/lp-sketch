@@ -166,9 +166,20 @@ First-install checks:
 - After an initial launch, enable Airplane Mode and reopen the app to confirm the bundled interface launches.
 - Try a disposable PDF import and export; record file-handling limitations for the next iteration.
 
-Use disposable projects for this initial test. Autosave remains the existing implementation, with the offline reopening scenario above verified by the account owner. Native export delivery is separate from durable project/PDF storage; Pencil/palm handling and broader storage recovery remain future work. The browser `/api/report` endpoint is not configured in this installed app. Report findings in this development task.
+Use disposable projects for this initial test. Autosave remains the existing implementation, with the offline reopening scenario above verified by the account owner. Native export delivery is separate from durable project/PDF storage; broader storage recovery remains future work. The browser `/api/report` endpoint is not configured in this installed app. Report findings in this development task.
 
 For native export testing, tap each of **PDF**, **PNG**, and **JPG**, choose **Save to Files**, then open the saved result in Files to check the background and drawing elements. Also try project **Save** and reload the resulting `.lps` file. Dismiss one share sheet to confirm cancellation leaves the editor usable. Choose **On My iPad** when checking offline file export.
+
+For palm-rejection testing, use Apple Pencil first:
+
+- Rest your hand on the canvas before touching down with the pen. Place line endpoints and symbols; the hand must not create or select elements.
+- Drag a selected element or endpoint while resting your hand. Check that the edit continues without accidental zooming and that Undo reverses it once.
+- Lift the pen while keeping your hand down, then move your hand. Held contacts must remain ignored until lifted.
+- Lift your hand, then use two fingers to pan and pinch to zoom. Try this between line endpoints and with the Pan tool selected. A single finger should not move or edit the canvas.
+- Tap tools and Undo/Redo with a finger. Background and reopen the app during a gesture, then check that navigation and drawing recover.
+- Repeat with the Insignia stylus if available. An active stylus reporting pen input should use the same policy; a stylus reporting finger touch cannot draw. Record the model if behavior differs.
+
+The mobile browser preview exercises the same input policy, but Chromium tests cannot establish hardware palm rejection. Multiple hand contacts arriving before a pen contact may still look like a two-finger gesture; record any resulting movement during the device check. Line construction remains the existing endpoint-tap workflow in this build.
 
 For the update check, run the workflow again with version `0.1.0`. Assign the new processed build to the internal group, update through TestFlight, and verify the installed build number changed and the editor still opens.
 

@@ -469,6 +469,179 @@ function appearsBefore(first: Element, second: Element): boolean {
   return Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING)
 }
 
+describe('pen canvas input', () => {
+  const lineSelector = 'svg.overlay-layer line[stroke="#2e8b57"][stroke-linecap="round"]'
+
+  function pointer(
+    stage: HTMLDivElement,
+    phase: 'down' | 'move' | 'up' | 'cancel' | 'lostpointercapture',
+    type: 'pen' | 'touch' | 'mouse',
+    id: number,
+    x = 220,
+    y = 220,
+  ) {
+    return fireEvent(stage, new PointerEvent(
+      phase === 'lostpointercapture' ? phase : `pointer${phase}`,
+      { bubbles: true, cancelable: true, pointerType: type, pointerId: id,
+        clientX: x, clientY: y, button: 0, ctrlKey: true, shiftKey: true },
+    ))
+  }
+
+  async function tap(stage: HTMLDivElement, type: 'pen' | 'touch' | 'mouse', id: number, x: number, y = 220) {
+    await pointer(stage, 'down', type, id, x, y)
+    await pointer(stage, 'up', type, id, x, y)
+  }
+
+  async function drawLine(stage: HTMLDivElement) {
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await tap(stage, 'pen', 10, 220)
+    await tap(stage, 'pen', 10, 420)
+  }
+
+  it('ignores a palm before the pen without creating or completing a line', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await pointer(stage, 'down', 'touch', 1, 100)
+    await tap(stage, 'pen', 10, 220)
+    await pointer(stage, 'move', 'touch', 1, 180)
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+
+    await tap(stage, 'pen', 10, 420)
+    await pointer(stage, 'up', 'touch', 1, 180)
+    const lines = container.querySelectorAll(lineSelector)
+    expect(lines).toHaveLength(1)
+    expect(parseNumericAttr(lines[0], 'x1')).toBeCloseTo(screenToOverlayDoc(container, { x: 220, y: 220 }).x)
+    expect(parseNumericAttr(lines[0], 'x2')).toBeCloseTo(screenToOverlayDoc(container, { x: 420, y: 220 }).x)
+  })
+
+  it('preserves a pen endpoint drag when two palm contacts arrive and commits one undo step', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await tap(stage, 'pen', 10, 320)
+    const initial = selectionHandlePoint(container, 'line-start')
+    const view = cameraViewFromContainer(container)
+    await pointer(stage, 'down', 'pen', 10, 220)
+    await pointer(stage, 'move', 'pen', 10, 220, 260)
+    await pointer(stage, 'down', 'touch', 1, 600, 400)
+    await pointer(stage, 'down', 'touch', 2, 700, 400)
+    await pointer(stage, 'move', 'touch', 2, 900, 400)
+    await pointer(stage, 'move', 'pen', 10, 220, 320)
+    await pointer(stage, 'up', 'pen', 10, 220, 320)
+    expect(cameraViewFromContainer(container)).toEqual(view)
+    expect(selectionHandlePoint(container, 'line-start').y).toBeCloseTo(initial.y + 100 / view.zoom)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick undo' }))
+    expect(parseNumericAttr(container.querySelector(lineSelector)!, 'y1')).toBeCloseTo(initial.y)
+    await fireEvent.click(screen.getByRole('button', { name: 'Quick redo' }))
+    expect(parseNumericAttr(container.querySelector(lineSelector)!, 'y1')).toBeCloseTo(initial.y + 100 / view.zoom)
+  })
+
+  it('keeps held palms excluded after pen lift and permits fresh two-finger pan and zoom', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    const before = cameraViewFromContainer(container)
+    await pointer(stage, 'down', 'touch', 1, 200)
+    await pointer(stage, 'down', 'pen', 10, 700)
+    await pointer(stage, 'down', 'touch', 2, 300)
+    await pointer(stage, 'up', 'pen', 10, 700)
+    await pointer(stage, 'move', 'touch', 1, 100)
+    await pointer(stage, 'move', 'touch', 2, 500)
+    await pointer(stage, 'down', 'touch', 3, 600)
+    await pointer(stage, 'move', 'touch', 3, 650)
+    expect(cameraViewFromContainer(container)).toEqual(before)
+    for (const id of [1, 2, 3]) await pointer(stage, 'up', 'touch', id)
+
+    await pointer(stage, 'down', 'touch', 1, 200)
+    await pointer(stage, 'down', 'touch', 2, 300)
+    await pointer(stage, 'move', 'touch', 2, 400)
+    expect(cameraViewFromContainer(container).zoom).toBeCloseTo(before.zoom * 2)
+    expect(cameraViewFromContainer(container).panX).not.toBe(before.panX)
+    await pointer(stage, 'up', 'touch', 2, 400)
+    const after = cameraViewFromContainer(container)
+    await pointer(stage, 'move', 'touch', 1, 100)
+    expect(cameraViewFromContainer(container)).toEqual(after)
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
+  })
+
+  it('does not let finger double-clicks finish a pen line', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await tap(stage, 'pen', 10, 220)
+    await tap(stage, 'touch', 1, 600)
+    await tap(stage, 'touch', 1, 600)
+    await fireEvent.dblClick(stage, { clientX: 600, clientY: 220 })
+    await tap(stage, 'pen', 10, 420)
+    const lines = container.querySelectorAll(lineSelector)
+    expect(lines).toHaveLength(1)
+    expect(parseNumericAttr(lines[0], 'x2')).toBeCloseTo(screenToOverlayDoc(container, { x: 420, y: 220 }).x)
+  })
+
+  it.each(['cancel', 'lostpointercapture', 'blur'] as const)(
+    'cancels an interrupted pen drag on %s and restores two-finger navigation', async (interruption) => {
+      const { container } = render(() => <App touchDrawingEnabled={false} />)
+      const stage = requireDrawingStage(container)
+      await drawLine(stage)
+      await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+      await tap(stage, 'pen', 10, 320)
+      const before = selectionHandlePoint(container, 'line-start')
+      await pointer(stage, 'down', 'pen', 10, 220)
+      await pointer(stage, 'move', 'pen', 10, 220, 320)
+      expect(selectionHandlePoint(container, 'line-start').y).not.toBe(before.y)
+      if (interruption === 'blur') await fireEvent(window, new Event('blur'))
+      else await pointer(stage, interruption, 'pen', 10, 220, 320)
+      expect(selectionHandlePoint(container, 'line-start')).toEqual(before)
+      await pointer(stage, 'move', 'pen', 10, 220, 360)
+      await pointer(stage, 'up', 'pen', 10, 220, 360)
+      expect(selectionHandlePoint(container, 'line-start')).toEqual(before)
+      const view = cameraViewFromContainer(container)
+      await pointer(stage, 'down', 'touch', 1, 600)
+      await pointer(stage, 'down', 'touch', 2, 700)
+      await pointer(stage, 'move', 'touch', 2, 800)
+      expect(cameraViewFromContainer(container).zoom).toBeCloseTo(view.zoom * 2)
+    },
+  )
+
+  it('does not let a single finger pan even with the Pan tool selected', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await fireEvent.click(screen.getByRole('button', { name: 'Pan' }))
+    const before = cameraViewFromContainer(container)
+    await pointer(stage, 'down', 'touch', 1, 200)
+    await pointer(stage, 'move', 'touch', 1, 400)
+    await pointer(stage, 'up', 'touch', 1, 400)
+    expect(cameraViewFromContainer(container)).toEqual(before)
+  })
+
+  it('cancels a mouse drag on lost capture in the mobile editor', async () => {
+    const { container } = render(() => <App touchDrawingEnabled={false} />)
+    const stage = requireDrawingStage(container)
+    await drawLine(stage)
+    await fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+    await tap(stage, 'mouse', 20, 320)
+    const before = selectionHandlePoint(container, 'line-start')
+    await pointer(stage, 'down', 'mouse', 20, 220)
+    await pointer(stage, 'move', 'mouse', 20, 220, 320)
+    expect(selectionHandlePoint(container, 'line-start').y).not.toBe(before.y)
+    await pointer(stage, 'lostpointercapture', 'mouse', 20, 220, 320)
+    expect(selectionHandlePoint(container, 'line-start')).toEqual(before)
+    await pointer(stage, 'up', 'mouse', 20, 220, 320)
+    expect(parseNumericAttr(container.querySelector(lineSelector)!, 'y1')).toBeCloseTo(before.y)
+  })
+
+  it('retains touch drawing by default in the browser editor', async () => {
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear' }))
+    await tap(stage, 'touch', 1, 220)
+    await tap(stage, 'touch', 1, 420)
+    expect(container.querySelectorAll(lineSelector)).toHaveLength(1)
+  })
+})
+
 describe('App interaction integration', () => {
   it('creates a line segment from two line-tool clicks', async () => {
     const { container } = render(() => <App />)

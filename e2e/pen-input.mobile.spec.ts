@@ -1,0 +1,72 @@
+import { expect, test } from '@playwright/test'
+import { gotoApp } from './helpers'
+
+test.use({ hasTouch: true })
+
+test('mobile bundle separates pen editing from finger navigation and toolbar taps', async ({ page, context }) => {
+  const stage = await gotoApp(page)
+  const input = await context.newCDPSession(page)
+  const bounds = await stage.boundingBox()
+  if (!bounds) throw new Error('Canvas has no bounds')
+  const point = (id: number, x: number, y = 140) => ({ id, x: bounds.x + x, y: bounds.y + y })
+  const endTouch = () => input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  const fingerTap = async (x: number, y: number) => {
+    await page.touchscreen.tap(x, y)
+  }
+  const penTap = async (x: number) => {
+    const location = point(10, x)
+    await input.send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x: location.x, y: location.y,
+      pointerType: 'pen', button: 'left', buttons: 1, clickCount: 1, force: 0.5,
+    })
+    await input.send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x: location.x, y: location.y,
+      pointerType: 'pen', button: 'left', buttons: 0, clickCount: 1,
+    })
+  }
+
+  // Browser input dispatch exercises capture and compatibility events without
+  // replacing the app's handlers. It does not emulate iPad hardware rejection.
+  const linearButton = page.getByRole('button', { name: /Linear$/ })
+  await linearButton.scrollIntoViewIfNeeded()
+  const linear = await linearButton.boundingBox()
+  if (!linear) throw new Error('Linear tool has no bounds')
+  await fingerTap(linear.x + linear.width / 2, linear.y + linear.height / 2)
+  await expect(page.locator('.toolbar-active-tool')).toContainText('Linear')
+
+  const firstTouch = point(1, 100)
+  await fingerTap(firstTouch.x, firstTouch.y)
+  await penTap(180)
+  const lines = page.locator('svg.overlay-layer line[stroke="#2e8b57"][stroke-linecap="round"]')
+  await expect(lines).toHaveCount(0)
+  await penTap(340)
+  await expect(lines).toHaveCount(1)
+  await expect(page.getByText('Line segment added.')).toBeVisible()
+
+  // Verify controls before raw CDP gestures: Chromium swallows the next tap
+  // after those gestures even on a plain HTML button without app handlers.
+  const undo = page.getByRole('button', { name: 'Quick undo' })
+  await undo.tap()
+  await expect(lines).toHaveCount(0)
+  await page.getByRole('button', { name: 'Quick redo' }).tap()
+  await expect(lines).toHaveCount(1)
+
+  const camera = page.locator('.camera-layer')
+  const beforeGesture = await camera.getAttribute('style')
+  await input.send('Input.dispatchTouchEvent', {
+    type: 'touchStart', touchPoints: [point(0, 100), point(1, 200)],
+  })
+  await input.send('Input.dispatchTouchEvent', {
+    type: 'touchMove', touchPoints: [point(0, 100), point(1, 300)],
+  })
+  await expect(camera).not.toHaveAttribute('style', beforeGesture!)
+  await endTouch()
+  const afterGesture = await camera.getAttribute('style')
+  await input.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(0, 100)] })
+  await input.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(0, 200)] })
+  await endTouch()
+  await expect(camera).toHaveAttribute('style', afterGesture!)
+  await expect(lines).toHaveCount(1)
+
+  await input.detach()
+})

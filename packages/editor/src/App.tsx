@@ -3,6 +3,7 @@ import {
   createMemo,
   createSignal,
   onCleanup,
+  onMount,
   on,
   Show,
 } from 'solid-js'
@@ -11,6 +12,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import './App.css'
 import AppSidebar from './components/AppSidebar'
 import CanvasStage from './components/CanvasStage'
+import { createPenInputGuard } from './controllers/pointer/penInputGuard'
 import OverlayLayer from './components/OverlayLayer'
 import PropertiesToolOptions from './components/PropertiesToolOptions'
 import { createSidebarController } from './components/sidebar/createSidebarController'
@@ -326,6 +328,8 @@ interface QueuedToolPointerMoveEvent {
 
 interface AppProps {
   exportFile?: FileExporter
+  /** Disable touch editing while retaining two-finger canvas navigation. */
+  touchDrawingEnabled?: boolean
 }
 
 function App(props: AppProps) {
@@ -413,6 +417,31 @@ function App(props: AppProps) {
   let queuedToolPointerFrame: number | null = null
   let lastDragPreviewDelta: Point | null = null
   const activeTouchPoints = new Map<number, Point>()
+  const penInputGuard = createPenInputGuard()
+  const touchNavigationOnly = () => props.touchDrawingEnabled === false
+
+  onMount(() => {
+    function cancelInterruptedCanvasInput() {
+      if (!touchNavigationOnly()) return
+      penInputGuard.reset()
+      clearPendingToolPointerMove()
+      activeTouchPoints.clear()
+      clearTouchSpacingPending()
+      clearTouchGesture()
+      setDragState(null)
+      clearDragPreviewState()
+    }
+    function handleVisibilityChange() {
+      if (document.hidden) cancelInterruptedCanvasInput()
+    }
+    window.addEventListener('blur', cancelInterruptedCanvasInput)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    onCleanup(() => {
+      window.removeEventListener('blur', cancelInterruptedCanvasInput)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      penInputGuard.reset()
+    })
+  })
 
   const pdfSignature = createMemo(() => {
     const pdf = project().pdf
@@ -956,6 +985,8 @@ function App(props: AppProps) {
       return
     }
 
+    if (touchNavigationOnly() && event.pointerType === 'touch') return
+
     const currentTool = tool()
     const activeDrag = dragState()
 
@@ -1321,6 +1352,7 @@ function App(props: AppProps) {
     clearTargetDistanceSnapLock()
     clearPendingToolPointerMove()
     activeTouchPoints.clear()
+    penInputGuard.suppressTouches()
     clearTouchSpacingPending()
     clearTouchGesture()
     setDragState(null)
@@ -2392,6 +2424,19 @@ function App(props: AppProps) {
     }
 
     const event = normalizePointerEvent(incomingEvent)
+    if (touchNavigationOnly()) {
+      if (!penInputGuard.pointerDown(event)) {
+        event.preventDefault()
+        return
+      }
+      if (event.pointerType === 'pen') {
+        activeTouchPoints.clear()
+        clearTouchGesture()
+      }
+      if (event.pointerType === 'pen' || event.pointerType === 'touch') {
+        event.currentTarget.setPointerCapture(event.pointerId)
+      }
+    }
     clearPendingToolPointerMove(event.pointerId)
     if (event.pointerType !== 'touch' && document.activeElement !== event.currentTarget) {
       event.currentTarget.focus({ preventScroll: true })
@@ -2412,6 +2457,11 @@ function App(props: AppProps) {
       touchGesture,
       beginTouchGestureFromActivePointers,
     })) {
+      return
+    }
+
+    if (touchNavigationOnly() && event.pointerType === 'touch') {
+      event.preventDefault()
       return
     }
 
@@ -2570,6 +2620,10 @@ function App(props: AppProps) {
     incomingEvent: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
     const event = normalizePointerEvent(incomingEvent)
+    if (touchNavigationOnly() && !penInputGuard.allowsMove(event)) {
+      event.preventDefault()
+      return
+    }
     if (event.pointerType === 'touch') {
       processToolPointerMove(snapshotToolPointerMoveEvent(event))
       return
@@ -2582,6 +2636,7 @@ function App(props: AppProps) {
     incomingEvent: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
     const event = normalizePointerEvent(incomingEvent)
+    if (touchNavigationOnly() && !penInputGuard.pointerEnd(event)) return
     flushPendingToolPointerMove(event.pointerId)
     if (event.pointerType === 'touch') {
       activeTouchPoints.delete(event.pointerId)
@@ -2647,6 +2702,7 @@ function App(props: AppProps) {
     incomingEvent: PointerEvent & { currentTarget: HTMLDivElement },
   ) {
     const event = normalizePointerEvent(incomingEvent)
+    if (touchNavigationOnly() && !penInputGuard.pointerEnd(event)) return
     clearPendingToolPointerMove(event.pointerId)
     if (event.pointerType === 'touch') {
       activeTouchPoints.delete(event.pointerId)
@@ -2683,6 +2739,12 @@ function App(props: AppProps) {
     clearDragPreviewState()
   }
 
+  function handleToolPointerCaptureLost(event: PointerEvent & { currentTarget: HTMLDivElement }) {
+    if (touchNavigationOnly() && penInputGuard.hasPointer(event)) {
+      handleToolPointerCancel(event)
+    }
+  }
+
   function handleWheel(event: WheelEvent & { currentTarget: HTMLDivElement }) {
     if (!stageRef) {
       return
@@ -2712,6 +2774,10 @@ function App(props: AppProps) {
   function handleDoubleClick(
     event: MouseEvent & { currentTarget: HTMLDivElement },
   ) {
+    if (touchNavigationOnly() && !penInputGuard.allowsDoubleClick()) {
+      event.preventDefault()
+      return
+    }
     if (isDialogEditingContextActive()) {
       return
     }
@@ -4182,6 +4248,7 @@ function App(props: AppProps) {
           onPointerMove={handleToolPointerMove}
           onPointerUp={handleToolPointerUp}
           onPointerCancel={handleToolPointerCancel}
+          onLostPointerCapture={handleToolPointerCaptureLost}
           onWheel={handleWheel}
           onDoubleClick={handleDoubleClick}
         >

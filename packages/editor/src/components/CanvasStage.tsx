@@ -81,6 +81,7 @@ interface CanvasStageProps {
   onPointerMove: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
   onPointerUp: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
   onPointerCancel: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
+  onLostPointerCapture: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void
   onWheel: (event: WheelEvent & { currentTarget: HTMLDivElement }) => void
   onDoubleClick: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void
   children: JSX.Element
@@ -146,6 +147,7 @@ export default function CanvasStage(props: CanvasStageProps) {
           onPointerMove={props.onPointerMove}
           onPointerUp={props.onPointerUp}
           onPointerCancel={props.onPointerCancel}
+          onLostPointerCapture={props.onLostPointerCapture}
           onWheel={props.onWheel}
           onDblClick={props.onDoubleClick}
           onContextMenu={(event) => event.preventDefault()}

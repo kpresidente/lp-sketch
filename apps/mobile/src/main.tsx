@@ -11,7 +11,10 @@ installGlobalErrorTelemetry()
 render(
   () => (
     <AppErrorBoundary>
-      <App exportFile={Capacitor.isNativePlatform() ? exportNativeFile : undefined} />
+      <App
+        touchDrawingEnabled={false}
+        exportFile={Capacitor.isNativePlatform() ? exportNativeFile : undefined}
+      />
     </AppErrorBoundary>
   ),
   root!,
