@@ -879,7 +879,7 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
       setEntries([])
     }
 
-    const pointerDownListener = (event: PointerEvent) => {
+    const dismissWhenOutside = (event: Event) => {
       const target = event.target as Node | null
       if (!target || !railRef) {
         return
@@ -909,10 +909,12 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
       }
     }
 
-    window.addEventListener('pointerdown', pointerDownListener)
+    window.addEventListener('pointerdown', dismissWhenOutside)
+    window.addEventListener('focusin', dismissWhenOutside)
     window.addEventListener('keydown', keyDownListener)
     onCleanup(() => {
-      window.removeEventListener('pointerdown', pointerDownListener)
+      window.removeEventListener('pointerdown', dismissWhenOutside)
+      window.removeEventListener('focusin', dismissWhenOutside)
       window.removeEventListener('keydown', keyDownListener)
     })
   })

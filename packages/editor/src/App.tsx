@@ -14,6 +14,7 @@ import AppSidebar from './components/AppSidebar'
 import CanvasStage from './components/CanvasStage'
 import { createPenInputGuard } from './controllers/pointer/penInputGuard'
 import { createSingleFingerPan } from './controllers/pointer/singleFingerPan'
+import { useSidebarLayout } from './hooks/useSidebarLayout'
 import OverlayLayer from './components/OverlayLayer'
 import PropertiesToolOptions from './components/PropertiesToolOptions'
 import { createSidebarController } from './components/sidebar/createSidebarController'
@@ -334,6 +335,7 @@ interface AppProps {
 }
 
 function App(props: AppProps) {
+  const sidebarLayout = useSidebarLayout()
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
     past: [],
@@ -2932,6 +2934,7 @@ function App(props: AppProps) {
 
   useGlobalAppShortcuts({
     tool,
+    dismissSidebarFlyout: sidebarLayout.closeFlyout,
     isEditingContextActive,
     isCanvasKeyboardContext,
     handleEnterToolFinish: handleEnterToolFinishShortcut,
@@ -3422,6 +3425,7 @@ function App(props: AppProps) {
 
     setTool(nextTool)
     clearTransientToolState()
+    sidebarLayout.closeFlyout()
     helpState.closeIfUnpinned()
     if (nextTool === 'multi_select') {
       setSelected(null)
@@ -4216,11 +4220,12 @@ function App(props: AppProps) {
 
   return (
     <HelpProvider value={helpState}>
-    <div class="app-shell">
+    <div class="app-shell" classList={{ 'sidebar-collapsed': sidebarLayout.collapsed() }}>
       <AppControllerProvider value={sidebarController}>
-        <AppSidebar />
+        <AppSidebar layout={sidebarLayout} />
 
         <CanvasStage
+          inert={sidebarLayout.activeSection() !== null}
           project={project()}
           hasPdf={hasPdf()}
           supportsNativeFileDialogs={supportsNativeFileDialogs}

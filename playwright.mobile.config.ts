@@ -8,7 +8,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`
 // native APIs still require the installed iPad application.
 export default defineConfig({
   ...base,
-  testMatch: ['smoke.spec.ts', '*.mobile.spec.ts'],
+  testMatch: ['smoke.spec.ts', 'sidebar.spec.ts', '*.mobile.spec.ts'],
   testIgnore: [],
   use: { ...base.use, baseURL: BASE_URL },
   webServer: {

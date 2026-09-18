@@ -14,6 +14,7 @@ import PropertiesBar from './PropertiesBar'
 import QuickAccessBar from './QuickAccessBar'
 
 interface CanvasStageProps {
+  inert?: boolean
   project: LpProject
   hasPdf: boolean
   supportsNativeFileDialogs: boolean
@@ -115,7 +116,7 @@ export default function CanvasStage(props: CanvasStageProps) {
   }
 
   return (
-    <main class="workspace">
+    <main class="workspace" inert={props.inert}>
       <PropertiesBar
         project={props.project}
         tool={props.tool}

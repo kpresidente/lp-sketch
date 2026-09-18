@@ -469,6 +469,118 @@ function appearsBefore(first: Element, second: Element): boolean {
   return Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING)
 }
 
+describe('collapsible sidebar', () => {
+  const preferenceKey = 'lp-sketch.sidebar.collapsed.v1'
+  beforeEach(() => window.localStorage.removeItem(preferenceKey))
+  afterEach(() => window.localStorage.removeItem(preferenceKey))
+
+  const collapse = () => fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+  const openSection = (name: string) => fireEvent.click(screen.getByRole('button', { name: `${name} section` }))
+
+  it('opens one section at a time and restores the full sidebar accordion state', async () => {
+    render(() => <App />)
+    await fireEvent.click(screen.getByRole('button', { name: 'Tools', exact: true }))
+    await collapse()
+    for (const name of ['Project', 'Tools', 'Components', 'Material', 'Scale', 'Layers']) {
+      expect(screen.getByRole('button', { name: `${name} section` }).getAttribute('aria-expanded')).toBe('false')
+      expect(screen.queryByRole('region', { name, exact: true })).toBeNull()
+    }
+    await openSection('Tools')
+    expect(screen.getByRole('switch', { name: 'Snap to points' })).toBeTruthy()
+    await openSection('Components')
+    expect(screen.queryByRole('region', { name: 'Tools', exact: true })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Linear', exact: true })).toBeTruthy()
+    await openSection('Components')
+    expect(screen.queryByRole('region', { name: 'Components', exact: true })).toBeNull()
+    await fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }))
+    expect(screen.queryByRole('region', { name: 'Tools', exact: true })).toBeNull()
+    expect(screen.getByRole('region', { name: 'Components', exact: true })).toBeTruthy()
+  })
+
+  it('keeps settings open and preserves inputs when switching sections or expanding', async () => {
+    render(() => <App />)
+    await collapse()
+    await openSection('Tools')
+    const snap = screen.getByRole('switch', { name: 'Snap to points' })
+    const before = snap.getAttribute('aria-checked')
+    await fireEvent.click(snap)
+    expect(snap.getAttribute('aria-checked')).not.toBe(before)
+    expect(screen.getByRole('region', { name: 'Tools flyout' })).toBeTruthy()
+    await openSection('Material')
+    await fireEvent.click(screen.getByRole('radio', { name: 'Aluminum' }))
+    expect(screen.getByRole('region', { name: 'Material flyout' })).toBeTruthy()
+    await openSection('Scale')
+    await fireEvent.input(screen.getByRole('spinbutton', { name: 'Scale inches' }), { target: { value: '7' } })
+    await openSection('Tools')
+    await openSection('Scale')
+    expect((screen.getByRole('spinbutton', { name: 'Scale inches' }) as HTMLInputElement).value).toBe('7')
+    await fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }))
+    expect((screen.getByRole('spinbutton', { name: 'Scale inches' }) as HTMLInputElement).value).toBe('7')
+    expect(screen.getByRole('radio', { name: 'Aluminum' }).getAttribute('aria-checked')).toBe('true')
+  })
+
+  it.each([true, false])('closes for tools and components, including the current tool (touch drawing: %s)', async (touchDrawingEnabled) => {
+    render(() => <App touchDrawingEnabled={touchDrawingEnabled} />)
+    await collapse()
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await openSection('Components')
+      await fireEvent.click(screen.getByRole('button', { name: 'Linear', exact: true }))
+      expect(screen.queryByRole('region', { name: 'Components flyout' })).toBeNull()
+    }
+    await openSection('Components')
+    await fireEvent.click(screen.getByRole('button', { name: 'AT', exact: true }))
+    expect(screen.queryByRole('region', { name: 'Components flyout' })).toBeNull()
+    await openSection('Tools')
+    await fireEvent.click(screen.getByRole('button', { name: 'Pan', exact: true }))
+    expect(screen.queryByRole('region', { name: 'Tools flyout' })).toBeNull()
+    await openSection('Scale')
+    await fireEvent.click(screen.getByRole('button', { name: 'Calibrate', exact: true }))
+    expect(screen.queryByRole('region', { name: 'Scale flyout' })).toBeNull()
+  })
+
+  it('leaves the flyout open when an unavailable tool cannot be selected', async () => {
+    render(() => <App />)
+    await collapse()
+    await openSection('Components')
+    const button = screen.getByRole('button', { name: 'Linear AT', exact: true }) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    await fireEvent.click(button)
+    expect(screen.getByRole('region', { name: 'Components flyout' })).toBeTruthy()
+  })
+
+  it('Escape dismisses the flyout without cancelling the pending conductor endpoint', async () => {
+    const { container } = render(() => <App />)
+    const stage = requireDrawingStage(container)
+    await fireEvent.click(screen.getByRole('button', { name: 'Linear', exact: true }))
+    await fireEvent.pointerDown(stage, { clientX: 220, clientY: 220, button: 0, ctrlKey: true, shiftKey: true })
+    await fireEvent.pointerUp(stage, { clientX: 220, clientY: 220, button: 0 })
+    await collapse()
+    await openSection('Project')
+    const name = screen.getByPlaceholderText('Project name...')
+    name.focus()
+    await fireEvent.keyDown(name, { key: 'Escape' })
+    expect(screen.queryByRole('region', { name: 'Project flyout' })).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Project section' }))
+    await fireEvent.pointerDown(stage, { clientX: 420, clientY: 220, button: 0, ctrlKey: true, shiftKey: true })
+    await fireEvent.pointerUp(stage, { clientX: 420, clientY: 220, button: 0 })
+    expect(container.querySelectorAll('svg.overlay-layer line[stroke="#2e8b57"][stroke-linecap="round"]')).toHaveLength(1)
+  })
+
+  it('remembers the collapsed layout but does not reopen a flyout on restart', async () => {
+    let app = render(() => <App />)
+    await collapse()
+    await openSection('Layers')
+    app.unmount()
+    app = render(() => <App />)
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Layers flyout' })).toBeNull()
+    await fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }))
+    app.unmount()
+    render(() => <App />)
+    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeTruthy()
+  })
+})
+
 describe('pen canvas input', () => {
   const lineSelector = 'svg.overlay-layer line[stroke="#2e8b57"][stroke-linecap="round"]'
   const legacyPanPreferenceKey = 'lp-sketch.input.one-finger-pan.v1'

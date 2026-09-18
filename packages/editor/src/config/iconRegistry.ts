@@ -17,8 +17,19 @@ export function tablerIconClass(icon: TablerIconName): string {
 
 export const MISC_ICON = {
   panelChevron: 'chevron-down',
+  sidebarCollapse: 'layout-sidebar-left-collapse',
+  sidebarExpand: 'layout-sidebar-left-expand',
   pdfPlaceholder: 'file-type-pdf',
   scaleBadge: 'ruler-2',
+} as const
+
+export const SIDEBAR_SECTION_ICON = {
+  project: 'building',
+  tools: 'tools',
+  components: 'cube',
+  material: 'layout-list',
+  scale: 'ruler',
+  layers: 'stack-front',
 } as const
 
 export const COMMAND_ICON = {

@@ -5,6 +5,7 @@ interface UseGlobalAppShortcutsOptions {
   tool: Accessor<Tool>
   isEditingContextActive?: Accessor<boolean>
   isCanvasKeyboardContext?: () => boolean
+  dismissSidebarFlyout?: () => boolean
   handleEnterToolFinish?: () => boolean
   handleUndo: () => void
   handleRedo: () => void
@@ -43,6 +44,11 @@ export function useGlobalAppShortcuts(options: UseGlobalAppShortcutsOptions) {
       const ctrlOrCmd = event.ctrlKey || event.metaKey
       const targetIsEditable = isEditableTarget(event.target)
       const editingContextActive = options.isEditingContextActive?.() ?? false
+
+      if (event.key === 'Escape' && !editingContextActive && options.dismissSidebarFlyout?.()) {
+        event.preventDefault()
+        return
+      }
 
       if (ctrlOrCmd && event.key.toLowerCase() === 'z') {
         if (targetIsEditable) {
