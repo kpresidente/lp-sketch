@@ -25,7 +25,10 @@ Files: `packages/editor/src/App.tsx`, `apps/mobile/src/main.tsx`, `packages/edit
 - [x] Run `npm test -- packages/editor/src/App.interaction.test.tsx -t "selection drag"`; confirm the jitter cases fail against unchanged production code.
 - [x] Add `penSelectionDragThresholdPx?: number` to editor props, defaulting to zero. Set it to 8 in the mobile entry point. Record the pen's screen point when selection begins; ignore matching pointer moves below the threshold before scheduling a preview. Clear the pending point on activation and through existing drag cleanup.
 - [x] Run the focused tests, then both builds, the full unit suite, browser E2E, and packaged-mobile E2E. Add a real browser-dispatched Pencil regression to the mobile suite.
-- [ ] Review the scoped change independently, record verification, commit, and deliver the next TestFlight build through the existing workflow. Keep the browser production merge separate.
-- [ ] Ask for physical iPad acceptance: tap/select repeatedly, deliberately drag, edit endpoints, and compare at several zoom levels.
+- [x] Review the scoped change independently, record verification, commit, and upload the next TestFlight build through the existing workflow. Keep the browser production merge separate.
+- [ ] After Apple sign-in is restored, save the approved encryption answers, assign build 30.1 to the existing testing group, and verify availability.
+- [x] Document the physical iPad acceptance check: tap/select repeatedly, deliberately drag, edit endpoints, and compare at several zoom levels. Device validation awaits TestFlight availability.
 
 Verification: 15 focused selection-drag tests, 433 total unit/integration tests, 35 browser E2E cases, and 16 packaged-mobile cases passed. Both builds, production audit (zero findings), and 25 contrast pairs passed. Independent review found no actionable issues. Browser plugin not available; repository Playwright provided the rendered check at 1366 x 1024, with no console errors. Browser validation revealed selection changes toolbar height, so the gate uses client coordinates rather than stage-relative coordinates; an additional red-first layout-shift regression now passes. Physical Pencil feel remains a device check.
+
+Release: implementation `ca42205` passed all hosted PR checks. Manual workflow 35383711604 uploaded 0.1.0 (30.1) successfully. Final Apple compliance/group steps require the owner to restore the expired browser session; the sign-in request is pending.
