@@ -6,6 +6,8 @@ Run `npm run mobile:dev`, `npm run mobile:build`, or `npm run mobile:sync` from 
 
 The Xcode scheme is `App`, device family is iPad, and preview bundle identifier is `app.lpsketch.preview`. TestFlight requires your registered `IOS_BUNDLE_ID` and Apple Team ID. Native dependencies use Capacitor 8.5.2 and Swift Package Manager.
 
+The native iPad viewport begins below the visible iOS status bar. The Status Bar plugin uses the system-reported bar height and resizes the web view, including on rotation. Its light background matches the sidebar, with dark system text/icons. This is configured in `capacitor.config.ts`; do not add a matching top padding to the shared editor or browser preview.
+
 See [the TestFlight guide](../../docs/TESTFLIGHT.md) for account setup, signing from Windows, GitHub credentials, installation, and update testing.
 
 On native platforms, the mobile entry supplies a file exporter to the shared editor. PDF, PNG, JPG, and `.lps` project Save use Capacitor Filesystem and Share to offer the native share sheet, including **Save to Files**. Files are staged in a private export cache; completed shares are retained for receiving apps and directories older than one day are cleaned up during later exports. Browser previews retain browser file delivery. The iOS privacy manifest declares the Filesystem plugin's file timestamp access.
