@@ -27,7 +27,7 @@ Files: `packages/editor/src/App.tsx`, `apps/mobile/src/main.tsx`, `packages/edit
 - [x] Run the focused tests, then both builds, the full unit suite, browser E2E, and packaged-mobile E2E. Add a real browser-dispatched Pencil regression to the mobile suite.
 - [x] Review the scoped change independently, record verification, commit, and upload the next TestFlight build through the existing workflow. Keep the browser production merge separate.
 - [x] After Apple sign-in is restored, save the approved encryption answers, assign build 30.1 to the existing testing group, and verify availability.
-- [x] Document the physical iPad acceptance check: tap/select repeatedly, deliberately drag, edit endpoints, and compare at several zoom levels. Device validation awaits TestFlight availability.
+- [x] Document the physical iPad acceptance check: tap/select repeatedly, deliberately drag, edit endpoints, and compare at several zoom levels. Build 30.1 is now available for this device check.
 
 Verification: 15 focused selection-drag tests, 433 total unit/integration tests, 35 browser E2E cases, and 16 packaged-mobile cases passed. Both builds, production audit (zero findings), and 25 contrast pairs passed. Independent review found no actionable issues. Browser plugin not available; repository Playwright provided the rendered check at 1366 x 1024, with no console errors. Browser validation revealed selection changes toolbar height, so the gate uses client coordinates rather than stage-relative coordinates; an additional red-first layout-shift regression now passes. Physical Pencil feel remains a device check.
 
