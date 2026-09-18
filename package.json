@@ -18,7 +18,7 @@
     "audit:contrast": "node scripts/contrast-audit.mjs"
   },
   "dependencies": {
-    "@kobalte/core": "^0.13.11",
+    "@kobalte/core": "^0.13.14",
     "@tabler/icons-webfont": "^3.44.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
