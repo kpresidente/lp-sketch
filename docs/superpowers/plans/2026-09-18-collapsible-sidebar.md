@@ -40,7 +40,7 @@
 - [x] Add browser scenarios covering rail width, unchanged canvas bounds when flyouts open, section switching, settings staying open, selecting tools/components, outside mouse/touch/pen dismissal without drawing or panning, persistence, and portrait scrolling.
 - [x] Run `npm run build`, `npm test`, `npm run test:e2e`, `npm run mobile:build`, and the mobile Playwright suite. Inspect landscape and portrait screenshots and console health. Store temporary visual evidence outside tracked source.
 - [x] Request an independent read-only diff review and fix actionable regressions with targeted verification.
-- [ ] Update help and TestFlight notes, commit the feature separately, and push the existing draft PR branch. Keep the native release state explicit; local browser checks do not establish physical iPad behavior.
+- [x] Update help and TestFlight notes, commit the feature separately, and push the existing draft PR branch. Keep the native release state explicit; local browser checks do not establish physical iPad behavior.
 
 ## Verification record
 
@@ -48,3 +48,5 @@
 - Full browser E2E passed 33 cases. The final keyboard overlap regression failed first, then the eight sidebar cases plus the existing Quick Access case passed. All 15 packaged-mobile Chromium cases passed with the final source.
 - Both final application builds, production dependency gate (zero advisories), and contrast audit passed. Rendered checks covered 1180 x 820 and 820 x 1180, expanded and collapsed layouts, and a clean browser console.
 - Independent review identified input commits returning focus behind the flyout and Quick Access retaining keyboard editing state. An inert workspace boundary and dismissal of Quick Access on outside focus fixed the issues; browser regressions reproduced both before the fixes. Follow-up review found no remaining actionable issues.
+- Implementation commit `2a4db51` is pushed to draft PR #27. CI passed all 418 unit/integration tests, 34 browser E2E cases, 15 packaged-mobile cases, both application builds, and the unsigned iPad archive. The manual workflow `35368938498` passed both native archives, IPA export, Apple validation, and upload for build `0.1.0 (25.1)`.
+- Apple processed build `25.1`; the previously approved encryption answers were saved and the build was assigned to the existing iPad Development group. The API confirmed `IN_BETA_TESTING` on September 18, 2026. The physical iPad sidebar check remains with the owner.
