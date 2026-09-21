@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LP Sketch — 01 Nightshift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#121417; --bg2:#181b20; --panel:#1e2228; --panel2:#262b33; --line:#2c323b; --line2:#3a414c;
+  --ink:#eef0f3; --ink2:#b3bac5; --ink3:#7d8694; --ink4:#59616d;
+  --amber:#f2b33d; --amber2:#ffcf66; --amber-dim:rgba(242,179,61,.14);
+  --cu:#22c55e; --al:#3b82f6; --gnd:#ef4444; --bi:#a855f7; --sn:#22d3ee;
+  --sel:#f2b33d; --sel-fill:#1e2228; --sym-fill:#1e2228;
+  --r:8px; --r2:6px;
+  --font:'Manrope',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);font-size:12.5px;color:var(--ink);background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;min-width:1180px}
+.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+.app{display:grid;grid-template-columns:236px 1fr 292px;grid-template-rows:44px 1fr 28px;height:100vh;height:100dvh}
+
+/* ── header ── */
+.top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--bg2);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:9px;padding-right:14px;border-right:1px solid var(--line);height:100%}
+.brand .mark{width:26px;height:26px;border-radius:7px;background:var(--amber);color:#1b1408;display:grid;place-items:center;font-size:16px;box-shadow:0 0 0 1px rgba(255,255,255,.06),0 4px 14px -4px rgba(242,179,61,.7)}
+.brand b{font-weight:800;letter-spacing:-.01em;font-size:13.5px}
+.crumb{display:flex;align-items:center;gap:8px;color:var(--ink2);font-weight:600}
+.crumb .sep{color:var(--ink4)}
+.crumb .proj{color:var(--ink);font-weight:700}
+.crumb .meta{font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:500}
+.top .spacer{flex:1}
+.hbtn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:var(--r2);color:var(--ink2);font-weight:600;font-size:12px;border:1px solid transparent}
+.hbtn:hover{background:var(--panel2);color:var(--ink);border-color:var(--line2)}
+.hbtn .ic{font-size:15px}
+.hbtn.primary{background:var(--ink);color:#111;border-color:var(--ink)}
+.hbtn.primary:hover{background:#fff}
+.hgroup{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.hgroup .hbtn{height:26px;padding:0 8px}
+
+/* ── left palette ── */
+.palette{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.pal-scroll{overflow:auto;padding:10px 10px 16px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:12px}
+.mode{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 6px;border-radius:var(--r2);border:1px solid var(--line);background:var(--bg2);color:var(--ink2);font-size:10.5px;font-weight:600}
+.mode .ic{font-size:17px}
+.mode:hover{border-color:var(--line2);color:var(--ink)}
+.mode.on{background:var(--amber-dim);border-color:var(--amber);color:var(--amber2)}
+.grp{margin-bottom:10px}
+.grp-h{display:flex;align-items:center;justify-content:space-between;padding:6px 2px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.grp-h .n{font-family:var(--mono);font-weight:500;letter-spacing:0;color:var(--ink4)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;height:58px;padding:4px 3px;border-radius:var(--r2);border:1px solid var(--line);background:var(--bg2);color:var(--ink2);font-size:10px;font-weight:600;line-height:1.1;text-align:center;transition:border-color .15s,color .15s,transform .15s,background .15s}
+.tile .ic{font-size:21px;color:var(--ink)}
+.tile:hover{border-color:var(--line2);color:var(--ink);transform:translateY(-1px)}
+.tile:hover .ic{color:var(--amber2)}
+.tile.on{background:var(--amber);border-color:var(--amber);color:#1b1408;box-shadow:0 6px 18px -8px rgba(242,179,61,.8)}
+.tile.on .ic{color:#1b1408}
+.tile .k{position:absolute;top:3px;right:5px;font-family:var(--mono);font-size:8.5px;color:var(--ink4)}
+.tile.on .k{color:rgba(27,20,8,.6)}
+
+/* ── canvas ── */
+.stage{position:relative;background:var(--bg);overflow:hidden;background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.055) 1px,transparent 1.2px);background-size:22px 22px}
+.stage::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
+.sheet{position:absolute;left:calc(50% - 22px);top:50%;width:min(840px,calc(100% - 90px));transform:translate(-50%,-50%);box-shadow:0 30px 80px -20px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.07);border-radius:2px;overflow:hidden;background:#fff}
+.sheet svg{display:block;width:100%;height:auto}
+.contextbar{position:absolute;left:14px;top:12px;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 6px;background:rgba(24,27,32,.94);backdrop-filter:blur(10px);border:1px solid var(--line2);border-radius:10px;box-shadow:0 12px 30px -12px rgba(0,0,0,.9);z-index:3}
+.ctool{display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 6px;height:28px;border-radius:7px;background:var(--amber);color:#1b1408;font-weight:800;font-size:11.5px;letter-spacing:.02em}
+.ctool .ic{font-size:16px}
+.chint{color:var(--ink3);font-weight:500;font-style:italic;padding:0 4px}
+.cfield{display:inline-flex;align-items:center;gap:6px;color:var(--ink2);font-weight:600;font-size:11.5px;padding:0 4px}
+.cfield .v{font-family:var(--mono);color:var(--amber2);font-weight:500}
+.cdiv{width:1px;height:18px;background:var(--line2)}
+.sw{position:relative;width:30px;height:16px;border-radius:8px;background:var(--line2);display:inline-block}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--ink2)}
+.sw.on{background:var(--amber)}
+.sw.on::after{left:16px;background:#1b1408}
+.quick{position:absolute;right:14px;top:12px;display:flex;flex-direction:column;gap:3px;padding:5px;background:rgba(24,27,32,.94);backdrop-filter:blur(10px);border:1px solid var(--line2);border-radius:10px;z-index:3;box-shadow:0 12px 30px -12px rgba(0,0,0,.9)}
+.qb{width:34px;height:34px;border-radius:7px;display:grid;place-items:center;color:var(--ink2);font-size:17px}
+.qb:hover{background:var(--panel2);color:var(--ink)}
+.qb.on{background:var(--amber);color:#1b1408}
+.qb.dis{opacity:.35}
+.qdiv{height:1px;background:var(--line2);margin:2px 4px}
+.zoom{position:absolute;right:14px;bottom:12px;display:flex;align-items:center;gap:2px;padding:3px;background:rgba(24,27,32,.94);border:1px solid var(--line2);border-radius:9px;z-index:3}
+.zoom .qb{width:28px;height:28px;font-size:15px}
+.zoom .v{font-family:var(--mono);font-size:11px;color:var(--ink2);padding:0 8px;min-width:54px;text-align:center}
+
+/* ── right inspector ── */
+.inspector{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.itabs{display:flex;border-bottom:1px solid var(--line);padding:0 6px}
+.itab{flex:1;height:38px;display:grid;place-items:center;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);position:relative}
+.itab:hover{color:var(--ink2)}
+.itab.on{color:var(--amber2)}
+.itab.on::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--amber);border-radius:2px 2px 0 0}
+.iscroll{overflow:auto;padding:12px 14px 20px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.sec{padding:10px 0 12px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+.sec-h{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.sec-h .ic{font-size:13px;color:var(--ink4)}
+.preview{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line2);border-radius:var(--r);background:linear-gradient(180deg,#fafbfc,#eef1f5);color:#111;margin-bottom:10px}
+.preview svg{width:112px;height:34px;flex:none}
+.preview .t{font-weight:700;font-size:12px;color:#111}
+.preview .s{font-family:var(--mono);font-size:10.5px;color:#556;margin-top:2px}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.lbl{width:78px;font-size:11.5px;font-weight:600;color:var(--ink2);flex:none}
+.seg{display:flex;flex:1;padding:2px;border:1px solid var(--line2);border-radius:7px;background:var(--bg2)}
+.seg button{flex:1;height:26px;border-radius:5px;font-size:11px;font-weight:700;color:var(--ink3)}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--panel2);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.4),inset 0 0 0 1px var(--line2)}
+.mats{display:flex;flex:1;gap:4px}
+.mat{flex:1;height:30px;border-radius:6px;border:1px solid var(--line2);background:var(--bg2);display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink3);position:relative}
+.mat i{position:absolute;left:5px;top:5px;width:6px;height:6px;border-radius:50%;background:var(--c)}
+.mat:hover{color:var(--ink)}
+.mat.on{border-color:var(--c);color:var(--ink);box-shadow:inset 0 0 0 1px var(--c),0 0 14px -4px var(--c)}
+.inp{flex:1;display:flex;align-items:center;height:30px;padding:0 9px;border:1px solid var(--line2);border-radius:6px;background:var(--bg2);font-family:var(--mono);font-size:12px;color:var(--ink)}
+.inp .u{margin-left:auto;color:var(--ink4);font-size:10.5px}
+.stepper{display:flex;align-items:center;border:1px solid var(--line2);border-radius:6px;background:var(--bg2);height:30px}
+.stepper button{width:28px;height:100%;display:grid;place-items:center;color:var(--ink3)}
+.stepper button:hover{color:var(--ink)}
+.stepper .v{width:40px;text-align:center;font-family:var(--mono);font-weight:600;font-size:13px;color:var(--amber2)}
+.chk{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-weight:600;color:var(--ink2);font-size:12px}
+.layer{display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:600;color:var(--ink2)}
+.layer .dot{width:8px;height:8px;border-radius:2px;background:var(--ink3)}
+.layer .eye{margin-left:auto;color:var(--ink3);font-size:15px;display:grid;place-items:center;width:24px;height:24px;border-radius:5px}
+.layer .eye:hover{background:var(--panel2);color:var(--ink)}
+.layer .cnt{font-family:var(--mono);font-size:10px;color:var(--ink4);font-weight:500}
+.layer.off{color:var(--ink4)}
+.layer.off .dot{background:var(--line2)}
+.layer.off .eye{color:var(--ink4)}
+.layer.sub{padding-left:18px;font-weight:500;color:var(--ink3)}
+.hist{display:flex;align-items:center;gap:6px}
+.hb{width:30px;height:28px;border-radius:6px;border:1px solid var(--line2);background:var(--bg2);display:grid;place-items:center;color:var(--ink2);font-size:15px}
+.hb:hover{color:var(--ink);border-color:var(--ink4)}
+.hb.dis{opacity:.35}
+.hist .n{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink4)}
+.pages{display:flex;align-items:center;gap:6px}
+.pages .pg{flex:1;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--ink)}
+.range{position:relative;flex:1;height:4px;border-radius:2px;background:var(--line2)}
+.range::before{content:"";position:absolute;left:0;top:0;height:100%;width:var(--p);border-radius:2px;background:var(--amber)}
+.range::after{content:"";position:absolute;left:var(--p);top:50%;width:12px;height:12px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 1px 3px rgba(0,0,0,.6)}
+.rv{font-family:var(--mono);font-size:11px;color:var(--ink2);width:34px;text-align:right}
+
+/* ── status ── */
+.status{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 14px;background:var(--bg2);border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.status .ok{display:flex;align-items:center;gap:6px;color:var(--ink2)}
+.status .ok i{width:6px;height:6px;border-radius:50%;background:var(--cu);box-shadow:0 0 8px var(--cu)}
+.status .tg{display:inline-flex;align-items:center;gap:5px;padding:0 7px;height:18px;border-radius:4px;border:1px solid var(--line2);color:var(--ink3)}
+.status .tg .ic{font-size:12px}
+.status .tg.on{color:var(--amber2);border-color:rgba(242,179,61,.4);background:var(--amber-dim)}
+.status .sp{flex:1}
+.tag{position:absolute;left:14px;bottom:12px;z-index:3;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink4);text-transform:uppercase}
+
+/* ── load motion ── */
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.palette,.inspector,.top,.status,.contextbar,.quick,.zoom{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+.palette{animation-delay:.05s}.inspector{animation-delay:.12s}.contextbar{animation-delay:.2s}.quick{animation-delay:.25s}.zoom{animation-delay:.3s}
+@keyframes sheetin{from{opacity:0;transform:translate(-50%,-49%) scale(.985)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.sheet{animation:sheetin .7s cubic-bezier(.2,.7,.2,1) .15s both}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<defs>
+<symbol id="s-select" viewBox="0 0 24 24"><path d="M5 3l14 8.5-6.3 1.4-2.2 6.6z"/></symbol>
+<symbol id="s-multi" viewBox="0 0 24 24"><path d="M4 4h5M15 4h5M4 4v5M20 4v5M4 15v5M20 15v5M4 20h5M15 20h5"/><path d="M10 10l7 4.2-3.1.7-1.1 3.3z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-pan" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-2.5 2.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5"/></symbol>
+<symbol id="s-line" viewBox="0 0 24 24"><path d="M5 19L19 5"/><circle cx="5" cy="19" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="1.7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-arc" viewBox="0 0 24 24"><path d="M4 18a8.5 8.5 0 0 1 16 0"/><circle cx="4" cy="18" r="1.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="1.7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-curve" viewBox="0 0 24 24"><path d="M3 18C7 4 12 22 21 6"/><circle cx="3" cy="18" r="1.7" fill="currentColor" stroke="none"/><circle cx="21" cy="6" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12.5" r="1.7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></symbol>
+<symbol id="s-bonded-at" viewBox="0 0 24 24"><path d="M12 3.5l7.5 4.3v8.4L12 20.5l-7.5-4.3V7.8z"/></symbol>
+<symbol id="s-linear-at" viewBox="0 0 24 24"><path d="M3 12h18"/><circle cx="6" cy="12" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="12" cy="12" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="18" cy="12" r="2.4" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-arc-at" viewBox="0 0 24 24"><path d="M4 17a8.5 8.5 0 0 1 16 0"/><circle cx="5.2" cy="13.5" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="12" cy="8.6" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="18.8" cy="13.5" r="2.4" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-bond" viewBox="0 0 24 24"><path d="M12 4.5l7.5 7.5-7.5 7.5L4.5 12z"/></symbol>
+<symbol id="s-mech" viewBox="0 0 24 24"><path d="M3 12h18"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-cadweld" viewBox="0 0 24 24"><path d="M3 12h4M17 12h4"/><rect x="7" y="7" width="10" height="10"/></symbol>
+<symbol id="s-mech-cross" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/><circle cx="12" cy="12" r="3.4" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-cad-cross" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/><rect x="8" y="8" width="8" height="8" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-steel-bond" viewBox="0 0 24 24"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"/><path d="M12 8.5v7M9 10.2l6 3.6M9 13.8l6-3.6"/></symbol>
+<symbol id="s-conduit-gnd" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M8.5 8.5l3.5 3.5 3.5-3.5M8.5 13l3.5 3.5 3.5-3.5"/></symbol>
+<symbol id="s-conduit-roof" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M8.5 14l3.5-3.5 3.5 3.5"/></symbol>
+<symbol id="s-surface-gnd" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 8.5l3.5 3.5 3.5-3.5M8.5 13l3.5 3.5 3.5-3.5"/></symbol>
+<symbol id="s-surface-roof" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14l3.5-3.5 3.5 3.5"/></symbol>
+<symbol id="s-thru-roof" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M12 8v8M8.6 10l6.8 4M8.6 14l6.8-4"/></symbol>
+<symbol id="s-thru-wall" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M10 9l-3 3 3 3M14 9l3 3-3 3"/></symbol>
+<symbol id="s-ground-rod" viewBox="0 0 24 24"><path d="M12 3v9M5 12h14M7.5 16h9M10 20h4"/></symbol>
+<symbol id="s-break" viewBox="0 0 24 24"><path d="M3 12h4l2.5-6 5 12 2.5-6h4"/></symbol>
+<symbol id="s-text" viewBox="0 0 24 24"><path d="M5 7V4h14v3M12 4v16M9 20h6"/></symbol>
+<symbol id="s-dim" viewBox="0 0 24 24"><path d="M3 5v14M21 5v14M3 12h18M6.5 9L3 12l3.5 3M17.5 9l3.5 3-3.5 3"/></symbol>
+<symbol id="s-arrow" viewBox="0 0 24 24"><path d="M5 19L19 5M10 5h9v9"/></symbol>
+<symbol id="s-legend" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M7 9h2M12 9h6M7 13h2M12 13h6M7 17h2M12 17h6"/></symbol>
+<symbol id="s-notes" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h7"/></symbol>
+<symbol id="s-measure" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8"/><path d="M7 8v3M11 8v4M15 8v3"/></symbol>
+<symbol id="s-mark" viewBox="0 0 24 24"><path d="M12 4v16M5 8l14 8M5 16l14-8"/></symbol>
+<symbol id="s-calibrate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+<symbol id="s-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+<symbol id="s-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></symbol>
+<symbol id="s-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="s-layers" viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4zM4 12l8 4 8-4M4 16l8 4 8-4"/></symbol>
+<symbol id="s-import" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M4 17v3h16v-3"/></symbol>
+<symbol id="s-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
+<symbol id="s-export" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M4 17v3h16v-3"/></symbol>
+<symbol id="s-pdf" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM15 3v4h4"/><path d="M8.5 17v-6h2a1.5 1.5 0 0 1 0 3h-2M13 17v-6h1.5a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2z"/></symbol>
+<symbol id="s-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 16l-5-5-8 8M3 18l4-4 3 3"/></symbol>
+<symbol id="s-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></symbol>
+<symbol id="s-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+<symbol id="s-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+<symbol id="s-chevron-r" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="s-chevron-l" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+<symbol id="s-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></symbol>
+<symbol id="s-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="s-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.3A11 11 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.6 8.6 2 12 2 12s3.5 7 10 7c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+<symbol id="s-zoom-in" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5M10.5 8v5"/></symbol>
+<symbol id="s-zoom-out" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5"/></symbol>
+<symbol id="s-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
+<symbol id="s-snap" viewBox="0 0 24 24"><path d="M5 4v7a7 7 0 0 0 14 0V4M5 4h4M15 4h4M5 8h4M15 8h4"/></symbol>
+<symbol id="s-angle" viewBox="0 0 24 24"><path d="M4 20L20 4M4 20h16M13 20a9 9 0 0 0-2.6-6.4"/></symbol>
+<symbol id="s-auto" viewBox="0 0 24 24"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></symbol>
+<symbol id="s-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+<symbol id="s-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="s-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="s-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="s-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+<symbol id="s-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-page" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM15 3v4h4"/></symbol>
+<symbol id="s-bug" viewBox="0 0 24 24"><path d="M9 9V7a3 3 0 0 1 6 0v2M5 13h14M12 11v9M7 20a5 5 0 0 0 10 0v-7H7zM4 9l3 2M20 9l-3 2M4 18l3-2M20 18l-3-2"/></symbol>
+<symbol id="s-pencil" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/></symbol>
+<symbol id="s-front" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></symbol>
+<symbol id="s-back" viewBox="0 0 24 24"><rect x="4" y="4" width="12" height="12"/><path d="M20 8v12H8"/></symbol>
+<symbol id="s-transparency" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M4 12h8V4M12 12v8h8"/></symbol>
+<symbol id="s-scale" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2"/></symbol>
+<symbol id="s-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 12h16M12 4v16"/></symbol>
+<symbol id="s-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark"><svg class="ic"><use href="#s-bolt"/></svg></span><b>LP Sketch</b></div>
+    <div class="crumb"><span class="proj">Riverside Logistics Hub</span><span class="sep">/</span><span>Roof Plan</span><span class="sep">·</span><span class="meta">A-201 · pg 2/4 · 1/8" = 1'-0"</span></div>
+    <div class="spacer"></div>
+    <div class="hgroup"><button class="hbtn"><svg class="ic"><use href="#s-import"/></svg>Import PDF</button><button class="hbtn"><svg class="ic"><use href="#s-save"/></svg>Save</button><button class="hbtn"><svg class="ic"><use href="#s-page"/></svg>Open</button></div>
+    <button class="hbtn primary"><svg class="ic"><use href="#s-export"/></svg>Export<svg class="ic" style="font-size:12px"><use href="#s-chevron"/></svg></button>
+    <button class="hbtn" style="width:30px;padding:0;justify-content:center"><svg class="ic"><use href="#s-help"/></svg></button>
+  </header>
+
+  <aside class="palette">
+    <div class="pal-scroll">
+      <div class="modes">
+        <button class="mode on"><svg class="ic"><use href="#s-select"/></svg>Select</button>
+        <button class="mode"><svg class="ic"><use href="#s-multi"/></svg>Multi</button>
+        <button class="mode"><svg class="ic"><use href="#s-pan"/></svg>Pan</button>
+      </div>
+      <div class="grp"><div class="grp-h">Conductors <span class="n">3</span></div>
+        <div class="tiles">
+          <button class="tile"><span class="k">L</span><svg class="ic"><use href="#s-line"/></svg>Linear</button>
+          <button class="tile"><span class="k">A</span><svg class="ic"><use href="#s-arc"/></svg>Arc</button>
+          <button class="tile"><span class="k">C</span><svg class="ic"><use href="#s-curve"/></svg>Curve</button>
+        </div></div>
+      <div class="grp"><div class="grp-h">Air terminals <span class="n">4</span></div>
+        <div class="tiles">
+          <button class="tile on"><span class="k">T</span><svg class="ic"><use href="#s-at"/></svg>Terminal</button>
+          <button class="tile"><svg class="ic"><use href="#s-bonded-at"/></svg>Bonded</button>
+          <button class="tile"><svg class="ic"><use href="#s-linear-at"/></svg>Linear AT</button>
+          <button class="tile"><svg class="ic"><use href="#s-arc-at"/></svg>Arc AT</button>
+        </div></div>
+      <div class="grp"><div class="grp-h">Connections <span class="n">6</span></div>
+        <div class="tiles">
+          <button class="tile"><svg class="ic"><use href="#s-bond"/></svg>Bond</button>
+          <button class="tile"><svg class="ic"><use href="#s-mech"/></svg>Mechanical</button>
+          <button class="tile"><svg class="ic"><use href="#s-cadweld"/></svg>Cadweld</button>
+          <button class="tile"><svg class="ic"><use href="#s-steel-bond"/></svg>Steel bond</button>
+          <button class="tile"><svg class="ic"><use href="#s-mech-cross"/></svg>Mech. crossrun</button>
+          <button class="tile"><svg class="ic"><use href="#s-cad-cross"/></svg>Cadweld crossrun</button>
+        </div></div>
+      <div class="grp"><div class="grp-h">Downleads <span class="n">4</span></div>
+        <div class="tiles">
+          <button class="tile"><svg class="ic"><use href="#s-conduit-gnd"/></svg>Conduit to ground</button>
+          <button class="tile"><svg class="ic"><use href="#s-conduit-roof"/></svg>Conduit to roof</button>
+          <button class="tile"><svg class="ic"><use href="#s-surface-gnd"/></svg>Surface to ground</button>
+          <button class="tile"><svg class="ic"><use href="#s-surface-roof"/></svg>Surface to roof</button>
+        </div></div>
+      <div class="grp"><div class="grp-h">Penetrations &amp; ground <span class="n">3</span></div>
+        <div class="tiles">
+          <button class="tile"><svg class="ic"><use href="#s-thru-roof"/></svg>Thru-roof</button>
+          <button class="tile"><svg class="ic"><use href="#s-thru-wall"/></svg>Thru-wall</button>
+          <button class="tile"><svg class="ic"><use href="#s-ground-rod"/></svg>Ground rod</button>
+        </div></div>
+      <div class="grp"><div class="grp-h">Annotation <span class="n">8</span></div>
+        <div class="tiles">
+          <button class="tile"><svg class="ic"><use href="#s-text"/></svg>Text</button>
+          <button class="tile"><svg class="ic"><use href="#s-dim"/></svg>Dim text</button>
+          <button class="tile"><svg class="ic"><use href="#s-arrow"/></svg>Arrow</button>
+          <button class="tile"><svg class="ic"><use href="#s-legend"/></svg>Legend</button>
+          <button class="tile"><svg class="ic"><use href="#s-notes"/></svg>Notes</button>
+          <button class="tile"><svg class="ic"><use href="#s-measure"/></svg>Measure</button>
+          <button class="tile"><svg class="ic"><use href="#s-mark"/></svg>Mark</button>
+          <button class="tile"><svg class="ic"><use href="#s-break"/></svg>Break</button>
+        </div></div>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <div class="contextbar">
+      <span class="ctool"><svg class="ic"><use href="#s-at"/></svg>Air terminal</span>
+      <span class="cdiv"></span>
+      <span class="cfield">Next letter <span class="v">Y</span></span>
+      <span class="cdiv"></span>
+      <span class="cfield">Direction handle <span class="sw on"></span></span>
+      <span class="cdiv"></span>
+      <span class="chint">Tap to place · drag to aim</span>
+    </div>
+    <div class="quick">
+      <button class="qb on" title="Select"><svg class="ic"><use href="#s-select"/></svg></button>
+      <button class="qb"><svg class="ic"><use href="#s-multi"/></svg></button>
+      <button class="qb"><svg class="ic"><use href="#s-pan"/></svg></button>
+      <div class="qdiv"></div>
+      <button class="qb"><svg class="ic"><use href="#s-undo"/></svg></button>
+      <button class="qb dis"><svg class="ic"><use href="#s-redo"/></svg></button>
+      <button class="qb"><svg class="ic"><use href="#s-trash"/></svg></button>
+      <div class="qdiv"></div>
+      <button class="qb"><svg class="ic"><use href="#s-settings"/></svg></button>
+    </div>
+    <div class="sheet"><svg class="plan" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono','DM Mono','Courier New',monospace">
+<rect x="0" y="0" width="1000" height="700" fill="#ffffff"/>
+<rect x="18" y="18" width="964" height="664" fill="none" stroke="#111827" stroke-width="1.2"/>
+<rect x="24" y="24" width="952" height="652" fill="none" stroke="#111827" stroke-width="0.5"/>
+<g stroke="#b9bfc9" stroke-width="0.6" stroke-dasharray="9 5">
+<line x1="120" y1="64" x2="120" y2="630"/><line x1="265" y1="64" x2="265" y2="630"/><line x1="410" y1="64" x2="410" y2="630"/><line x1="555" y1="64" x2="555" y2="630"/><line x1="700" y1="64" x2="700" y2="630"/><line x1="880" y1="64" x2="880" y2="630"/>
+<line x1="76" y1="110" x2="940" y2="110"/><line x1="76" y1="330" x2="940" y2="330"/><line x1="76" y1="600" x2="940" y2="600"/>
+</g>
+<g fill="#ffffff" stroke="#4b5563" stroke-width="0.8">
+<circle cx="120" cy="54" r="8"/><circle cx="265" cy="54" r="8"/><circle cx="410" cy="54" r="8"/><circle cx="555" cy="54" r="8"/><circle cx="700" cy="54" r="8"/><circle cx="880" cy="54" r="8"/>
+<circle cx="66" cy="110" r="8"/><circle cx="66" cy="330" r="8"/><circle cx="66" cy="600" r="8"/>
+</g>
+<g fill="#374151" font-size="8.5" font-weight="600" text-anchor="middle">
+<text x="120" y="57">A</text><text x="265" y="57">B</text><text x="410" y="57">C</text><text x="555" y="57">D</text><text x="700" y="57">E</text><text x="880" y="57">F</text>
+<text x="66" y="113">1</text><text x="66" y="333">2</text><text x="66" y="603">3</text>
+</g>
+<path d="M120 110H700V330H880V600H120Z" fill="#ffffff" stroke="#111827" stroke-width="1.6"/>
+<path d="M132 122H688V342H868V588H132Z" fill="none" stroke="#374151" stroke-width="0.7"/>
+<g fill="none" stroke="#374151" stroke-width="0.8">
+<rect x="300" y="200" width="90" height="60"/><path d="M300 200l90 60M390 200l-90 60" stroke-width="0.45"/>
+<rect x="470" y="220" width="90" height="60"/><path d="M470 220l90 60M560 220l-90 60" stroke-width="0.45"/>
+<rect x="560" y="430" width="110" height="70"/><path d="M560 430l110 70M670 430l-110 70" stroke-width="0.45"/>
+<rect x="160" y="440" width="120" height="110"/><rect x="172" y="452" width="96" height="86" stroke-dasharray="4 3" stroke-width="0.5"/>
+<rect x="380" y="380" width="40" height="40"/><rect x="440" y="380" width="40" height="40"/><rect x="500" y="380" width="40" height="40"/>
+<circle cx="250" cy="300" r="5"/><path d="M246.5 296.5l7 7M253.5 296.5l-7 7" stroke-width="0.5"/>
+<circle cx="760" cy="520" r="5"/><path d="M756.5 516.5l7 7M763.5 516.5l-7 7" stroke-width="0.5"/>
+</g>
+<g fill="#4b5563" font-size="8" font-weight="500" letter-spacing="0.6" text-anchor="middle">
+<text x="345" y="233">RTU-1</text><text x="515" y="253">RTU-2</text><text x="615" y="468">RTU-3</text>
+<text x="220" y="497">STAIR</text><text x="220" y="507">PENTHOUSE</text>
+<text x="460" y="436">SKYLIGHTS (3)</text>
+<text x="500" y="88" font-size="11" font-weight="700" letter-spacing="2.5" fill="#111827">ROOF PLAN</text>
+<text x="500" y="100" font-size="7.5">SCALE: 1/8" = 1'-0"</text>
+</g>
+<g stroke="#6b7280" stroke-width="0.6" fill="#6b7280" font-size="8">
+<line x1="120" y1="640" x2="880" y2="640"/><line x1="120" y1="633" x2="120" y2="647"/><line x1="880" y1="633" x2="880" y2="647"/><path d="M116 644l8-8M876 644l8-8"/>
+<text x="500" y="636" text-anchor="middle" stroke="none">152'-0"</text>
+<line x1="46" y1="110" x2="46" y2="600"/><line x1="39" y1="110" x2="53" y2="110"/><line x1="39" y1="600" x2="53" y2="600"/><path d="M42 114l8-8M42 604l8-8"/>
+<text transform="rotate(-90 40 355)" x="40" y="355" text-anchor="middle" stroke="none">98'-0"</text>
+</g>
+<g stroke="#111827" stroke-width="0.7" fill="none">
+<rect x="700" y="606" width="276" height="70"/><line x1="700" y1="630" x2="976" y2="630"/><line x1="700" y1="654" x2="976" y2="654"/><line x1="860" y1="606" x2="860" y2="676"/>
+</g>
+<g fill="#111827" font-size="6.5" letter-spacing="0.7">
+<text x="708" y="620">PROJECT</text><text x="708" y="646" font-size="8.5" font-weight="700">RIVERSIDE LOGISTICS HUB</text><text x="708" y="668">ROOF PLAN — LIGHTNING PROTECTION</text>
+<text x="868" y="620">SHEET</text><text x="868" y="648" font-size="13" font-weight="700">A-201</text><text x="868" y="668">REV 3 · 2026-09-14</text>
+</g>
+<g transform="translate(716 372)" fill="#111827" font-size="6.2" letter-spacing="0.2">
+<text x="0" y="0" font-size="7.5" font-weight="700" letter-spacing="1.4">GENERAL NOTES</text>
+<line x1="0" y1="5" x2="252" y2="5" stroke="#111827" stroke-width="0.5"/>
+<text x="0" y="16">1. SYSTEM PER NFPA 780 AND UL 96A, CLASS I MATERIALS.</text>
+<text x="0" y="26">2. MAIN CONDUCTORS: 32-STRAND COPPER, 17 AWG MIN.</text>
+<text x="0" y="36">3. AIR TERMINALS WITHIN 2'-0" OF ROOF EDGES; 20'-0" O.C. MAX.</text>
+<text x="0" y="46">4. BOND ALL ROOFTOP EQUIPMENT WITHIN 6'-0" OF CONDUCTOR.</text>
+<text x="0" y="56">5. GROUND RODS 5/8" X 10' CU-CLAD, 2'-0" MIN FROM FOUNDATION.</text>
+</g>
+<g class="lp">
+<path d="M126 116H694V336H874V594H126Z" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M345 116V194M515 116V214M615 336V424M220 594V556" fill="none" stroke="#16a34a" stroke-width="2.2"/>
+<path d="M126 594l-14 14M874 594l14 14M694 116l14-14" fill="none" stroke="#16a34a" stroke-width="2.2"/>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.5"><path d="M345 188l6 6-6 6-6-6zM515 208l6 6-6 6-6-6zM615 418l6 6-6 6-6-6zM220 550l6 6-6 6-6-6z"/></g>
+<g fill="#16a34a"><circle cx="345" cy="116" r="3"/><circle cx="515" cy="116" r="3"/><circle cx="615" cy="336" r="3"/><circle cx="220" cy="594" r="3"/></g>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.5">
+<rect x="106.5" y="602.5" width="11" height="11"/><rect x="882.5" y="602.5" width="11" height="11"/><rect x="702.5" y="96.5" width="11" height="11"/>
+</g>
+<g fill="none" stroke="#16a34a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M109.5 605.5l2.5 2.5 2.5-2.5M109.5 609l2.5 2.5 2.5-2.5M885.5 605.5l2.5 2.5 2.5-2.5M885.5 609l2.5 2.5 2.5-2.5M705.5 99.5l2.5 2.5 2.5-2.5M705.5 103l2.5 2.5 2.5-2.5"/>
+</g>
+<g fill="none" stroke="#DC143C" stroke-width="1.5" stroke-linecap="round">
+<path d="M112 614v10M104 624h16M107 628h10M110 632h4M888 614v10M880 624h16M883 628h10M886 632h4M708 96V86M700 86h16M703 82h10M706 78h4"/>
+</g>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.5">
+<circle cx="126" cy="116" r="6.5"/><circle cx="221" cy="116" r="6.5"/><circle cx="316" cy="116" r="6.5"/><circle cx="411" cy="116" r="6.5"/><circle cx="506" cy="116" r="6.5"/><circle cx="601" cy="116" r="6.5"/><circle cx="694" cy="116" r="6.5"/>
+<circle cx="694" cy="226" r="6.5"/><circle cx="694" cy="336" r="6.5"/><circle cx="784" cy="336" r="6.5"/><circle cx="874" cy="336" r="6.5"/><circle cx="874" cy="422" r="6.5"/><circle cx="874" cy="508" r="6.5"/><circle cx="874" cy="594" r="6.5"/>
+<circle cx="780" cy="594" r="6.5"/><circle cx="686" cy="594" r="6.5"/><circle cx="592" cy="594" r="6.5"/><circle cx="498" cy="594" r="6.5"/><circle cx="404" cy="594" r="6.5"/><circle cx="310" cy="594" r="6.5"/><circle cx="126" cy="594" r="6.5"/>
+<circle cx="126" cy="474" r="6.5"/><circle cx="126" cy="354" r="6.5"/><circle cx="126" cy="234" r="6.5"/>
+</g>
+<g fill="#111827" font-size="7.5" font-weight="700" text-anchor="middle" font-family="'Plus Jakarta Sans','Manrope',system-ui,sans-serif">
+<text x="126" y="118.8">A</text><text x="221" y="118.8">B</text><text x="316" y="118.8">C</text><text x="411" y="118.8">D</text><text x="506" y="118.8">E</text><text x="601" y="118.8">F</text><text x="694" y="118.8">G</text>
+<text x="694" y="228.8">H</text><text x="694" y="338.8">I</text><text x="784" y="338.8">J</text><text x="874" y="338.8">K</text><text x="874" y="424.8">L</text><text x="874" y="510.8">M</text><text x="874" y="596.8">N</text>
+<text x="780" y="596.8">O</text><text x="686" y="596.8">P</text><text x="592" y="596.8">Q</text><text x="498" y="596.8">R</text><text x="404" y="596.8">S</text><text x="310" y="596.8">T</text><text x="126" y="596.8">U</text>
+<text x="126" y="476.8">V</text><text x="126" y="356.8">W</text><text x="126" y="236.8">X</text>
+</g>
+<g transform="translate(40 468)">
+<rect x="0" y="0" width="156" height="112" fill="#ffffff" stroke="#111827" stroke-width="0.7"/>
+<text x="8" y="14" font-size="7.5" font-weight="700" letter-spacing="1.4" fill="#111827">LP LEGEND</text>
+<line x1="0" y1="20" x2="156" y2="20" stroke="#111827" stroke-width="0.5"/>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.3"><circle cx="14" cy="33" r="5"/><path d="M14 46l5 5-5 5-5-5z"/><rect x="9.5" y="65.5" width="9" height="9"/></g>
+<path d="M8 89h12" stroke="#16a34a" stroke-width="2"/>
+<path d="M14 97v6M9 103h10M11 106h6M13 109h2" stroke="#DC143C" stroke-width="1.2" fill="none"/>
+<g fill="#111827" font-size="6.5" letter-spacing="0.4">
+<text x="26" y="35.5">AIR TERMINAL, CLASS I</text><text x="26" y="53.5">BOND TO EQUIPMENT</text><text x="26" y="72.5">CONDUIT DOWNLEAD TO GROUND</text><text x="26" y="91">COPPER MAIN CONDUCTOR</text><text x="26" y="106">GROUND ROD, 5/8" X 10'</text>
+</g>
+</g>
+<g stroke="#111827" stroke-width="0.8" fill="#111827" font-size="7.5">
+<line x1="126" y1="142" x2="694" y2="142"/><path d="M126 138v8M694 138v8"/>
+<rect x="370" y="135" width="80" height="13" fill="#ffffff" stroke="none"/><text x="410" y="144.5" text-anchor="middle" stroke="none" font-weight="600">20'-0" O.C. TYP.</text>
+</g>
+<g fill="none" stroke="var(--sel,#f2b33d)" stroke-width="1.2">
+<rect x="399" y="104" width="24" height="24" stroke-dasharray="3 2"/>
+<g fill="var(--sel-fill,#fff)"><rect x="396" y="101" width="6" height="6"/><rect x="420" y="101" width="6" height="6"/><rect x="396" y="125" width="6" height="6"/><rect x="420" y="125" width="6" height="6"/></g>
+</g>
+</g>
+</svg>
+</div>
+    <div class="zoom"><button class="qb"><svg class="ic"><use href="#s-zoom-out"/></svg></button><span class="v">100%</span><button class="qb"><svg class="ic"><use href="#s-zoom-in"/></svg></button><button class="qb"><svg class="ic"><use href="#s-fit"/></svg></button></div>
+    <div class="tag">Direction 01 · Nightshift</div>
+  </main>
+
+  <aside class="inspector">
+    <div class="itabs"><button class="itab on">Stroke</button><button class="itab">Selection</button><button class="itab">Sheet</button></div>
+    <div class="iscroll">
+      <div class="preview">
+        <svg viewBox="0 0 112 34"><line x1="4" y1="17" x2="108" y2="17" stroke="#16a34a" stroke-width="2.4"/><circle cx="20" cy="17" r="3" fill="#16a34a"/><circle cx="56" cy="17" r="8" fill="#fff" stroke="#16a34a" stroke-width="1.8"/><text x="56" y="20.5" text-anchor="middle" font-size="9" font-weight="700" fill="#111" font-family="Manrope,sans-serif">Y</text><path d="M92 11l6 6-6 6-6-6z" fill="#fff" stroke="#16a34a" stroke-width="1.6"/></svg>
+        <div><div class="t">Copper · Class I</div><div class="s">rooftop · medium</div></div>
+      </div>
+      <div class="sec"><div class="sec-h">Material</div>
+        <div class="row"><div class="mats">
+          <button class="mat on" style="--c:var(--cu)"><i></i>Cu</button><button class="mat" style="--c:var(--al)"><i></i>Al</button><button class="mat" style="--c:var(--gnd)"><i></i>Gnd</button><button class="mat" style="--c:var(--bi)"><i></i>Bi</button><button class="mat" style="--c:var(--sn)"><i></i>Sn</button>
+        </div></div>
+        <div class="row"><span class="lbl">Class</span><div class="seg"><button class="on">Class I</button><button>Class II</button></div></div>
+        <div class="row"><span class="lbl">Size</span><div class="seg"><button>S</button><button class="on">M</button><button>L</button></div></div>
+      </div>
+      <div class="sec"><div class="sec-h">Placement <svg class="ic"><use href="#s-help"/></svg></div>
+        <div class="row"><span class="lbl">Letter</span><div class="stepper"><button><svg class="ic"><use href="#s-minus"/></svg></button><span class="v">Y</span><button><svg class="ic"><use href="#s-plus"/></svg></button></div><span style="font-family:var(--mono);font-size:10.5px;color:var(--ink4)">auto</span></div>
+        <div class="row"><span class="lbl">Legend suffix</span><div class="inp">—<span class="u">optional</span></div></div>
+        <div class="chk"><span>Snap to points</span><span class="sw on"></span></div>
+        <div class="chk"><span>Angle snap 15°</span><span class="sw on"></span></div>
+        <div class="chk"><span>Auto-connectors</span><span class="sw on"></span></div>
+        <div class="row" style="margin-top:4px"><span class="lbl"></span><div class="seg"><button class="on">Mechanical</button><button>Cadweld</button></div></div>
+      </div>
+      <div class="sec"><div class="sec-h">Layers</div>
+        <div class="layer"><span class="dot"></span>Rooftop<span class="cnt">61</span><span class="eye"><svg class="ic"><use href="#s-eye"/></svg></span></div>
+        <div class="layer sub"><span class="dot"></span>Connections<span class="cnt">8</span><span class="eye"><svg class="ic"><use href="#s-eye"/></svg></span></div>
+        <div class="layer"><span class="dot"></span>Downleads<span class="cnt">3</span><span class="eye"><svg class="ic"><use href="#s-eye"/></svg></span></div>
+        <div class="layer"><span class="dot"></span>Grounding<span class="cnt">3</span><span class="eye"><svg class="ic"><use href="#s-eye"/></svg></span></div>
+        <div class="layer off"><span class="dot"></span>Annotation<span class="cnt">4</span><span class="eye"><svg class="ic"><use href="#s-eye-off"/></svg></span></div>
+      </div>
+      <div class="sec"><div class="sec-h">History</div>
+        <div class="hist"><button class="hb"><svg class="ic"><use href="#s-undo"/></svg></button><button class="hb dis"><svg class="ic"><use href="#s-redo"/></svg></button><span class="n">14 past · 0 future</span></div>
+      </div>
+      <div class="sec"><div class="sec-h">Sheet &amp; background</div>
+        <div class="pages"><button class="hb"><svg class="ic"><use href="#s-chevron-l"/></svg></button><span class="pg">2 / 4 · Roof plan</span><button class="hb"><svg class="ic"><use href="#s-chevron-r"/></svg></button></div>
+        <div class="row" style="margin-top:10px"><span class="lbl">PDF fade</span><span class="range" style="--p:35%"></span><span class="rv">35%</span></div>
+        <div class="row" style="margin-top:2px"><span class="lbl">Scale</span><div class="inp">1/8" = 1'-0"<span class="u">calibrate</span></div></div>
+      </div>
+    </div>
+  </aside>
+
+  <footer class="status">
+    <span class="ok"><i></i>Ready</span>
+    <span>X 412.5 · Y 118.0</span>
+    <span class="tg on"><svg class="ic"><use href="#s-snap"/></svg>SNAP</span>
+    <span class="tg on"><svg class="ic"><use href="#s-angle"/></svg>15°</span>
+    <span class="tg on"><svg class="ic"><use href="#s-auto"/></svg>AUTO-CONN</span>
+    <span class="sp"></span>
+    <span>1/8" = 1'-0"</span><span>Copper · Class I</span><span>Autosaved 2 min ago</span>
+  </footer>
+</div>
+</body>
+</html>
