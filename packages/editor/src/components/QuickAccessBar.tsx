@@ -1,13 +1,6 @@
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js'
 import { SYMBOL_LABELS } from '@lp-sketch/core/model/defaultProject'
-import type {
-  AutoConnectorType,
-  DesignScale,
-  LayerId,
-  MaterialColor,
-  SymbolType,
-  Tool,
-} from '@lp-sketch/core/types/project'
+import type { LayerId, MaterialColor, SymbolType, Tool } from '@lp-sketch/core/types/project'
 import {
   COMMAND_ICON,
   PROJECT_ACTION_ICON,
@@ -20,6 +13,7 @@ import {
   tablerIconClass,
 } from '../config/iconRegistry'
 import { CustomIcon } from './icons/CustomIcon'
+import { useAppController } from '../context/AppControllerContext'
 import {
   formatDisabledTooltip,
   symbolDisabledReasons,
@@ -159,59 +153,6 @@ type QuickEntry =
       kind: 'separator'
     }
 
-interface QuickAccessBarProps {
-  hasPdf: boolean
-  supportsNativeFileDialogs: boolean
-  tool: Tool
-  activeSymbol: SymbolType
-  colorOptions: readonly MaterialColor[]
-  scaleIsSet: boolean
-  scaleRealUnitsPerPoint: number | null
-  historyPastCount: number
-  historyFutureCount: number
-  designScale: DesignScale
-  snapEnabled: boolean
-  angleSnapEnabled: boolean
-  autoConnectorsEnabled: boolean
-  autoConnectorType: AutoConnectorType
-  activeClass: 'class1' | 'class2'
-  activeColor: MaterialColor
-  layers: Readonly<Record<LayerId, boolean>>
-  manualScaleInchesInput: string
-  manualScaleFeetInput: string
-  manualScaleDirty: boolean
-  currentScaleInfo: string
-  pdfTransparency: number
-  onSelectTool: (tool: Tool) => void
-  onSetActiveSymbol: (symbol: SymbolType) => void
-  onImportPdf: (event: Event) => void
-  onImportPdfPicker: () => void
-  onLoadProject: (event: Event) => void
-  onLoadProjectPicker: () => void
-  onSaveProject: () => void
-  onExportImage: (format: 'png' | 'jpg') => void
-  onExportPdf: () => void
-  onUndo: () => void
-  onRedo: () => void
-  canDeleteSelection: boolean
-  onDeleteSelection: () => void
-  onSetSnapEnabled: (value: boolean) => void
-  onSetAngleSnapEnabled: (value: boolean) => void
-  onSetAutoConnectorsEnabled: (value: boolean) => void
-  onSetAutoConnectorType: (value: AutoConnectorType) => void
-  onSetActiveClass: (value: 'class1' | 'class2') => void
-  onSetActiveColor: (value: MaterialColor) => void
-  onSetLayerVisible: (layer: LayerId, value: boolean) => void
-  onSetManualScaleInchesInput: (value: string) => void
-  onSetManualScaleFeetInput: (value: string) => void
-  onApplyManualScale: () => void
-  onSetDesignScale: (value: DesignScale) => void
-  onPreviewPdfTransparency: (value: number) => void
-  onCommitPdfTransparency: (value: number) => void
-  onEditingContextChange?: (active: boolean) => void
-  onRefocusCanvasFromInputCommit?: () => void
-}
-
 const TOOL_LABELS: Record<Tool, string> = {
   select: 'Select',
   multi_select: 'Multi',
@@ -289,7 +230,8 @@ function encodeQuickEntries(entries: readonly QuickEntry[]): string[] {
   return entries.map((entry) => (entry.kind === 'separator' ? 'separator' : entry.itemId))
 }
 
-export default function QuickAccessBar(props: QuickAccessBarProps) {
+export default function QuickAccessBar() {
+  const props = useAppController()
   let railRef: HTMLDivElement | undefined
   let importPdfInput: HTMLInputElement | undefined
   let loadProjectInput: HTMLInputElement | undefined
@@ -307,7 +249,7 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
 
     event.preventDefault()
     event.currentTarget.blur()
-    props.onRefocusCanvasFromInputCommit?.()
+    props.onRefocusCanvasFromInputCommit()
   }
 
   const addableItems = createMemo<QuickAddableItem[]>(() => {
@@ -660,19 +602,19 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
   function isToggleEnabled(toggleId: QuickToggleId): boolean {
     switch (toggleId) {
       case 'snap_enabled':
-        return props.snapEnabled
+        return props.project.settings.snapEnabled
       case 'angle_snap_enabled':
-        return props.angleSnapEnabled
+        return props.project.settings.angleSnapEnabled
       case 'auto_connectors_enabled':
-        return props.autoConnectorsEnabled
+        return props.project.settings.autoConnectorsEnabled
       case 'layer_rooftop':
-        return props.layers.rooftop
+        return props.project.layers.rooftop
       case 'layer_downleads':
-        return props.layers.downleads
+        return props.project.layers.downleads
       case 'layer_grounding':
-        return props.layers.grounding
+        return props.project.layers.grounding
       case 'layer_annotation':
-        return props.layers.annotation
+        return props.project.layers.annotation
       default:
         return false
     }
@@ -681,25 +623,25 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
   function toggleValue(toggleId: QuickToggleId) {
     switch (toggleId) {
       case 'snap_enabled':
-        props.onSetSnapEnabled(!props.snapEnabled)
+        props.onSetSnapEnabled(!props.project.settings.snapEnabled)
         break
       case 'angle_snap_enabled':
-        props.onSetAngleSnapEnabled(!props.angleSnapEnabled)
+        props.onSetAngleSnapEnabled(!props.project.settings.angleSnapEnabled)
         break
       case 'auto_connectors_enabled':
-        props.onSetAutoConnectorsEnabled(!props.autoConnectorsEnabled)
+        props.onSetAutoConnectorsEnabled(!props.project.settings.autoConnectorsEnabled)
         break
       case 'layer_rooftop':
-        props.onSetLayerVisible('rooftop', !props.layers.rooftop)
+        props.onSetLayerVisible('rooftop', !props.project.layers.rooftop)
         break
       case 'layer_downleads':
-        props.onSetLayerVisible('downleads', !props.layers.downleads)
+        props.onSetLayerVisible('downleads', !props.project.layers.downleads)
         break
       case 'layer_grounding':
-        props.onSetLayerVisible('grounding', !props.layers.grounding)
+        props.onSetLayerVisible('grounding', !props.project.layers.grounding)
         break
       case 'layer_annotation':
-        props.onSetLayerVisible('annotation', !props.layers.annotation)
+        props.onSetLayerVisible('annotation', !props.project.layers.annotation)
         break
       default:
         break
@@ -709,17 +651,17 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
   function isChoiceActive(choiceId: QuickChoiceId): boolean {
     switch (choiceId) {
       case 'auto_connector_mechanical':
-        return props.autoConnectorType === 'mechanical'
+        return props.project.settings.autoConnectorType === 'mechanical'
       case 'auto_connector_cadweld':
-        return props.autoConnectorType === 'cadweld'
+        return props.project.settings.autoConnectorType === 'cadweld'
       case 'class_class1':
-        return props.activeClass === 'class1'
+        return props.project.settings.activeClass === 'class1'
       case 'class_class2':
-        return props.activeClass === 'class2'
+        return props.project.settings.activeClass === 'class2'
       default:
         if (choiceId.startsWith('material_')) {
           const color = choiceId.slice('material_'.length) as MaterialColor
-          return props.activeColor === color
+          return props.project.settings.activeColor === color
         }
         return false
     }
@@ -781,19 +723,12 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
     }
   }
 
-  const availabilityProject = createMemo(() => ({
-    scale: {
-      isSet: props.scaleIsSet,
-      realUnitsPerPoint: props.scaleRealUnitsPerPoint,
-    },
-  }))
-
   function quickItemDisabledReasons(item: QuickAddableItem): string[] {
     if (item.kind === 'tool' && item.toolId) {
-      return toolDisabledReasons(item.toolId, availabilityProject(), props.activeColor)
+      return toolDisabledReasons(item.toolId, props.project, props.project.settings.activeColor)
     }
     if (item.kind === 'symbol' && item.symbolType) {
-      return symbolDisabledReasons(item.symbolType, props.activeColor)
+      return symbolDisabledReasons(item.symbolType, props.project.settings.activeColor)
     }
     return []
   }
@@ -929,11 +864,11 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
   })
 
   createEffect(() => {
-    props.onEditingContextChange?.(customizerOpen() || openFlyoutItemId() !== null)
+    props.onSetQuickAccessEditingContextActive(customizerOpen() || openFlyoutItemId() !== null)
   })
 
   onCleanup(() => {
-    props.onEditingContextChange?.(false)
+    props.onSetQuickAccessEditingContextActive(false)
   })
 
   return (
@@ -1122,28 +1057,28 @@ export default function QuickAccessBar(props: QuickAccessBarProps) {
             <Show when={item().settingId === 'annotation_size'}>
               <div class="class-selector" role="radiogroup" aria-label="Annotation size">
                 <button
-                  class={`btn ${props.designScale === 'small' ? 'active' : ''}`}
+                  class={`btn ${props.project.settings.designScale === 'small' ? 'active' : ''}`}
                   type="button"
                   role="radio"
-                  aria-checked={props.designScale === 'small'}
+                  aria-checked={props.project.settings.designScale === 'small'}
                   onClick={() => props.onSetDesignScale('small')}
                 >
                   Small
                 </button>
                 <button
-                  class={`btn ${props.designScale === 'medium' ? 'active' : ''}`}
+                  class={`btn ${props.project.settings.designScale === 'medium' ? 'active' : ''}`}
                   type="button"
                   role="radio"
-                  aria-checked={props.designScale === 'medium'}
+                  aria-checked={props.project.settings.designScale === 'medium'}
                   onClick={() => props.onSetDesignScale('medium')}
                 >
                   Medium
                 </button>
                 <button
-                  class={`btn ${props.designScale === 'large' ? 'active' : ''}`}
+                  class={`btn ${props.project.settings.designScale === 'large' ? 'active' : ''}`}
                   type="button"
                   role="radio"
-                  aria-checked={props.designScale === 'large'}
+                  aria-checked={props.project.settings.designScale === 'large'}
                   onClick={() => props.onSetDesignScale('large')}
                 >
                   Large

@@ -28,7 +28,7 @@
 
 | Term | Meaning | Today |
 | --- | --- | --- |
-| Controller | The single object every block reads state and actions from, delivered by context. | `AppSidebarProps` in `packages/editor/src/components/sidebar/types.ts` (119 fields), provided by `AppControllerProvider` |
+| Controller | The single object every block reads state and actions from, delivered by context. | `AppController` in `packages/editor/src/context/AppController.ts` (132 fields after step 1; was `AppSidebarProps` with 119), provided by `AppControllerProvider` |
 | Block | A self-contained piece of chrome with stable accessible names and no layout opinion. | The six panels in `components/sidebar/`, `PropertiesBar`, `PropertiesToolOptions`, `QuickAccessBar` |
 | Workspace | The stage and everything rendered inside it. | The stage portion of `components/CanvasStage.tsx` plus `OverlayLayer` |
 | Shell | A component that arranges blocks and slots into a full screen. | Hard-coded in `App.tsx` lines around the `app-shell` div |
@@ -110,17 +110,17 @@ Scope:
 
 Acceptance:
 
-- `CanvasStage` receives only stage concerns: refs, pointer handlers, wheel, double-click, PDF transparency, and children.
+- `CanvasStage` receives only stage concerns: `inert`, refs, pointer handlers, wheel, double-click, and children. It reads the view transform, PDF transparency, stage cursor, and the import placeholder actions from the controller.
 - `npm test` and `npm run test:e2e` pass without test changes.
 
 Checklist:
 
-- [ ] Controller fields added and typed
-- [ ] `QuickAccessBar` reads context
-- [ ] `PropertiesBar` reads context
-- [ ] `CanvasStage` prop surface reduced to stage concerns
-- [ ] `AppSidebarProps` renamed to `AppController`
-- [ ] Unit and e2e suites green
+- [x] Controller fields added and typed
+- [x] `QuickAccessBar` reads context
+- [x] `PropertiesBar` reads context
+- [x] `CanvasStage` prop surface reduced to stage concerns
+- [x] `AppSidebarProps` renamed to `AppController`
+- [x] Unit and e2e suites green
 
 ### Step 2. Extract the Workspace
 
@@ -268,7 +268,7 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 
 | Step | Status | Branch or PR | Notes |
 | --- | --- | --- | --- |
-| 1. Consolidate the controller | not started | | |
+| 1. Consolidate the controller | in review | `codex/monorepo-foundation` | Implemented 2026-09-20; see the implementation notes, step 1 |
 | 2. Extract the Workspace | not started | | |
 | 3. Shell boundary with Classic | not started | | |
 | 4. Tokens and themes | not started | | |

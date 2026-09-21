@@ -1,10 +1,12 @@
 import { createContext, useContext, type ParentProps } from 'solid-js'
-import type { AppSidebarProps } from '../components/sidebar/types'
+import type { AppController } from './AppController'
 
-const AppControllerContext = createContext<AppSidebarProps>()
+export type { AppController } from './AppController'
+
+const AppControllerContext = createContext<AppController>()
 
 interface AppControllerProviderProps extends ParentProps {
-  value: AppSidebarProps
+  value: AppController
 }
 
 export function AppControllerProvider(props: AppControllerProviderProps) {
@@ -15,7 +17,7 @@ export function AppControllerProvider(props: AppControllerProviderProps) {
   )
 }
 
-export function useAppController() {
+export function useAppController(): AppController {
   const context = useContext(AppControllerContext)
   if (!context) {
     throw new Error('useAppController must be used within an AppControllerProvider.')

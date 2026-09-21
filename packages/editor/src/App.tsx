@@ -16,8 +16,7 @@ import { createPenInputGuard } from './controllers/pointer/penInputGuard'
 import { createSingleFingerPan } from './controllers/pointer/singleFingerPan'
 import { useSidebarLayout } from './hooks/useSidebarLayout'
 import OverlayLayer from './components/OverlayLayer'
-import PropertiesToolOptions from './components/PropertiesToolOptions'
-import { createSidebarController } from './components/sidebar/createSidebarController'
+import type { AppController } from './context/AppController'
 import AnnotationEditDialog from './components/dialogs/AnnotationEditDialog'
 import GeneralNotesDialog from './components/dialogs/GeneralNotesDialog'
 import LegendLabelDialog from './components/dialogs/LegendLabelDialog'
@@ -4010,7 +4009,7 @@ function App(props: AppProps) {
   const handleSendSelectedToBack = () => {
     moveSelectedToZEdge('back')
   }
-  const sidebarController = createSidebarController({
+  const appController: AppController = {
     get project() {
       return project()
     },
@@ -4166,11 +4165,38 @@ function App(props: AppProps) {
     get canSendSelectedToBack() {
       return canSendSelectedToBack()
     },
+    get canDeleteSelection() {
+      return canDeleteSelection()
+    },
     get statusMessage() {
       return statusMessage()
     },
     get errorMessage() {
       return errorMessage()
+    },
+    get stageCursor() {
+      return stageCursor()
+    },
+    get calibrationPreview() {
+      return calibrationPreview()
+    },
+    get lineSegmentDistanceLabel() {
+      return lineSegmentDistanceLabel()
+    },
+    get linePathTotalDistanceLabel() {
+      return linePathTotalDistanceLabel()
+    },
+    get measureDistanceLabel() {
+      return measureDistanceLabel()
+    },
+    get markSpanDistanceLabel() {
+      return markSpanDistanceLabel()
+    },
+    get linearAutoSpacingPathDistanceLabel() {
+      return linearAutoSpacingPathDistanceLabel()
+    },
+    get selectionDebugEnabled() {
+      return selectionDebugEnabled()
     },
     onRefocusCanvasFromInputCommit: refocusCanvasFromInputCommit,
     onSetProjectName: handleSetProjectName,
@@ -4178,6 +4204,7 @@ function App(props: AppProps) {
     onImportPdfPicker: () => {
       void handleImportPdfPicker()
     },
+    onImportPdfDrop: handleImportPdfDrop,
     onSaveProject: handleSaveProject,
     onLoadProject: handleLoadProjectUi,
     onLoadProjectPicker: () => {
@@ -4236,83 +4263,21 @@ function App(props: AppProps) {
     onApplyManualScale: applyManualScale,
     onBringSelectedToFront: handleBringSelectedToFront,
     onSendSelectedToBack: handleSendSelectedToBack,
+    onDeleteSelection: handleDeleteSelectedObjects,
     onUndo: handleUndo,
     onRedo: handleRedo,
-  })
+    onSetSelectionDebugEnabled: setSelectionDebugEnabled,
+    onSetQuickAccessEditingContextActive: setQuickAccessEditingContextActive,
+  }
 
   return (
     <HelpProvider value={helpState}>
     <div class="app-shell" classList={{ 'sidebar-collapsed': sidebarLayout.collapsed() }}>
-      <AppControllerProvider value={sidebarController}>
+      <AppControllerProvider value={appController}>
         <AppSidebar layout={sidebarLayout} />
 
         <CanvasStage
           inert={sidebarLayout.activeSection() !== null}
-          project={project()}
-          hasPdf={hasPdf()}
-          supportsNativeFileDialogs={supportsNativeFileDialogs}
-          tool={tool()}
-          activeSymbol={activeSymbol()}
-          colorOptions={COLOR_OPTIONS}
-          scaleIsSet={project().scale.isSet}
-          scaleRealUnitsPerPoint={project().scale.realUnitsPerPoint}
-          selectedKind={selected()?.kind ?? null}
-          historyPastCount={history().past.length}
-          historyFutureCount={history().future.length}
-          snapEnabled={project().settings.snapEnabled}
-          angleSnapEnabled={project().settings.angleSnapEnabled}
-          autoConnectorsEnabled={project().settings.autoConnectorsEnabled}
-          autoConnectorType={project().settings.autoConnectorType}
-          activeClass={project().settings.activeClass}
-          activeColor={project().settings.activeColor}
-          layers={project().layers}
-          onSelectTool={handleSelectTool}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canDeleteSelection={canDeleteSelection()}
-          onDeleteSelection={handleDeleteSelectedObjects}
-          stageCursor={stageCursor()}
-          selectionDebugEnabled={selectionDebugEnabled()}
-          onSetSelectionDebugEnabled={setSelectionDebugEnabled}
-          calibrationPreview={calibrationPreview()}
-          lineSegmentDistanceLabel={lineSegmentDistanceLabel()}
-          linePathTotalDistanceLabel={linePathTotalDistanceLabel()}
-          measureDistanceLabel={measureDistanceLabel()}
-          markSpanDistanceLabel={markSpanDistanceLabel()}
-          linearAutoSpacingPathDistanceLabel={linearAutoSpacingPathDistanceLabel()}
-          pdfTransparency={effectivePdfTransparency()}
-          manualScaleInchesInput={manualScaleInchesInput()}
-          manualScaleFeetInput={manualScaleFeetInput()}
-          currentScaleInfo={currentScaleInfo()}
-          manualScaleDirty={manualScaleDirty()}
-          designScale={project().settings.designScale}
-          toolOptionsSlot={(
-            <PropertiesToolOptions />
-          )}
-          onSetActiveSymbol={handleSetActiveSymbol}
-          onImportPdf={(event) => void handleImportPdf(event)}
-          onImportPdfPicker={() => void handleImportPdfPicker()}
-          onImportPdfDrop={handleImportPdfDrop}
-          onLoadProject={(event) => void handleLoadProject(event)}
-          onLoadProjectPicker={() => void handleLoadProjectPicker()}
-          onSaveProject={handleSaveProject}
-          onExportImage={handleExportImageUi}
-          onExportPdf={handleExportPdfUi}
-          onSetSnapEnabled={handleSetSnapEnabled}
-          onSetAngleSnapEnabled={handleSetAngleSnapEnabled}
-          onSetAutoConnectorsEnabled={handleSetAutoConnectorsEnabled}
-          onSetAutoConnectorType={handleSetAutoConnectorType}
-          onSetActiveClass={handleSetActiveClass}
-          onSetActiveColor={handleSetActiveColor}
-          onSetLayerVisible={handleSetLayerVisible}
-          onSetManualScaleInchesInput={setManualScaleInchesInput}
-          onSetManualScaleFeetInput={setManualScaleFeetInput}
-          onApplyManualScale={applyManualScale}
-          onSetDesignScale={handleSetDesignScale}
-          onPreviewPdfTransparency={handlePreviewPdfTransparency}
-          onCommitPdfTransparency={handleCommitPdfTransparency}
-          onQuickAccessEditingContextChange={setQuickAccessEditingContextActive}
-          onRefocusCanvasFromInputCommit={refocusCanvasFromInputCommit}
           setStageRef={(element) => {
             stageRef = element
             stageResizeObserver?.disconnect()

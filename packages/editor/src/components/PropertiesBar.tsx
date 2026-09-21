@@ -1,9 +1,11 @@
-import { Show, type JSX } from 'solid-js'
-import type { LpProject, Selection, SymbolType, Tool } from '@lp-sketch/core/types/project'
+import { Show } from 'solid-js'
+import type { Selection, Tool } from '@lp-sketch/core/types/project'
 import { SYMBOL_LABELS } from '@lp-sketch/core/model/defaultProject'
 import { TOOL_CUSTOM_ICON, TOOL_ICON, tablerIconClass } from '../config/iconRegistry'
 import { CustomIcon } from './icons/CustomIcon'
+import { useAppController } from '../context/AppControllerContext'
 import { useHelp } from '../context/HelpContext'
+import PropertiesToolOptions from './PropertiesToolOptions'
 
 const TOOL_DISPLAY: Record<Tool, { icon: string; label: string }> = {
   select: { icon: TOOL_ICON.select, label: 'Select' },
@@ -56,28 +58,8 @@ const SELECTION_KIND_LABEL: Record<Selection['kind'], string> = {
   mark: 'Mark',
 }
 
-interface PropertiesBarProps {
-  project: LpProject
-  tool: Tool
-  activeSymbol: SymbolType
-  selectedKind: Selection['kind'] | null
-  historyPastCount: number
-  historyFutureCount: number
-  onSelectTool: (tool: Tool) => void
-  onUndo: () => void
-  onRedo: () => void
-  selectionDebugEnabled: boolean
-  onSetSelectionDebugEnabled: (enabled: boolean) => void
-  calibrationPreview: string | null
-  lineSegmentDistanceLabel: string | null
-  linePathTotalDistanceLabel: string | null
-  measureDistanceLabel: string | null
-  markSpanDistanceLabel: string | null
-  linearAutoSpacingPathDistanceLabel: string | null
-  toolOptionsSlot?: JSX.Element
-}
-
-export default function PropertiesBar(props: PropertiesBarProps) {
+export default function PropertiesBar() {
+  const props = useAppController()
   const help = useHelp()
   const toolInfo = () => TOOL_DISPLAY[props.tool] ?? { icon: TOOL_ICON.select, label: props.tool }
   const activeCustomToolIcon = () => TOOL_CUSTOM_ICON[props.tool]
@@ -134,9 +116,7 @@ export default function PropertiesBar(props: PropertiesBarProps) {
           </Show>
 
           <div class="tb-sep" />
-          <Show when={props.toolOptionsSlot} fallback={<span class="tb-hint">No tool-specific properties.</span>}>
-            {props.toolOptionsSlot}
-          </Show>
+          <PropertiesToolOptions />
         </div>
 
         <div class="properties-side properties-right">

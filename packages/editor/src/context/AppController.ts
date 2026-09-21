@@ -11,11 +11,15 @@ import type {
   SymbolType,
   Tool,
 } from '@lp-sketch/core/types/project'
-import type { ReportType } from '../../lib/reporting'
+import type { CornerKind } from '@lp-sketch/core/lib/spacing'
+import type { ReportType } from '../lib/reporting'
 
-export type CornerKind = 'outside' | 'inside'
-
-export interface AppSidebarProps {
+/**
+ * The single object every block and the drawing stage read state and actions from.
+ * `App.tsx` builds it once with reactive getters and delivers it through
+ * `AppControllerProvider`; chrome never receives App internals as props.
+ */
+export interface AppController {
   project: LpProject
   hasPdf: boolean
   supportsNativeFileDialogs: boolean
@@ -71,12 +75,22 @@ export interface AppSidebarProps {
   historyFutureCount: number
   canBringSelectedToFront: boolean
   canSendSelectedToBack: boolean
+  canDeleteSelection: boolean
   statusMessage: string
   errorMessage: string
+  stageCursor: string
+  calibrationPreview: string | null
+  lineSegmentDistanceLabel: string | null
+  linePathTotalDistanceLabel: string | null
+  measureDistanceLabel: string | null
+  markSpanDistanceLabel: string | null
+  linearAutoSpacingPathDistanceLabel: string | null
+  selectionDebugEnabled: boolean
   onRefocusCanvasFromInputCommit: () => void
   onSetProjectName: (value: string) => void
   onImportPdf: (event: Event) => void
   onImportPdfPicker: () => void
+  onImportPdfDrop: (file: File) => void
   onSaveProject: () => void
   onLoadProject: (event: Event) => void
   onLoadProjectPicker: () => void
@@ -133,6 +147,9 @@ export interface AppSidebarProps {
   onApplyManualScale: () => void
   onBringSelectedToFront: () => void
   onSendSelectedToBack: () => void
+  onDeleteSelection: () => void
   onUndo: () => void
   onRedo: () => void
+  onSetSelectionDebugEnabled: (enabled: boolean) => void
+  onSetQuickAccessEditingContextActive: (active: boolean) => void
 }
