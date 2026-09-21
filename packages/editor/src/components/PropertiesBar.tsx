@@ -76,7 +76,7 @@ export default function PropertiesBar() {
   }
 
   return (
-    <div class="workspace-toolbar properties-bar" data-properties-bar="active">
+    <div class="workspace-toolbar properties-bar" data-properties-bar="active" role="toolbar" aria-label="Properties">
       <div class="properties-row">
         <div class="properties-side properties-left">
           <div class="tb-label toolbar-active-tool">

@@ -1,16 +1,16 @@
 import { createEffect, createUniqueId, For, on, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
-import ComponentsPanel from './sidebar/ComponentsPanel'
-import { workspaceCanvasSpikeEnabled } from '../config/workspaceRenderer'
-import LayersPanel from './sidebar/LayersPanel'
-import ProjectPanel from './sidebar/ProjectPanel'
-import ScalePanel from './sidebar/ScalePanel'
-import StatusMessages from './sidebar/StatusMessages'
-import StylePanel from './sidebar/StylePanel'
-import ToolsPanel from './sidebar/ToolsPanel'
-import { PanelPresentationContext } from './sidebar/Panel'
-import { MISC_ICON, SIDEBAR_SECTION_ICON, tablerIconClass } from '../config/iconRegistry'
-import type { SidebarLayout, SidebarSection } from '../hooks/useSidebarLayout'
+import ComponentsPanel from '../../components/sidebar/ComponentsPanel'
+import { workspaceCanvasSpikeEnabled } from '../../config/workspaceRenderer'
+import LayersPanel from '../../components/sidebar/LayersPanel'
+import ProjectPanel from '../../components/sidebar/ProjectPanel'
+import ScalePanel from '../../components/sidebar/ScalePanel'
+import StatusMessages from '../../components/sidebar/StatusMessages'
+import StylePanel from '../../components/sidebar/StylePanel'
+import ToolsPanel from '../../components/sidebar/ToolsPanel'
+import { PanelPresentationContext } from '../../components/sidebar/Panel'
+import { MISC_ICON, SIDEBAR_SECTION_ICON, tablerIconClass } from '../../config/iconRegistry'
+import type { SidebarLayout, SidebarSection } from './useSidebarLayout'
 
 const SECTIONS = [
   { id: 'project', label: 'Project', component: ProjectPanel },
@@ -21,7 +21,8 @@ const SECTIONS = [
   { id: 'layers', label: 'Layers', component: LayersPanel },
 ] as const
 
-export default function AppSidebar(props: { layout: SidebarLayout }) {
+/** Classic's sidebar chrome: header, collapsed rail, flyouts, and the panel blocks it composes. */
+export default function ClassicSidebar(props: { layout: SidebarLayout }) {
   const workspaceFlagEnabled = workspaceCanvasSpikeEnabled()
   const contentId = `sidebar-content-${createUniqueId()}`
   const sectionButtons = new Map<SidebarSection, HTMLButtonElement>()

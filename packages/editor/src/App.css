@@ -55,21 +55,6 @@
   --font-mono: 'Fira Code', monospace;
 }
 
-/* ──── APP SHELL ──── */
-.app-shell {
-  display: grid;
-  /* Keep the sidebar beside the canvas at every viewport width. */
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-  height: 100vh;
-  height: 100dvh;
-  width: 100vw;
-  overflow: hidden;
-  color: var(--text-primary);
-  background: var(--bg-base);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
 /* ──── SIDEBAR ──── */
 .sidebar {
   background: var(--bg-sidebar);
@@ -82,11 +67,6 @@
 }
 
 .sidebar [hidden] { display: none !important; }
-
-.app-shell.sidebar-collapsed {
-  grid-template-columns: var(--sidebar-rail-width) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-}
 
 .sidebar.is-collapsed {
   position: relative;

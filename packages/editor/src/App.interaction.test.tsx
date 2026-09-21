@@ -470,7 +470,7 @@ function appearsBefore(first: Element, second: Element): boolean {
 }
 
 describe('collapsible sidebar', () => {
-  const preferenceKey = 'lp-sketch.sidebar.collapsed.v1'
+  const preferenceKey = 'lp-sketch.shell.classic.sidebar.collapsed.v1'
   beforeEach(() => window.localStorage.removeItem(preferenceKey))
   afterEach(() => window.localStorage.removeItem(preferenceKey))
 

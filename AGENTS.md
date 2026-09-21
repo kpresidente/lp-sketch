@@ -38,11 +38,13 @@ The repository uses npm workspaces. Run development, build, test, and audit comm
 - `packages/core/src/types/` — Shared project and interaction types
 - `packages/core/src/lib/` — Pure geometry, snapping, spacing, legend, layers, and project calculations
 - `packages/editor/src/App.tsx` — Shared editor orchestration, tool state, pointer workflows
-- `packages/editor/src/components/` — Sidebar panels, canvas, overlays, dialogs
+- `packages/editor/src/components/` — Sidebar panels, bars, overlays, dialogs (the blocks shells arrange)
 - `packages/editor/src/controllers/` — Pointer event controllers
+- `packages/editor/src/shells/` — Shell registry, `ShellHost`, and the Classic shell that arranges blocks around the workspace
+- `packages/editor/src/blocks/` — Registry of blocks every shell must mount or waive
 - `packages/editor/src/hooks/` — SolidJS reactive hooks
 - `packages/editor/src/lib/` — Browser-dependent rendering helpers, exports, autosave, file handling, reporting
-- `packages/editor/src/workspace/` — Shared canvas export renderer
+- `packages/editor/src/workspace/` — Drawing stage component and shared canvas export renderer
 - `packages/editor/src/context/` and `config/` — Providers, runtime limits, icon registry
 - `packages/editor/src/help/` — Shared manual and help build plugin
 - `api/` — Existing browser reporting API

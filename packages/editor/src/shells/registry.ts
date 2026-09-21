@@ -1,0 +1,66 @@
+import type { BlockId } from '../blocks/registry'
+import ClassicShell from './classic/ClassicShell'
+import type { ShellComponent } from './types'
+
+export type ShellId = 'classic'
+
+/** Global device preference. Never enters project JSON, autosave, or history. */
+export const SHELL_PREFERENCE_KEY = 'lp-sketch.shell.v1'
+
+interface ShellRegistrationBase {
+  id: ShellId
+  label: string
+  /** Required blocks this shell intentionally leaves out, each with the reason. */
+  waivedBlocks: Partial<Record<BlockId, string>>
+}
+
+export type ShellRegistration = ShellRegistrationBase &
+  (
+    | {
+        /** Bundled with the app so the shell paints on the first frame. Use for the default. */
+        kind: 'eager'
+        component: ShellComponent
+      }
+    | {
+        /** Loaded the first time the shell is selected. */
+        kind: 'lazy'
+        load: () => Promise<{ default: ShellComponent }>
+      }
+  )
+
+export const CLASSIC_SHELL: ShellRegistration = {
+  id: 'classic',
+  label: 'Classic',
+  kind: 'eager',
+  component: ClassicShell,
+  waivedBlocks: {},
+}
+
+export const SHELLS: readonly ShellRegistration[] = [CLASSIC_SHELL]
+
+export const DEFAULT_SHELL: ShellRegistration = CLASSIC_SHELL
+
+export function findShell(id: string | null | undefined): ShellRegistration | undefined {
+  return SHELLS.find((shell) => shell.id === id)
+}
+
+function preferenceStorage(): Storage | null {
+  try {
+    return typeof window === 'undefined' ? null : window.localStorage
+  } catch {
+    return null
+  }
+}
+
+/** The shell this device prefers, or the default when nothing valid is stored. */
+export function readShellPreference(): ShellRegistration {
+  return findShell(preferenceStorage()?.getItem(SHELL_PREFERENCE_KEY)) ?? DEFAULT_SHELL
+}
+
+export function writeShellPreference(id: ShellId): void {
+  try {
+    preferenceStorage()?.setItem(SHELL_PREFERENCE_KEY, id)
+  } catch {
+    // The preference is a convenience; the app still runs with the default shell.
+  }
+}

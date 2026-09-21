@@ -37,7 +37,7 @@ Root scripts preserve the existing development workflow. Vite loads environment 
 - `packages/editor/src/App.tsx`
   - App orchestration, tool state, pointer workflows
 - `packages/editor/src/components/`
-  - Sidebar panels, quick-access toolbar, canvas stage, overlay branches, dialogs, help drawer
+  - Sidebar panels, quick-access toolbar, properties bar, overlay branches, dialogs, help drawer: the blocks a shell arranges
 - `packages/core/src/lib/`
   - Geometry, snapping, spacing, legend, layer filtering, text layout, project calculations
 - `packages/editor/src/lib/`
@@ -46,10 +46,14 @@ Root scripts preserve the existing development workflow. Vite loads environment 
   - Default project creation, schema migration, validation, history transactions
 - `packages/editor/src/controllers/pointer/`
   - Pointer event controllers: placement, select, measure, gesture
+- `packages/editor/src/shells/` and `packages/editor/src/blocks/`
+  - Shell registry, `ShellHost`, the Classic shell, and the required-block registry every shell must mount or waive
+- `packages/editor/src/workspace/`
+  - Drawing stage component and the shared canvas export renderer
 - `packages/editor/src/hooks/`
   - SolidJS reactive hooks (autosave, PDF renderer, file actions, shortcuts)
 - `packages/editor/src/context/`
-  - Context providers: AppControllerContext (sidebar), HelpContext (help drawer)
+  - Context providers: AppControllerContext (the controller every block reads), HelpContext (help drawer)
 - `packages/core/src/config/` and `packages/editor/src/config/`
   - Domain constants in core; runtime limits and icon registry in editor
 - `packages/core/src/types/`

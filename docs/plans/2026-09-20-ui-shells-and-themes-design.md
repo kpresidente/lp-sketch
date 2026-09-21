@@ -151,7 +151,7 @@ Scope:
 
 - Create `shells/registry.ts`, `blocks/registry.ts`, `ShellHost`, and `shells/classic/ClassicShell.tsx`. Classic reproduces today's UI exactly: sidebar, collapsed rail and flyouts, properties bar, quick-access rail, status messages, help drawer placement.
 - Move `useSidebarLayout` into the Classic shell. Its storage key becomes `lp-sketch.shell.classic.sidebar.collapsed.v1`, with a one-time read of the old key.
-- Move the `app-shell` grid CSS and the iPad status bar inset into the Classic shell stylesheet.
+- Move the `app-shell` grid CSS into the Classic shell stylesheet. The iPad status bar inset turned out to be native configuration (`StatusBar.overlaysWebView: false` in `apps/mobile/capacitor.config.ts`), not CSS, so there was nothing to move for it.
 - Add the block coverage test: for every registered shell, mount it with a fixture controller and assert every required block landmark is present or waived.
 - Add the shell preference and `ShellHost` lazy loading, even though only one shell exists.
 
@@ -163,12 +163,12 @@ Acceptance:
 
 Checklist:
 
-- [ ] Registries and `ShellHost` in place
-- [ ] Classic shell renders today's UI
-- [ ] Sidebar layout state owned by Classic, storage key migrated
-- [ ] Block coverage test added
-- [ ] Screenshot comparison recorded in the implementation notes
-- [ ] Suites green
+- [x] Registries and `ShellHost` in place
+- [x] Classic shell renders today's UI
+- [x] Sidebar layout state owned by Classic, storage key migrated
+- [x] Block coverage test added
+- [x] Screenshot comparison recorded in the implementation notes
+- [x] Suites green
 
 ### Step 4. Tokenize and add themes
 
@@ -270,7 +270,7 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 | --- | --- | --- | --- |
 | 1. Consolidate the controller | in review | `codex/monorepo-foundation` | Implemented 2026-09-20; see the implementation notes, step 1 |
 | 2. Extract the Workspace | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; see the implementation notes, step 2 |
-| 3. Shell boundary with Classic | not started | | |
+| 3. Shell boundary with Classic | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 18 of 18 screenshots identical; see the implementation notes, step 3 |
 | 4. Tokens and themes | not started | | |
 | 5. Tempered shell as default | not started | | |
 | 6. Hardening | not started | | |

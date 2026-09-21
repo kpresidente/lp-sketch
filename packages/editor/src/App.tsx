@@ -10,14 +10,12 @@ import {
 import { GlobalWorkerOptions } from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import './App.css'
-import AppSidebar from './components/AppSidebar'
-import PropertiesBar from './components/PropertiesBar'
-import QuickAccessBar from './components/QuickAccessBar'
 import { createPenInputGuard } from './controllers/pointer/penInputGuard'
 import { createSingleFingerPan } from './controllers/pointer/singleFingerPan'
-import { useSidebarLayout } from './hooks/useSidebarLayout'
 import OverlayLayer from './components/OverlayLayer'
 import Workspace from './workspace/Workspace'
+import ShellHost from './shells/ShellHost'
+import type { ShellChrome } from './shells/types'
 import type { AppController } from './context/AppController'
 import AnnotationEditDialog from './components/dialogs/AnnotationEditDialog'
 import GeneralNotesDialog from './components/dialogs/GeneralNotesDialog'
@@ -338,9 +336,9 @@ interface AppProps {
 }
 
 function App(props: AppProps) {
-  const sidebarLayout = useSidebarLayout()
-  /** True while shell chrome covers the workspace; today that is a collapsed-sidebar flyout. */
-  const chromeModalOpen = createMemo(() => sidebarLayout.activeSection() !== null)
+  /** Registered by the active shell during its setup; see `shells/types.ts`. */
+  let shellChrome: ShellChrome | undefined
+  const closeChromeModal = () => shellChrome?.closeChromeModal() ?? false
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
     past: [],
@@ -2958,7 +2956,7 @@ function App(props: AppProps) {
 
   useGlobalAppShortcuts({
     tool,
-    dismissSidebarFlyout: sidebarLayout.closeFlyout,
+    dismissChromeModal: closeChromeModal,
     isEditingContextActive,
     isCanvasKeyboardContext,
     handleEnterToolFinish: handleEnterToolFinishShortcut,
@@ -3449,7 +3447,7 @@ function App(props: AppProps) {
 
     setTool(nextTool)
     clearTransientToolState()
-    sidebarLayout.closeFlyout()
+    closeChromeModal()
     helpState.closeIfUnpinned()
     if (nextTool === 'multi_select') {
       setSelected(null)
@@ -4275,154 +4273,154 @@ function App(props: AppProps) {
 
   return (
     <HelpProvider value={helpState}>
-    <div class="app-shell" classList={{ 'sidebar-collapsed': sidebarLayout.collapsed() }}>
       <AppControllerProvider value={appController}>
-        <AppSidebar layout={sidebarLayout} />
+        <ShellHost
+          onChromeReady={(chrome) => {
+            shellChrome = chrome
+          }}
+          slots={{
+            workspace: () => (
+                <Workspace
+                  setStageRef={(element) => {
+                    stageRef = element
+                  }}
+                  onStageResize={(size) => setStageDimensions(size)}
+                  setPdfCanvasRef={(element) => {
+                    pdfCanvasRef = element
+                    bindPdfCanvasRef(element)
+                  }}
+                  onPointerDown={handleToolPointerDown}
+                  onPointerMove={handleToolPointerMove}
+                  onPointerUp={handleToolPointerUp}
+                  onPointerCancel={handleToolPointerCancel}
+                  onLostPointerCapture={handleToolPointerCaptureLost}
+                  onWheel={handleWheel}
+                  onDoubleClick={handleDoubleClick}
+                >
+                  <OverlayLayer
+                    project={viewportVisibleProject()}
+                    annotationScale={annotationScale()}
+                    selected={overlaySelected()}
+                    multiSelectedKeys={overlayMultiSelectedKeys()}
+                    hovered={hoveredSelection()}
+                    legendUi={legendUi()}
+                    textFontSizePx={textFontSizePx()}
+                    textLineHeightPx={textLineHeightPx()}
+                    approximateTextWidth={approximateTextWidthWithScale}
+                    legendEntriesForPlacement={legendEntriesForPlacement}
+                    legendBoxSize={legendBoxSizeWithScale}
+                    legendLineText={legendLineText}
+                    measurePathPreview={measurePathPreview()}
+                    markPathPreview={markPathPreview()}
+                    linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
+                    linearAutoSpacingVertices={linearAutoSpacingVertices()}
+                    linearAutoSpacingCorners={linearAutoSpacingCorners()}
+                    arcChordPreview={arcChordPreview()}
+                    arcCurvePreview={arcCurvePreview()}
+                    linePreview={linePreview()}
+                    dimensionTextPreview={dimensionTextPreview()}
+                    directionPreview={directionPreview()}
+                    arrowPreview={arrowPreview()}
+                    calibrationLinePreview={calibrationLinePreview()}
+                    dimensionTextLabel={dimensionTextLabelWithScale}
+                    snapPointPreview={snapPointPreview()}
+                    selectionHandlePreview={selectionHandlePreview()}
+                    selectionDebugLabel={selectionDebugLabel()}
+                  />
+                </Workspace>
+            ),
+            dialogs: () => (
+              <>
+                  <Show when={annotationEdit()}>
+                    {(editor) => (
+                      <AnnotationEditDialog
+                        editor={editor()}
+                        onSetInput={(value) =>
+                          setAnnotationEdit((prev) =>
+                            prev
+                              ? {
+                                ...prev,
+                                input: value,
+                              }
+                              : prev,
+                          )
+                        }
+                        onSetLayer={(layer) =>
+                          setAnnotationEdit((prev) =>
+                            prev
+                              ? {
+                                ...prev,
+                                layer,
+                              }
+                              : prev,
+                          )
+                        }
+                        onApply={applyAnnotationEditor}
+                        onCancel={() => setAnnotationEdit(null)}
+                      />
+                    )}
+                  </Show>
 
-        <main class="workspace" inert={chromeModalOpen()}>
-          <PropertiesBar />
+                  <Show when={legendLabelEdit()}>
+                    {(editor) => (
+                      <LegendLabelDialog
+                        editor={editor()}
+                        scope={project().settings.legendDataScope}
+                        setDialogRef={(element) => bindLegendLabelDialogRef(element, editor().screen)}
+                        onTitlePointerDown={handleLegendLabelDialogPointerDown}
+                        onTitlePointerMove={handleLegendLabelDialogPointerMove}
+                        onTitlePointerUp={handleLegendLabelDialogPointerUp}
+                        onSetScope={handleSetLegendDataScope}
+                        onSetInput={setLegendLabelEditorInput}
+                        onApply={applyLegendLabelEditor}
+                        onCancel={closeLegendLabelDialog}
+                      />
+                    )}
+                  </Show>
 
-          <div class="workspace-stage-shell">
-            <Workspace
-              setStageRef={(element) => {
-                stageRef = element
-              }}
-              onStageResize={(size) => setStageDimensions(size)}
-              setPdfCanvasRef={(element) => {
-                pdfCanvasRef = element
-                bindPdfCanvasRef(element)
-              }}
-              onPointerDown={handleToolPointerDown}
-              onPointerMove={handleToolPointerMove}
-              onPointerUp={handleToolPointerUp}
-              onPointerCancel={handleToolPointerCancel}
-              onLostPointerCapture={handleToolPointerCaptureLost}
-              onWheel={handleWheel}
-              onDoubleClick={handleDoubleClick}
-            >
-              <OverlayLayer
-                project={viewportVisibleProject()}
-                annotationScale={annotationScale()}
-                selected={overlaySelected()}
-                multiSelectedKeys={overlayMultiSelectedKeys()}
-                hovered={hoveredSelection()}
-                legendUi={legendUi()}
-                textFontSizePx={textFontSizePx()}
-                textLineHeightPx={textLineHeightPx()}
-                approximateTextWidth={approximateTextWidthWithScale}
-                legendEntriesForPlacement={legendEntriesForPlacement}
-                legendBoxSize={legendBoxSizeWithScale}
-                legendLineText={legendLineText}
-                measurePathPreview={measurePathPreview()}
-                markPathPreview={markPathPreview()}
-                linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
-                linearAutoSpacingVertices={linearAutoSpacingVertices()}
-                linearAutoSpacingCorners={linearAutoSpacingCorners()}
-                arcChordPreview={arcChordPreview()}
-                arcCurvePreview={arcCurvePreview()}
-                linePreview={linePreview()}
-                dimensionTextPreview={dimensionTextPreview()}
-                directionPreview={directionPreview()}
-                arrowPreview={arrowPreview()}
-                calibrationLinePreview={calibrationLinePreview()}
-                dimensionTextLabel={dimensionTextLabelWithScale}
-                snapPointPreview={snapPointPreview()}
-                selectionHandlePreview={selectionHandlePreview()}
-                selectionDebugLabel={selectionDebugLabel()}
-              />
-            </Workspace>
-            <QuickAccessBar />
-          </div>
-        </main>
+                  <Show when={generalNotesEdit()}>
+                    {(editor) => (
+                      <GeneralNotesDialog
+                        editor={editor()}
+                        title={GENERAL_NOTES_TITLE}
+                        maxNotes={MAX_GENERAL_NOTES_COUNT}
+                        scope={project().settings.notesDataScope}
+                        setDialogRef={(element) => bindGeneralNotesDialogRef(element, editor().screen)}
+                        onTitlePointerDown={handleGeneralNotesDialogPointerDown}
+                        onTitlePointerMove={handleGeneralNotesDialogPointerMove}
+                        onTitlePointerUp={handleGeneralNotesDialogPointerUp}
+                        onSetScope={handleSetNotesDataScope}
+                        onSetInput={setGeneralNotesEditorInput}
+                        onMoveRow={moveGeneralNotesEditorRow}
+                        onRemoveRow={removeGeneralNotesEditorRow}
+                        onAddRow={addGeneralNotesEditorRow}
+                        onApply={applyGeneralNotesEditor}
+                        onCancel={closeGeneralNotesDialog}
+                      />
+                    )}
+                  </Show>
 
-        <Show when={annotationEdit()}>
-          {(editor) => (
-            <AnnotationEditDialog
-              editor={editor()}
-              onSetInput={(value) =>
-                setAnnotationEdit((prev) =>
-                  prev
-                    ? {
-                      ...prev,
-                      input: value,
-                    }
-                    : prev,
-                )
-              }
-              onSetLayer={(layer) =>
-                setAnnotationEdit((prev) =>
-                  prev
-                    ? {
-                      ...prev,
-                      layer,
-                    }
-                    : prev,
-                )
-              }
-              onApply={applyAnnotationEditor}
-              onCancel={() => setAnnotationEdit(null)}
-            />
-          )}
-        </Show>
-
-        <Show when={legendLabelEdit()}>
-          {(editor) => (
-            <LegendLabelDialog
-              editor={editor()}
-              scope={project().settings.legendDataScope}
-              setDialogRef={(element) => bindLegendLabelDialogRef(element, editor().screen)}
-              onTitlePointerDown={handleLegendLabelDialogPointerDown}
-              onTitlePointerMove={handleLegendLabelDialogPointerMove}
-              onTitlePointerUp={handleLegendLabelDialogPointerUp}
-              onSetScope={handleSetLegendDataScope}
-              onSetInput={setLegendLabelEditorInput}
-              onApply={applyLegendLabelEditor}
-              onCancel={closeLegendLabelDialog}
-            />
-          )}
-        </Show>
-
-        <Show when={generalNotesEdit()}>
-          {(editor) => (
-            <GeneralNotesDialog
-              editor={editor()}
-              title={GENERAL_NOTES_TITLE}
-              maxNotes={MAX_GENERAL_NOTES_COUNT}
-              scope={project().settings.notesDataScope}
-              setDialogRef={(element) => bindGeneralNotesDialogRef(element, editor().screen)}
-              onTitlePointerDown={handleGeneralNotesDialogPointerDown}
-              onTitlePointerMove={handleGeneralNotesDialogPointerMove}
-              onTitlePointerUp={handleGeneralNotesDialogPointerUp}
-              onSetScope={handleSetNotesDataScope}
-              onSetInput={setGeneralNotesEditorInput}
-              onMoveRow={moveGeneralNotesEditorRow}
-              onRemoveRow={removeGeneralNotesEditorRow}
-              onAddRow={addGeneralNotesEditorRow}
-              onApply={applyGeneralNotesEditor}
-              onCancel={closeGeneralNotesDialog}
-            />
-          )}
-        </Show>
-
-        <Show when={reportDialogOpen()}>
-          <ReportDialog
-            draft={reportDraft()}
-            submitting={reportSubmitting()}
-            errorMessage={reportDialogError()}
-            onSetType={handleSetReportType}
-            onSetTitle={handleSetReportTitle}
-            onSetDetails={handleSetReportDetails}
-            onSetReproSteps={handleSetReportReproSteps}
-            onSubmit={() => {
-              void handleSubmitReport()
-            }}
-            onCancel={handleCloseReportDialog}
-          />
-        </Show>
+                  <Show when={reportDialogOpen()}>
+                    <ReportDialog
+                      draft={reportDraft()}
+                      submitting={reportSubmitting()}
+                      errorMessage={reportDialogError()}
+                      onSetType={handleSetReportType}
+                      onSetTitle={handleSetReportTitle}
+                      onSetDetails={handleSetReportDetails}
+                      onSetReproSteps={handleSetReportReproSteps}
+                      onSubmit={() => {
+                        void handleSubmitReport()
+                      }}
+                      onCancel={handleCloseReportDialog}
+                    />
+                  </Show>
+              </>
+            ),
+            helpDrawer: () => <HelpDrawer />,
+          }}
+        />
       </AppControllerProvider>
-
-      <HelpDrawer />
-    </div>
     </HelpProvider>
   )
 }

@@ -79,3 +79,65 @@ No files under `e2e/` or any `*.test.ts(x)` changed.
 
 - `chromeModalOpen` is still computed in `App.tsx` from the sidebar layout hook, and `handleSelectTool` and the global shortcuts still call `sidebarLayout.closeFlyout()` directly. Step 3 moves both behind the shell contract.
 - The `main.workspace` and `workspace-stage-shell` wrappers live in `App.tsx` until the Classic shell takes them in Step 3.
+
+## Step 3. Introduce the shell boundary with Classic
+
+Refactor with zero visual change. One existing test file changed a storage key constant (see decision 7).
+
+### What changed
+
+- `packages/editor/src/blocks/registry.ts` (new): `REQUIRED_BLOCKS`, nine entries with the role and accessible name each block exposes: the six sidebar panels (`region` named Project, Tools, Components, Material, Scale, Layers), status messages (`status`), the properties bar (`toolbar` named Properties), and the quick-access rail (`toolbar` named Quick access).
+- `packages/editor/src/shells/types.ts` (new): `ShellSlots` (workspace, dialogs, help drawer, each a render function), `ShellChrome` (`chromeModalOpen` accessor and `closeChromeModal` action), `ShellProps`, `ShellComponent`.
+- `packages/editor/src/shells/registry.ts` (new): `SHELLS`, `DEFAULT_SHELL`, `SHELL_PREFERENCE_KEY` (`lp-sketch.shell.v1`), `readShellPreference`, `writeShellPreference`, `findShell`. A registration is `kind: 'eager'` with a bundled component or `kind: 'lazy'` with a `load()` function, and carries `waivedBlocks`.
+- `packages/editor/src/shells/ShellHost.tsx` (new): resolves the preferred shell once at mount. Eager shells mount directly; lazy shells mount through `lazy()` behind a `Suspense` fallback.
+- `packages/editor/src/shells/classic/ClassicShell.tsx` (new): the `app-shell` grid, `ClassicSidebar`, the `main.workspace` column with `PropertiesBar`, the workspace slot, and `QuickAccessBar`, then the dialogs and help drawer slots, in the same DOM order as before. Registers `chromeModalOpen` (a flyout is open) and `closeChromeModal` (close it) through `onChromeReady`.
+- `packages/editor/src/shells/classic/ClassicSidebar.tsx`: moved from `components/AppSidebar.tsx`; only the import paths and the component name changed.
+- `packages/editor/src/shells/classic/useSidebarLayout.ts`: moved from `hooks/`. The storage key is now `lp-sketch.shell.classic.sidebar.collapsed.v1`. The old key is read once, copied forward, and removed.
+- `packages/editor/src/shells/classic/classic.css` (new): the `.app-shell` and `.app-shell.sidebar-collapsed` rules, removed from `App.css`.
+- `packages/editor/src/App.tsx`: the render tree is now providers plus `ShellHost` with three slots. `App` keeps the `ShellChrome` handle the shell registers, and `handleSelectTool` and the global shortcuts close modal chrome through it. 4,428 lines, from 4,466 at the start of Step 1.
+- `packages/editor/src/hooks/useGlobalAppShortcuts.ts`: the option is `dismissChromeModal`, formerly `dismissSidebarFlyout`.
+- `PropertiesBar` and `QuickAccessBar` gained `role="toolbar"` with accessible names so they expose the landmark the block registry requires. No visual effect.
+- Tests: `shells/shells.coverage.test.tsx` (the block coverage gate, one case per registered shell), `shells/ShellHost.test.tsx` (eager mount, lazy mount behind the fallback, preference fallback), `shells/testing/createFixtureController.ts` (a static controller with no-op actions for mounting shells outside `App`).
+- `scripts/ui-parity.mjs` (new): captures eighteen screenshots (three viewports by six chrome states) against a running dev server and compares two sets byte for byte. Sets land in `test-results/ui-parity/`, which git ignores.
+- `AGENTS.md` and `docs/ENGINEERING.md`: the module lists gained `shells/` and `blocks/` and describe `workspace/` as the stage component plus the export renderer.
+
+### Decisions worth knowing
+
+1. The default shell is eager. `lazy()` defers the first paint by at least a microtask, which would blank the first frame and break every test that queries synchronously after rendering `App`. Classic is registered `kind: 'eager'`; lazy loading is implemented for future shells and covered by a test with a fixture shell.
+2. No `Suspense` boundary around eager shells. A boundary would also catch any `createResource` in slot content and hide the whole chrome while it resolves. Nothing uses one today, but only the lazy path carries a boundary.
+3. `inert` stays on the shell-owned `main.workspace` wrapper, as in Step 2. The shell now owns that state and exposes `chromeModalOpen`, instead of `App` deriving it from sidebar internals.
+4. Slots are render functions rather than pre-built elements, so the shell creates slot content under its own reactive owner. A future runtime shell switch then re-creates the workspace instead of moving DOM nodes between owners.
+5. The iPad status bar inset is native configuration, not CSS. The design document's scope line was corrected.
+6. `ClassicSidebar` moved under the shell folder because it is Classic chrome (collapse toggle, section rail, flyouts) that composes the panel blocks. Leaving it under `components/` would have made a component depend on a shell module for its layout type.
+7. `App.interaction.test.tsx` removes the collapsed-sidebar key before and after each test in its "collapsible sidebar" group. That constant now names the new key; without the change, one test's collapsed state leaked into the next through storage. No assertions changed.
+
+### Screenshot comparison
+
+Procedure: with the dev server on `localhost:5173`, `node scripts/ui-parity.mjs capture before` on the Step 2 tree, `capture after` on this tree, then `compare before after`. Chromium through Playwright, device scale factor 1, CSS animations disabled, pointer parked over the stage. Every file was byte-identical, so before and after share one hash. The first twelve characters of each SHA-256:
+
+| State | Desktop 1440 by 900 | iPad landscape 1180 by 820 | iPad portrait 820 by 1180 |
+| --- | --- | --- | --- |
+| Default | `52cc2804b53f` | `b77791a35d0f` | `4ea10ef056a4` |
+| Linear tool active | `f0d587a2d33e` | `15a469432c25` | `175ea9d859e3` |
+| Sidebar collapsed | `5e3ce443fde5` | `785ab810af9d` | `76d3586f2471` |
+| Collapsed, Tools flyout open | `def96bf4d4c1` | `9a273cb7b029` | `94367b11448c` |
+| Quick-access customizer open | `98db5c7b1a36` | `f9195e50ee74` | `3cc777014ea0` |
+| Help drawer open | `2102066b2dad` | `06d361daee4b` | `03401db558ea` |
+
+Result: 18 of 18 identical.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | pass |
+| `npm test` | 52 files, 437 tests, pass (2 files and 4 tests added) |
+| `npm run build` | pass |
+| `npm run test:e2e` | rerun alone: 35 passed, 0 failed. The first run, alongside the unit suite and the screenshot capture, had 34 passed and 1 failed at page load (`.drawing-stage` not visible within 5 s), a load-time timeout under CPU contention rather than a behavior failure |
+| Screenshot parity | 18 of 18 identical |
+
+### Left for later steps
+
+- `ShellHost` reads the shell preference once at mount. Runtime switching arrives with the shell picker in Step 5.
+- Sidebar, panel, bar, and rail CSS still live in `App.css`; Classic's stylesheet holds only the grid. Step 5 decides what moves when the fine-grained blocks are extracted.
+- The `.workspace` and `.workspace-stage-shell` class names and the `.sidebar .status-msg` e2e helpers are Step 6 work.

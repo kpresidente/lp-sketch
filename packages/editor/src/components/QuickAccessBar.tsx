@@ -872,7 +872,7 @@ export default function QuickAccessBar() {
   })
 
   return (
-    <div ref={railRef} class="quick-access-rail" data-toolbar-quick-tools="active">
+    <div ref={railRef} class="quick-access-rail" data-toolbar-quick-tools="active" role="toolbar" aria-label="Quick access">
       <Show when={!props.supportsNativeFileDialogs}>
         <input
           ref={importPdfInput}
