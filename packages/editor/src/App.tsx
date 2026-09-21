@@ -11,11 +11,13 @@ import { GlobalWorkerOptions } from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import './App.css'
 import AppSidebar from './components/AppSidebar'
-import CanvasStage from './components/CanvasStage'
+import PropertiesBar from './components/PropertiesBar'
+import QuickAccessBar from './components/QuickAccessBar'
 import { createPenInputGuard } from './controllers/pointer/penInputGuard'
 import { createSingleFingerPan } from './controllers/pointer/singleFingerPan'
 import { useSidebarLayout } from './hooks/useSidebarLayout'
 import OverlayLayer from './components/OverlayLayer'
+import Workspace from './workspace/Workspace'
 import type { AppController } from './context/AppController'
 import AnnotationEditDialog from './components/dialogs/AnnotationEditDialog'
 import GeneralNotesDialog from './components/dialogs/GeneralNotesDialog'
@@ -337,6 +339,8 @@ interface AppProps {
 
 function App(props: AppProps) {
   const sidebarLayout = useSidebarLayout()
+  /** True while shell chrome covers the workspace; today that is a collapsed-sidebar flyout. */
+  const chromeModalOpen = createMemo(() => sidebarLayout.activeSection() !== null)
   const [project, setProject] = createSignal<LpProject>(createDefaultProject())
   const [history, setHistory] = createSignal<{ past: LpProject[]; future: LpProject[] }>({
     past: [],
@@ -412,7 +416,6 @@ function App(props: AppProps) {
 
   const [stageDimensions, setStageDimensions] = createSignal({ width: 0, height: 0 })
   let stageRef: HTMLDivElement | undefined
-  let stageResizeObserver: ResizeObserver | undefined
   let pdfCanvasRef: HTMLCanvasElement | undefined
   let pdfInteractionSettleTimer: number | null = null
   let touchSpacingTimer: number | null = null
@@ -4276,65 +4279,61 @@ function App(props: AppProps) {
       <AppControllerProvider value={appController}>
         <AppSidebar layout={sidebarLayout} />
 
-        <CanvasStage
-          inert={sidebarLayout.activeSection() !== null}
-          setStageRef={(element) => {
-            stageRef = element
-            stageResizeObserver?.disconnect()
-            if (typeof ResizeObserver !== 'undefined') {
-              stageResizeObserver = new ResizeObserver((entries) => {
-                const entry = entries[0]
-                if (entry) {
-                  setStageDimensions({ width: entry.contentRect.width, height: entry.contentRect.height })
-                }
-              })
-              stageResizeObserver.observe(element)
-            }
-            setStageDimensions({ width: element.clientWidth, height: element.clientHeight })
-          }}
-          setPdfCanvasRef={(element) => {
-            pdfCanvasRef = element
-            bindPdfCanvasRef(element)
-          }}
-          onPointerDown={handleToolPointerDown}
-          onPointerMove={handleToolPointerMove}
-          onPointerUp={handleToolPointerUp}
-          onPointerCancel={handleToolPointerCancel}
-          onLostPointerCapture={handleToolPointerCaptureLost}
-          onWheel={handleWheel}
-          onDoubleClick={handleDoubleClick}
-        >
-          <OverlayLayer
-            project={viewportVisibleProject()}
-            annotationScale={annotationScale()}
-            selected={overlaySelected()}
-            multiSelectedKeys={overlayMultiSelectedKeys()}
-            hovered={hoveredSelection()}
-            legendUi={legendUi()}
-            textFontSizePx={textFontSizePx()}
-            textLineHeightPx={textLineHeightPx()}
-            approximateTextWidth={approximateTextWidthWithScale}
-            legendEntriesForPlacement={legendEntriesForPlacement}
-            legendBoxSize={legendBoxSizeWithScale}
-            legendLineText={legendLineText}
-            measurePathPreview={measurePathPreview()}
-            markPathPreview={markPathPreview()}
-            linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
-            linearAutoSpacingVertices={linearAutoSpacingVertices()}
-            linearAutoSpacingCorners={linearAutoSpacingCorners()}
-            arcChordPreview={arcChordPreview()}
-            arcCurvePreview={arcCurvePreview()}
-            linePreview={linePreview()}
-            dimensionTextPreview={dimensionTextPreview()}
-            directionPreview={directionPreview()}
-            arrowPreview={arrowPreview()}
-            calibrationLinePreview={calibrationLinePreview()}
-            dimensionTextLabel={dimensionTextLabelWithScale}
-            snapPointPreview={snapPointPreview()}
-            selectionHandlePreview={selectionHandlePreview()}
-            selectionDebugLabel={selectionDebugLabel()}
-          />
-        </CanvasStage>
+        <main class="workspace" inert={chromeModalOpen()}>
+          <PropertiesBar />
+
+          <div class="workspace-stage-shell">
+            <Workspace
+              setStageRef={(element) => {
+                stageRef = element
+              }}
+              onStageResize={(size) => setStageDimensions(size)}
+              setPdfCanvasRef={(element) => {
+                pdfCanvasRef = element
+                bindPdfCanvasRef(element)
+              }}
+              onPointerDown={handleToolPointerDown}
+              onPointerMove={handleToolPointerMove}
+              onPointerUp={handleToolPointerUp}
+              onPointerCancel={handleToolPointerCancel}
+              onLostPointerCapture={handleToolPointerCaptureLost}
+              onWheel={handleWheel}
+              onDoubleClick={handleDoubleClick}
+            >
+              <OverlayLayer
+                project={viewportVisibleProject()}
+                annotationScale={annotationScale()}
+                selected={overlaySelected()}
+                multiSelectedKeys={overlayMultiSelectedKeys()}
+                hovered={hoveredSelection()}
+                legendUi={legendUi()}
+                textFontSizePx={textFontSizePx()}
+                textLineHeightPx={textLineHeightPx()}
+                approximateTextWidth={approximateTextWidthWithScale}
+                legendEntriesForPlacement={legendEntriesForPlacement}
+                legendBoxSize={legendBoxSizeWithScale}
+                legendLineText={legendLineText}
+                measurePathPreview={measurePathPreview()}
+                markPathPreview={markPathPreview()}
+                linearAutoSpacingPathPreview={linearAutoSpacingPathPreview()}
+                linearAutoSpacingVertices={linearAutoSpacingVertices()}
+                linearAutoSpacingCorners={linearAutoSpacingCorners()}
+                arcChordPreview={arcChordPreview()}
+                arcCurvePreview={arcCurvePreview()}
+                linePreview={linePreview()}
+                dimensionTextPreview={dimensionTextPreview()}
+                directionPreview={directionPreview()}
+                arrowPreview={arrowPreview()}
+                calibrationLinePreview={calibrationLinePreview()}
+                dimensionTextLabel={dimensionTextLabelWithScale}
+                snapPointPreview={snapPointPreview()}
+                selectionHandlePreview={selectionHandlePreview()}
+                selectionDebugLabel={selectionDebugLabel()}
+              />
+            </Workspace>
+            <QuickAccessBar />
+          </div>
+        </main>
 
         <Show when={annotationEdit()}>
           {(editor) => (

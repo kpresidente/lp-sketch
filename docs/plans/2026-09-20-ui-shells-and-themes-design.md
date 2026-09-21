@@ -127,7 +127,7 @@ Checklist:
 Scope:
 
 - Split `CanvasStage` into `workspace/Workspace.tsx` (the `drawing-stage` region, camera layer, PDF canvas, transparency wash, import placeholder, resize observation) and two blocks (`PropertiesBar`, `QuickAccessBar`) that the shell places.
-- `Workspace` takes the `chromeModalOpen` signal for `inert` instead of the sidebar flyout state.
+- `inert` is driven by a `chromeModalOpen` signal instead of the sidebar flyout state. It stays on the shell-owned wrapper around the bars and the stage, because chrome behind an open flyout must stay unreachable too; the sidebar e2e spec asserts this.
 - Keep the `.drawing-stage` class and the `Drawing canvas` region name; e2e helpers depend on both.
 - This is the same boundary the Canvas 2D spike swaps behind (`OverlayLayer` versus a future `WorkspaceCanvas`). Coordinate so both efforts use one component.
 
@@ -139,11 +139,11 @@ Acceptance:
 
 Checklist:
 
-- [ ] `Workspace.tsx` created with stage-only props
-- [ ] `PropertiesBar` and `QuickAccessBar` placed from outside the workspace
-- [ ] `inert` driven by `chromeModalOpen`
-- [ ] Canvas spike flag still works behind the same boundary
-- [ ] Suites green
+- [x] `Workspace.tsx` created with stage-only props
+- [x] `PropertiesBar` and `QuickAccessBar` placed from outside the workspace
+- [x] `inert` driven by `chromeModalOpen`
+- [x] Canvas spike flag still works behind the same boundary
+- [x] Suites green
 
 ### Step 3. Introduce the shell boundary with Classic
 
@@ -269,7 +269,7 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 | Step | Status | Branch or PR | Notes |
 | --- | --- | --- | --- |
 | 1. Consolidate the controller | in review | `codex/monorepo-foundation` | Implemented 2026-09-20; see the implementation notes, step 1 |
-| 2. Extract the Workspace | not started | | |
+| 2. Extract the Workspace | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; see the implementation notes, step 2 |
 | 3. Shell boundary with Classic | not started | | |
 | 4. Tokens and themes | not started | | |
 | 5. Tempered shell as default | not started | | |

@@ -46,3 +46,36 @@ No files under `e2e/` or any `*.test.ts(x)` changed.
 
 - `inert` on the stage still derives from the sidebar flyout state (`sidebarLayout.activeSection() !== null`). Step 2 replaces it with the shell's `chromeModalOpen` signal.
 - `PropertiesBar` and `QuickAccessBar` are still mounted inside `CanvasStage`. Step 2 moves their placement to `App.tsx` and leaves the stage with only the `drawing-stage` region.
+
+## Step 2. Extract the Workspace
+
+Pure refactor, no visual change, no test changes.
+
+### What changed
+
+- `packages/editor/src/workspace/Workspace.tsx` (new): the `drawing-stage` region with the camera layer, PDF canvas, transparency wash, and import placeholder. Eleven stage-only props: `setStageRef`, `onStageResize`, `setPdfCanvasRef`, the five pointer handlers, wheel, double-click, and children. The `ResizeObserver` that reports the stage size moved in from `App.tsx` and is now disconnected on cleanup, which the old inline version never did.
+- `packages/editor/src/App.tsx`: renders the `main.workspace` wrapper, `PropertiesBar`, the `workspace-stage-shell` wrapper, `Workspace`, and `QuickAccessBar` directly, in the same DOM order as before. A `chromeModalOpen` memo, currently `sidebarLayout.activeSection() !== null`, drives `inert`.
+- Deleted `packages/editor/src/components/CanvasStage.tsx`.
+
+### Decisions worth knowing
+
+1. `inert` stays on the `main.workspace` wrapper rather than on the stage. `e2e/sidebar.spec.ts` tabs past an open flyout and asserts that nothing inside `.workspace` receives focus, so the properties bar and the quick-access rail must be inert along with the stage. The wrapper is shell-owned layout, so the shell decides what a chrome modal covers; Step 3 makes that explicit. The design document's Step 2 scope line was updated to match.
+2. `Workspace` reads the controller for the view transform, PDF page, transparency, cursor, and the import placeholder actions. The controller is app state rather than chrome, so this keeps the "no knowledge of any panel, bar, or rail" rule intact.
+3. The `.workspace` and `.workspace-stage-shell` class names are kept even though they now name shell layout rather than the workspace, because the sidebar e2e spec queries `.workspace`. Renaming belongs with the helper cleanup in Step 6.
+4. The Canvas 2D spike flag today only shows a badge in the sidebar header; nothing swaps renderers yet. `Workspace`'s `children` is the swap point: `OverlayLayer` renders there today and a `WorkspaceCanvas` would render there under the flag.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | pass |
+| `npm test` | 50 files, 433 tests, pass |
+| `npm run build` | pass |
+| `npm run test:e2e` | 35 tests, pass |
+
+No files under `e2e/` or any `*.test.ts(x)` changed.
+
+### Left for later steps
+
+- `chromeModalOpen` is still computed in `App.tsx` from the sidebar layout hook, and `handleSelectTool` and the global shortcuts still call `sidebarLayout.closeFlyout()` directly. Step 3 moves both behind the shell contract.
+- The `main.workspace` and `workspace-stage-shell` wrappers live in `App.tsx` until the Classic shell takes them in Step 3.
