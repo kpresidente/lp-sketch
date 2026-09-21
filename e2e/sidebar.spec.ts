@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { gotoApp } from './helpers'
 
+// Classic's shell spec: the collapsible sidebar, its section flyouts, and their dismissal.
 test.use({ hasTouch: true })
 
 test('collapsed sections reclaim canvas space and settings stay open', async ({ page }) => {
-  const stage = await gotoApp(page)
+  const stage = await gotoApp(page, { shell: 'classic' })
   const expanded = await stage.boundingBox()
   await page.getByRole('button', { name: 'Collapse sidebar' }).click()
   const collapsed = await stage.boundingBox()
@@ -49,7 +50,7 @@ test('collapsed sections reclaim canvas space and settings stay open', async ({ 
 
 for (const pointerType of ['mouse', 'touch', 'pen'] as const) {
   test(`outside ${pointerType} dismissal does not place an endpoint or move the plan`, async ({ page, context }) => {
-    const stage = await gotoApp(page)
+    const stage = await gotoApp(page, { shell: 'classic' })
     await page.getByRole('button', { name: 'Collapse sidebar' }).click()
     await page.getByRole('button', { name: 'Components section' }).click()
     await page.getByRole('button', { name: /Linear$/ }).click()
@@ -96,7 +97,7 @@ for (const pointerType of ['mouse', 'touch', 'pen'] as const) {
 
 for (const section of ['Project', 'Scale']) {
   test(`Enter in ${section} cannot finish a conductor behind the flyout`, async ({ page }) => {
-    const stage = await gotoApp(page)
+    const stage = await gotoApp(page, { shell: 'classic' })
     await page.getByRole('button', { name: /Linear$/ }).click()
     await page.getByRole('switch', { name: 'Continuous line mode' }).click()
     await page.getByRole('button', { name: 'Collapse sidebar' }).click()
@@ -131,7 +132,7 @@ for (const section of ['Project', 'Scale']) {
 
 test('tool selection closes the flyout and portrait controls remain reachable', async ({ page }) => {
   await page.setViewportSize({ width: 820, height: 1180 })
-  const stage = await gotoApp(page)
+  const stage = await gotoApp(page, { shell: 'classic' })
   await page.getByRole('button', { name: 'Collapse sidebar' }).click()
   const stageBounds = await stage.boundingBox()
   expect(stageBounds!.x).toBe(64)
@@ -161,7 +162,7 @@ test('tool selection closes the flyout and portrait controls remain reachable', 
 })
 
 test('keyboard navigation from Quick Access leaves one dismissible sidebar panel', async ({ page }) => {
-  await gotoApp(page)
+  await gotoApp(page, { shell: 'classic' })
   await page.getByRole('button', { name: 'Collapse sidebar' }).click()
   await page.getByRole('button', { name: 'Customize quick-access toolbar' }).click()
   await expect(page.locator('.quick-access-customizer')).toBeVisible()

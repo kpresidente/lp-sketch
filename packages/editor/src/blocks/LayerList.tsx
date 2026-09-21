@@ -1,8 +1,7 @@
 import { For, Show } from 'solid-js'
-import Panel from './Panel'
 import type { LayerId } from '@lp-sketch/core/types/project'
-import { useAppController } from '../../context/AppControllerContext'
-import { SectionHelp } from './SectionHelp'
+import { SectionHelp } from '../components/SectionHelp'
+import { useAppController } from '../context/AppControllerContext'
 
 const LAYER_OPTIONS: Array<{ id: LayerId; label: string }> = [
   { id: 'rooftop', label: 'Rooftop' },
@@ -11,13 +10,13 @@ const LAYER_OPTIONS: Array<{ id: LayerId; label: string }> = [
   { id: 'annotation', label: 'Annotation' },
 ]
 
-export default function LayersPanel() {
+/** Block: layer and sublayer visibility. Landmark: a group named "Layers". */
+export default function LayerList() {
   const props = useAppController()
+
   return (
-    <Panel label="Layers">
-      <div style={{ display: 'flex', "justify-content": 'flex-end', "margin-bottom": '2px' }}>
-        <SectionHelp anchor="help-layers" />
-      </div>
+    <div class="block" data-block="layers" role="group" aria-label="Layers">
+      <div class="section-label">Layers <SectionHelp anchor="help-layers" /></div>
       <For each={LAYER_OPTIONS}>
         {(layer) => (
           <>
@@ -51,17 +50,13 @@ export default function LayersPanel() {
                   }`}
                   disabled={!props.project.layers.rooftop}
                   onClick={() =>
-                    props.onSetLayerSublayerVisible(
-                      'connections',
-                      !props.project.layers.sublayers.connections,
-                    )
-                  }
+                    props.onSetLayerSublayerVisible('connections', !props.project.layers.sublayers.connections)}
                 />
               </div>
             </Show>
           </>
         )}
       </For>
-    </Panel>
+    </div>
   )
 }

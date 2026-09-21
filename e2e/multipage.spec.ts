@@ -4,7 +4,7 @@ import {
   expectStatus,
   gotoApp,
   loadProjectFromProjectPanel,
-  panelRegion,
+  openBlock,
 } from './helpers'
 
 test.describe('multi-page workflows', () => {
@@ -12,14 +12,14 @@ test.describe('multi-page workflows', () => {
     await gotoApp(page)
     await loadProjectFromProjectPanel(page, await createMultiPageProjectJsonPayload())
 
-    const project = panelRegion(page, 'Project')
-    await expect(project.locator('.page-nav-value')).toHaveText('1 of 2')
+    const pages = await openBlock(page, 'Pages')
+    await expect(pages.locator('.page-nav-value')).toHaveText('1 of 2')
     await expect(page.locator('svg.overlay-layer line[x1="120"][y1="160"]')).toHaveCount(1)
     await expect(page.locator('svg.overlay-layer line[x1="520"][y1="160"]')).toHaveCount(0)
 
-    await project.getByRole('button', { name: /Forward$/ }).click()
+    await pages.getByRole('button', { name: /Forward$/ }).click()
     await expectStatus(page, 'Page 2 of 2')
-    await expect(project.locator('.page-nav-value')).toHaveText('2 of 2')
+    await expect(pages.locator('.page-nav-value')).toHaveText('2 of 2')
     await expect(page.locator('svg.overlay-layer line[x1="120"][y1="160"]')).toHaveCount(0)
     await expect(page.locator('svg.overlay-layer line[x1="520"][y1="160"]')).toHaveCount(1)
   })
@@ -34,10 +34,10 @@ test.describe('multi-page workflows', () => {
         notesScope: 'page',
       }),
     )
-    const project = panelRegion(page, 'Project')
+    const pages = await openBlock(page, 'Pages')
 
     await expect(page.getByText('1. Page 1 note')).toBeVisible()
-    await project.getByRole('button', { name: /Forward$/ }).click()
+    await pages.getByRole('button', { name: /Forward$/ }).click()
     await expectStatus(page, 'Page 2 of 2')
     await expect(page.getByText('1. Page 2 note')).toBeVisible()
 
@@ -50,7 +50,7 @@ test.describe('multi-page workflows', () => {
     )
 
     await expect(page.getByText('1. Global note')).toBeVisible()
-    await project.getByRole('button', { name: /Forward$/ }).click()
+    await pages.getByRole('button', { name: /Forward$/ }).click()
     await expectStatus(page, 'Page 2 of 2')
     await expect(page.getByText('1. Global note')).toBeVisible()
   })

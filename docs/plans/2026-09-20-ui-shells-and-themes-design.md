@@ -35,6 +35,8 @@
 | Slot | A piece of UI the shell must place but does not own: workspace, tool options, dialogs, help drawer. | Rendered directly by `App.tsx` |
 | Theme | A named token set plus fonts. | The `:root` block in `App.css` and the font link in `apps/web/index.html` |
 
+Since step 5 the blocks are the components under `packages/editor/src/blocks/` (28 of them, each with a `group`, `radiogroup`, `toolbar`, or `status` landmark), the shells are `shells/tempered/` (default) and `shells/classic/` (whose panels compose the blocks), and the slot list is unchanged.
+
 ## Target architecture
 
 ```
@@ -206,30 +208,30 @@ Scope:
 - `shells/tempered/TemperedShell.tsx` from `prototypes/ui-refresh/04-tempered.html`: sticky stroke widget (material, class, size, live preview), three sidebar tabs (Draw, Annotate, Setup), context bar, quick-access rail, status strip.
 - Split the coarse panels into the finer blocks the shell needs: mode switch, one component per tool group, material picker, class picker, size picker, layer list, page navigation, scale control, history, file actions, export actions, stroke summary, status readouts. Classic keeps working by composing the same blocks into its old panels.
 - Give `PropertiesToolOptions` a layout hint (`horizontal | vertical | strip`) so future inspector-style shells can reuse it unchanged.
-- Add a shell picker block next to the theme picker.
+- Add a shell picker block next to the theme picker. Implemented as the "Layout" block: switching is live through a shell context in `ShellHost`, which re-mounts the chrome and the slots; App state is untouched.
 - Add a Tempered e2e spec covering tab switching, the stroke widget, the collapsed state, and iPad landscape and portrait.
 
 Acceptance:
 
 - Block coverage test passes for Tempered with no waivers.
-- Every existing behavior e2e spec passes against Tempered as the default shell, with only shell-coupled selectors changed (see step 6).
+- Every existing behavior e2e spec passes against Tempered as the default shell, with only shell-coupled selectors changed (see step 6). The e2e helpers now address blocks by landmark and reveal the tab that holds one; `sidebar.spec.ts` pins Classic as its shell spec. The App unit suites pin Classic until step 6 splits them, because Tempered keeps two tabs hidden and those suites reach into all of them.
 - Tempered matches the prototype within reason at 1440 by 900 and on iPad landscape.
 
 Checklist:
 
-- [ ] Fine-grained blocks extracted, Classic re-composed from them
-- [ ] Tool options layout hint
-- [ ] Tempered shell built
-- [ ] Shell picker block, with a help anchor
-- [ ] Tempered e2e spec
-- [ ] Tempered set as default
-- [ ] Suites green
+- [x] Fine-grained blocks extracted, Classic re-composed from them
+- [x] Tool options layout hint
+- [x] Tempered shell built
+- [x] Shell picker block, with a help anchor (`help-layout`; the block is named "Layout" for users)
+- [x] Tempered e2e spec
+- [x] Tempered set as default
+- [x] Suites green
 
 ### Step 6. Hardening
 
 Scope:
 
-- Split tests into behavior tests (shell-agnostic, run once against the default shell) and shell tests (small, one file per shell). Replace shell-coupled selectors in `e2e/helpers.ts`: `expectStatus` and `expectError` query `.sidebar .status-msg`, and `panelRegion('Project')` assumes the Classic panel regions. Give the status block a landmark and query that instead.
+- Split tests into behavior tests (shell-agnostic, run once against the default shell) and shell tests (small, one file per shell). The e2e side landed in step 5 (`openBlock` reveals a block's tab; `expectStatus` queries the block's own class; `sidebar.spec.ts` and `tempered.spec.ts` are the shell specs). What remains is the unit side: the five App suites pin Classic; move the shell-agnostic ones onto the default shell with the same reveal idea, and keep the collapsible-sidebar and panel-region tests as Classic's shell test.
 - Rewrite `packages/editor/src/help/USER_MANUAL.md` around blocks and tasks rather than locations. The required anchor list in `build-help.mjs` stays the same; the prose stops saying "in the Tools panel".
 - Namespace remaining shell preferences per the Preferences table, with one-time migration of the old keys.
 - Add the `hivis` theme from the Hi-Vis prototype palette, including the heavier border and radius tokens it needs, and run the contrast audit on it.
@@ -272,7 +274,7 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 | 2. Extract the Workspace | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; see the implementation notes, step 2 |
 | 3. Shell boundary with Classic | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 18 of 18 screenshots identical; see the implementation notes, step 3 |
 | 4. Tokens and themes | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; light and dark pass the audit; see the implementation notes, step 4 |
-| 5. Tempered shell as default | not started | | |
+| 5. Tempered shell as default | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 28 blocks, Tempered mounts all, Classic waives two; see the implementation notes, step 5 |
 | 6. Hardening | not started | | |
 
 Statuses: not started, in progress, in review, done.

@@ -116,7 +116,7 @@ export default function PropertiesBar() {
           </Show>
 
           <div class="tb-sep" />
-          <PropertiesToolOptions />
+          <PropertiesToolOptions layout="horizontal" />
         </div>
 
         <div class="properties-side properties-right">

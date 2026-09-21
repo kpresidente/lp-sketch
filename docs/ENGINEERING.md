@@ -47,7 +47,7 @@ Root scripts preserve the existing development workflow. Vite loads environment 
 - `packages/editor/src/controllers/pointer/`
   - Pointer event controllers: placement, select, measure, gesture
 - `packages/editor/src/shells/` and `packages/editor/src/blocks/`
-  - Shell registry, `ShellHost`, the Classic shell, and the required-block registry every shell must mount or waive
+  - Shell registry, `ShellHost` and the shell context (live switching), the Tempered shell (default), the Classic shell and its panels, and the block components with the required-block registry every shell must mount or waive
 - `packages/editor/src/workspace/`
   - Drawing stage component and the shared canvas export renderer
 - `packages/editor/src/themes/`

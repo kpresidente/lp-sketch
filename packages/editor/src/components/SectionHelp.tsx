@@ -1,5 +1,5 @@
-import { tablerIconClass } from '../../config/iconRegistry'
-import { useHelp } from '../../context/HelpContext'
+import { tablerIconClass } from '../config/iconRegistry'
+import { useHelp } from '../context/HelpContext'
 
 interface SectionHelpProps {
   anchor: string

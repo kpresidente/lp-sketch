@@ -1,5 +1,5 @@
 import { createContext, createSignal, createUniqueId, Show, useContext, type JSX } from 'solid-js'
-import { MISC_ICON, tablerIconClass } from '../../config/iconRegistry'
+import { MISC_ICON, tablerIconClass } from '../../../config/iconRegistry'
 
 interface PanelProps {
   label: string
@@ -7,11 +7,13 @@ interface PanelProps {
   defaultCollapsed?: boolean
 }
 
+/** Classic's flyout presentation: panels swap their collapse header for a close button inside a flyout. */
 export const PanelPresentationContext = createContext<{
   isFlyout: () => boolean
   closeFlyout: () => void
 }>()
 
+/** Classic's collapsible panel: a titled region that composes blocks. */
 export default function Panel(props: PanelProps) {
   const presentation = useContext(PanelPresentationContext)
   const [collapsed, setCollapsed] = createSignal(props.defaultCollapsed ?? false)

@@ -1,8 +1,9 @@
 import type { BlockId } from '../blocks/registry'
 import ClassicShell from './classic/ClassicShell'
+import TemperedShell from './tempered/TemperedShell'
 import type { ShellComponent } from './types'
 
-export type ShellId = 'classic'
+export type ShellId = 'tempered' | 'classic'
 
 /** Global device preference. Never enters project JSON, autosave, or history. */
 export const SHELL_PREFERENCE_KEY = 'lp-sketch.shell.v1'
@@ -28,17 +29,33 @@ export type ShellRegistration = ShellRegistrationBase &
       }
   )
 
+export const TEMPERED_SHELL: ShellRegistration = {
+  id: 'tempered',
+  label: 'Tempered',
+  kind: 'eager',
+  component: TemperedShell,
+  waivedBlocks: {},
+}
+
+// Classic stays eager: its unit suites and the live switch from the shell
+// picker render it synchronously. `lazy` remains for shells added later.
 export const CLASSIC_SHELL: ShellRegistration = {
   id: 'classic',
   label: 'Classic',
   kind: 'eager',
   component: ClassicShell,
-  waivedBlocks: {},
+  waivedBlocks: {
+    'stroke-summary':
+      'Classic shows the full material, class, and size pickers in its Material and Scale panels, so a stroke summary would repeat them.',
+    readouts:
+      'Classic shows the page, scale, snapping, and history state inside its panels and the selection in the properties bar.',
+  },
 }
 
-export const SHELLS: readonly ShellRegistration[] = [CLASSIC_SHELL]
+/** In the order the shell picker offers them; the default comes first. */
+export const SHELLS: readonly ShellRegistration[] = [TEMPERED_SHELL, CLASSIC_SHELL]
 
-export const DEFAULT_SHELL: ShellRegistration = CLASSIC_SHELL
+export const DEFAULT_SHELL: ShellRegistration = TEMPERED_SHELL
 
 export function findShell(id: string | null | undefined): ShellRegistration | undefined {
   return SHELLS.find((shell) => shell.id === id)

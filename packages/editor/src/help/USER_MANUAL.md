@@ -34,9 +34,11 @@ LP Sketch is a lightning protection system design communication tool. It allows 
 5. **Save your project** -- Save to a `.lps` file for future editing
 6. **Export** -- Export as PNG, JPG, or flattened PDF for handoff
 
-### 1.4. Collapsible Sidebar
+### 1.4. Sidebar and Collapsed Rail
 
-Use **Collapse sidebar** in the sidebar heading to give the drawing more space. The compact sidebar has six section buttons: **Project**, **Tools**, **Components**, **Material**, **Scale**, and **Layers**. This layout is available in both the browser and iPad app, and your collapse/expand choice is remembered on the device.
+The default layout keeps the stroke widget (material, class, and annotation size) at the top of the sidebar and sorts the rest into three tabs: **Draw** (mode, conductors, components, snapping, history), **Annotate** (annotation tools and layers), and **Setup** (project name, file, export, report, pages, PDF background, drawing scale, theme, and layout). The Classic layout shows the same controls as six panels instead; see the Layout section under Project.
+
+Use **Collapse sidebar** in the sidebar heading to give the drawing more space. The compact rail has one section button per tab (**Draw**, **Annotate**, **Setup**) in the default layout, or six in Classic (**Project**, **Tools**, **Components**, **Material**, **Scale**, and **Layers**). This layout is available in both the browser and iPad app, and your collapse/expand choice is remembered on the device.
 
 The sidebar stays on the left in both portrait and landscape, whether expanded or collapsed. Rotating the tablet or narrowing the browser window does not move it above the workspace.
 
@@ -151,12 +153,20 @@ On your next visit, if an autosaved draft is detected, it will be automatically 
 
 ### 2.9. Theme {#help-theme}
 
-The **Theme** control in the Project panel sets the editor's appearance on this device:
+The **Theme** control in the Setup tab (or the Project panel in the Classic layout) sets the editor's appearance on this device:
 - **System** follows the light or dark appearance of the operating system and switches when it changes
 - **Light** is the standard appearance
 - **Dark** uses dark chrome with an amber accent for low-light work
 
 The theme changes the editor chrome and interaction colors such as selection outlines, handles, and snap markers. The PDF page, conductor material colors, legends, notes, dimension text, and every export look the same in every theme. The choice is stored on the device and is not part of the project file.
+
+### 2.10. Layout {#help-layout}
+
+The **Layout** control next to Theme chooses how the editor chrome is arranged on this device. Every layout offers the same tools, controls, and names; only their placement changes.
+- **Tempered** (default) keeps the stroke widget at the top of the sidebar, sorts the controls into the Draw, Annotate, and Setup tabs, puts tool options in the bar above the drawing, and shows page, scale, snapping, selection, and history readouts in the strip below it
+- **Classic** shows every control at once in six collapsible panels: Project, Tools, Components, Material, Scale, and Layers
+
+Switching applies immediately and keeps the open project, the active tool, and the drawing. The choice is stored on the device and is not part of the project file.
 
 ---
 

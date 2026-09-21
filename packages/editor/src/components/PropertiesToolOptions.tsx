@@ -119,8 +119,16 @@ function symbolHint(props: PropertiesController): string {
   return props.symbolDirectionStart ? 'Click to set direction' : 'Click to place'
 }
 
-export default function PropertiesToolOptions() {
+export type ToolOptionsLayout = 'horizontal' | 'vertical' | 'strip'
+
+interface PropertiesToolOptionsProps {
+  /** How the shell lays the options out; the controls are the same in each. */
+  layout?: ToolOptionsLayout
+}
+
+export default function PropertiesToolOptions(options: PropertiesToolOptionsProps) {
   const props = useAppController()
+  const layout = () => options.layout ?? 'horizontal'
   const help = useHelp()
   const handleEnterBlur = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
     if (event.key !== 'Enter') {
@@ -197,7 +205,7 @@ export default function PropertiesToolOptions() {
   const renderInlineOptions = () => {
     if (props.tool === 'line') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-switch-wrap">
             <span class="tb-check-label">Continuous</span>
             <button
@@ -217,7 +225,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'arc') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <button class="tb-btn" type="button" onClick={props.onResetArc}>
             Reset Arc
           </button>
@@ -229,7 +237,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'curve') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-switch-wrap">
             <span class="tb-check-label">Continuous</span>
             <button
@@ -253,7 +261,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'linear_auto_spacing') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field">
             <span class="tb-field-label">Max Interval</span>
             <input
@@ -347,7 +355,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'arc_auto_spacing') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field">
             <span class="tb-field-label">Max Interval</span>
             <input
@@ -414,7 +422,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'measure') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field">
             <span class="tb-field-label">Target</span>
             <input
@@ -443,7 +451,7 @@ export default function PropertiesToolOptions() {
 
     if (markToolActive()) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field">
             <span class="tb-field-label">Target</span>
             <input
@@ -508,7 +516,7 @@ export default function PropertiesToolOptions() {
 
     if (markSelectedInSelectMode()) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <button
             class="tb-btn tb-btn-danger"
             type="button"
@@ -525,7 +533,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'text') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field tb-field-multiline">
             <span class="tb-field-label">Text</span>
             <textarea
@@ -556,7 +564,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'dimension_text') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-switch-wrap">
             <span class="tb-check-label">Extension Lines</span>
             <button
@@ -586,7 +594,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'arrow') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <button class="tb-btn" type="button" onClick={props.onResetArrow}>
             Reset Arrow
           </button>
@@ -598,7 +606,7 @@ export default function PropertiesToolOptions() {
 
     if (legendSelected()) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <button class="tb-btn tb-btn-primary" type="button" onClick={props.onEditSelectedLegend}>
             Edit Labels
           </button>
@@ -612,7 +620,7 @@ export default function PropertiesToolOptions() {
 
     if (generalNotesSelected()) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <button class="tb-btn tb-btn-primary" type="button" onClick={props.onEditSelectedGeneralNotes}>
             Edit Notes
           </button>
@@ -626,7 +634,7 @@ export default function PropertiesToolOptions() {
 
     if (downleadSelectionOptionsVisible()) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field">
             <span class="tb-field-label">Vertical</span>
             <input
@@ -660,7 +668,7 @@ export default function PropertiesToolOptions() {
     if (textSelectedInSelectMode()) {
       const maskEnabled = () => props.selectedTextBackgroundMask ?? false
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-switch-wrap">
             <span class="tb-check-label">Background Mask</span>
             <button
@@ -682,7 +690,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'legend') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <span class="tb-hint">Click to place legend stamp</span>
           <div class="tb-sep" />
           <span class="tb-status">
@@ -694,7 +702,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'general_notes') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <span class="tb-hint">Click to place general notes stamp</span>
           <div class="tb-sep" />
           <span class="tb-status">
@@ -706,7 +714,7 @@ export default function PropertiesToolOptions() {
 
     if (downleadPlacementOptionsVisible()) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field">
             <span class="tb-field-label">Vertical</span>
             <input
@@ -733,7 +741,7 @@ export default function PropertiesToolOptions() {
 
     if (letteredComponentOptionsVisible()) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <div class="tb-field">
             <span class="tb-field-label">Letter</span>
             <select
@@ -772,7 +780,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'symbol') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <span class="tb-hint">{symbolHint(props)}</span>
         </div>
       )
@@ -780,7 +788,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'calibrate') {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           <span class="tb-hint">{calibrateHint(props)}</span>
           {props.calibrationPendingDistancePt !== null && (
             <>
@@ -828,7 +836,7 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'select' && props.selectedKind) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           {zOrderControls()}
         </div>
       )
@@ -836,14 +844,14 @@ export default function PropertiesToolOptions() {
 
     if (props.tool === 'multi_select' && props.multiSelectionCount > 0) {
       return (
-        <div class="properties-tool-options-inline">
+        <div class="properties-tool-options-inline" data-layout={layout()}>
           {zOrderControls()}
         </div>
       )
     }
 
     return (
-      <div class="properties-tool-options-inline">
+      <div class="properties-tool-options-inline" data-layout={layout()}>
         <span class="tb-hint">No tool-specific properties.</span>
       </div>
     )

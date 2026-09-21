@@ -1,7 +1,7 @@
 import { For } from 'solid-js'
 import { useTheme } from '../context/ThemeContext'
 import { THEMES, type ThemePreference } from '../themes/registry'
-import { SectionHelp } from './sidebar/SectionHelp'
+import { SectionHelp } from '../components/SectionHelp'
 
 interface ThemeOption {
   id: ThemePreference
@@ -23,8 +23,8 @@ export default function ThemePicker() {
   const isActive = (option: ThemeOption) => theme.preference() === option.id
 
   return (
-    <>
-      <div class="section-label" style={{ 'margin-top': '10px' }}>
+    <div class="block" data-block="theme">
+      <div class="section-label">
         Theme <SectionHelp anchor="help-theme" />
       </div>
       <div class="btn-grid-3" role="radiogroup" aria-label="Theme">
@@ -43,6 +43,6 @@ export default function ThemePicker() {
           )}
         </For>
       </div>
-    </>
+    </div>
   )
 }

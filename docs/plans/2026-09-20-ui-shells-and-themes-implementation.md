@@ -201,3 +201,65 @@ Above the new section every sidebar pixel is identical, so the bundled Plus Jaka
 - The `hivis` theme (Step 6) needs the heavier border and radius tokens the Hi-Vis prototype uses; `light.css` has no border-width token yet.
 - The Theme picker sits in Classic's Project panel. Tempered places the same block in its Setup tab in Step 5.
 - The `.overlay-layer` dotted grid and the `canvas-watermark` still read chrome tokens directly (`--border`, `--bg-card`); that is fine for two themes and can become `--ws-*` tokens if a theme needs a different surround treatment.
+
+## Step 5. Build the Tempered shell and make it the default
+
+Visible change by design: the app opens in the Tempered layout. The Classic layout is one radio click away in the Setup tab and keeps every control it had.
+
+### What changed
+
+- `packages/editor/src/blocks/` (new components): the six panels became 23 fine blocks, each owning its caption, its `help-*` anchor, and a landmark: `ModeSwitch` (group "Mode"), `HistoryControls` ("History"), `SnappingControls` ("Snapping"), `AnnotationTools` ("Annotation"), `ConductorTools` ("Conductors"), `AirTerminalTools` ("Air Terminals"), `ConnectionTools` ("Connections"), `DownleadTools` ("Downleads"), `PenetrationTools` ("Penetrations"), `GroundingTools` ("Grounding"), `ClassPicker` ("Class"), `MaterialPicker` (radiogroup "Material"), `AnnotationSizePicker` (radiogroup "Annotation size"), `StrokeSummary` ("Stroke", new), `LayerList` ("Layers"), `ProjectName` ("Project name"), `FileActions` ("File"), `ExportActions` ("Export"), `ReportActions` ("Report"), `PageNavigation` ("Pages"), `PdfBackground` ("PDF background"), `DrawingScale` ("Drawing scale"), `Readouts` ("Readouts", new), plus `ShellPicker` (radiogroup "Layout", new). `ThemePicker` and `StatusMessages` moved in beside them; `toolButtons.tsx` holds the shared `ToolButton` and `SymbolButton` tiles and `labels.ts` the shared user-facing names. Every block root carries `data-block="<id>"` so a shell can restyle one without reaching into it.
+- `blocks/registry.ts`: 28 required blocks (the 25 above plus properties, quick-access, and status). The role and name pairs are the contract the coverage test, the e2e helpers, and the manual use.
+- `shells/classic/panels/` (moved from `components/sidebar/`): the six Classic panels now compose blocks and nothing else; `Panel.tsx` and `PanelPresentationContext` moved with them. Classic waives `stroke-summary` and `readouts` with reasons in the registry. `classic.css` separates blocks inside a panel with the rule-above-caption that the panel sections had.
+- `shells/tempered/` (new): `TemperedShell` (grid of sidebar and workspace column; context bar, stage with the quick rail, status strip), `TemperedSidebar` (header with the project name, sticky stroke widget, Draw / Annotate / Setup tablist with arrow-key navigation, three tab panels, collapsed rail with one section button per tab, flyout, footer status), `useTemperedLayout` (`lp-sketch.shell.tempered.sidebar.collapsed.v1`, `lp-sketch.shell.tempered.tab.v1`, transient flyout), and `tempered.css` (theme tokens only). Tab placement: Draw holds mode, the six component groups, snapping, and history; Annotate holds the annotation tools and layers; Setup holds project name, file, export, report, pages, PDF background, drawing scale, theme, and layout.
+- `shells/shared/DismissBackdrop.tsx` (new): the outside-tap pointer sink both shells use; its class is `shell-dismiss-backdrop`.
+- `shells/ShellContext.tsx` (new) and `ShellHost.tsx`: the host owns a shell signal and provides it; `ShellPicker` calls `setShell`, which stores the preference and re-mounts the chrome and the slots under the new shell. `shells/registry.ts` registers Tempered first and as the default; both shells stay eager.
+- `components/PropertiesToolOptions.tsx`: `layout?: 'horizontal' | 'vertical' | 'strip'` sets `data-layout` on the options root; `App.css` lays out vertical (column, full-width separators) and strip (no wrap, horizontal scroll). `PropertiesBar` passes `horizontal`.
+- `App.css`: base styles for the two new blocks (`.stroke-summary*`, `.readouts`), the layout-hint rules, the shared backdrop class; the panel-section rule it no longer needs is gone.
+- `config/iconRegistry.ts`: `TEMPERED_TAB_ICON` (pencil, writing, settings).
+- e2e: `helpers.ts` gains `openBlock(page, name, role)` (finds a block by landmark and clicks the tab that holds it when a shell hides it), `gotoApp(page, { shell })`, and `expectStatus` / `expectError` query `.status-msg` without a shell prefix; `panelRegion` is gone. The behavior specs use block names. `sidebar.spec.ts` pins Classic as its shell spec; `tempered.spec.ts` (new, 5 tests) covers tabs and arrow keys, the stroke widget, the collapsed rail with flyouts, iPad portrait and landscape, and the live layout switch.
+- Unit tests: `shells.coverage.test.tsx` wraps shells in the shell provider and queries mounted blocks with `hidden: true`; `ShellHost.test.tsx` covers the default and the state switch; `shells/tempered/TemperedShell.test.tsx` (new, 6 tests) renders `App` and covers the default shell, tabs and persistence, the stroke summary, the collapsed rail with Escape and tool-close behavior, restart behavior, and switching to Classic and back. The five App suites pin Classic in their `beforeEach`.
+- `scripts/ui-parity.mjs`: `UI_PARITY_SHELL` (default tempered) stores the shell preference; Tempered sets add `tab-annotate` and `tab-setup`; the flyout state opens the first section of whichever shell is under test (`flyout`, was `flyout-tools`).
+- Help: `help-layout` joined the required anchors (40); the manual gained 2.10 "Layout" and 1.4 now describes the tabs and both rails.
+- `AGENTS.md` and `docs/ENGINEERING.md` describe `blocks/` as the block components and `shells/` as both shells.
+
+### Decisions worth knowing
+
+1. Inactive tabs use the `hidden` attribute, as Classic's collapsed panels do, so hidden controls are hidden for tests too. The e2e helpers reveal a block's tab through ARIA (`tabpanel` to its `aria-labelledby` tab), which works on any shell that uses tabs and is a no-op on Classic. The App unit suites reach into all three tabs dozens of times per file, so for this step they pin Classic; step 6 already owned the test split and now has this concrete input.
+2. Block landmarks are `group` or `radiogroup` with an explicit `aria-label`, not `aria-labelledby` to the caption, because the caption contains the help button and the computed name would pick up its tooltip.
+3. `StrokeSummary` and `Readouts` are display-only blocks rather than shell chrome because the design lists them as blocks and any shell may want them; Classic waives both with reasons instead of duplicating its pickers.
+4. Switching shells is live. The slots are render functions, so the Workspace is re-created under the new shell; `bindStage` re-observes and `bindPdfCanvasRef` resets its buffers and re-queues the render, which is why the drawing survives. Both shells are eager because the unit suites render Classic synchronously and a lazy Classic would blank the first frame of a switch.
+5. Snapping and history sit at the end of the Draw tab; the prototype did not place them. The status strip shows their state as text with the state word ("Snap on"), not color alone.
+6. `ShellPicker` reads `SHELLS` at render time, never at module scope: the registry imports the shells, which import the picker, and a module-scope read would see an uninitialized binding.
+7. Classic is not pixel-identical. The Layers panel gained a "Layers" caption with its help button (the block owns them), the "loaded" file line moved under the File caption, and block gaps replaced four inline margins (two pixels here and there). Everything Classic's tests assert still holds.
+8. The prototype's zoom widget (zoom out, readout, zoom in, fit) is not built: the controller has no zoom actions yet. It is listed below.
+
+### Screenshot comparison
+
+`node scripts/ui-parity.mjs capture` with `UI_PARITY_DIR` pointed at the scratchpad (Playwright empties `test-results/` on every run, which is where the Step 4 sets went): `step5-tempered` (24 shots: three viewports by default, linear-tool, tab-annotate, tab-setup, collapsed, flyout, quick-customizer, help-open), `step5-tempered-dark` (24), and `step5-classic` (18) against the Step 4 `step4-light` set with a PIL pixel diff split at the sidebar edge.
+
+| Set | Result |
+| --- | --- |
+| Tempered light, desktop 1440 by 900 | The prototype's arrangement: header with mark and tagline, stroke widget (summary, chips, class, size), Draw / Annotate / Setup tabs, segmented mode, three-column tiles, footer status; context bar with the tool chip and the readouts on one row; quick rail top right; status strip |
+| Tempered light, iPad landscape and portrait | Same layout. Below 1420 px the context bar's readouts drop to a second row, which is the existing `App.css` media query and happens in Classic too; the Setup tab fits its nine blocks with the sidebar scrolling |
+| Tempered dark | Amber accent on dark cards from the tokens alone; the shell defines no tokens |
+| Tempered collapsed and flyout | 64 px rail with Draw, Annotate, Setup buttons; the flyout carries the stroke widget above the tab content; the status floats bottom right as in Classic |
+| Classic vs Step 4 | Collapsed: 3 of 3 identical. Workspace column: 0 changed pixels in all 18 shots (the one exception is 950 px of manual text inside the open help drawer at portrait). Expanded sidebar: 2.3% to 9.3% of pixels below y=184 changed, which is the Layers caption, the file line under File, block spacing, and the new Layout picker |
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | pass |
+| `npm run audit:contrast` | pass for light and dark |
+| `npm run build` | pass; help build verifies 40 anchors; fonts emitted as woff2 assets |
+| `npm run mobile:build` | pass; same 40 anchors and woff2 assets in the iPad bundle |
+| `npm test` | 55 files, 456 tests, pass (1 file and 7 tests added). One earlier full run hit the pre-existing 5 s budget of the PDF export test in `App.file-actions.test.tsx` under load; the file passes alone in 7 s and the final run passed. |
+| `npm run test:e2e` | 40 tests, pass, run alone (35 behavior and Classic tests plus 5 Tempered). The first run failed twice: the legend flow clicked a stage point that the import placeholder now covers at 1280 px (the spec's points moved up), and the layout-switch test assumed the Draw tab after switching back when Tempered correctly restores the Setup tab (the spec now reveals the block). |
+
+### Left for later steps
+
+- Step 6 test split: move the App unit suites onto the default shell with a jsdom `openBlock`, keeping the collapsible-sidebar and panel-region tests as Classic's shell test.
+- Zoom controls (out, readout, in, fit) need controller actions before a shell can place them; the context bar keeps the zoom readout meanwhile.
+- Classic's sidebar and panel styles still live in `App.css`; they can move to `classic.css` now that the panels are Classic-owned.
+- The manual still names Classic panels in places ("the Tools panel"); the step 6 rewrite around blocks removes that.

@@ -6,6 +6,7 @@ import { AppControllerProvider } from '../context/AppControllerContext'
 import { createHelpState, HelpProvider } from '../context/HelpContext'
 import { createThemeState, ThemeProvider } from '../context/ThemeContext'
 import { SHELLS, type ShellRegistration } from './registry'
+import { createShellState, ShellProvider } from './ShellContext'
 import { createFixtureController } from './testing/createFixtureController'
 import type { ShellChrome, ShellComponent } from './types'
 
@@ -26,12 +27,14 @@ describe.each(SHELLS)('shell "$id" block coverage', (registration) => {
     const Shell = await resolveShell(registration)
     let chrome: ShellChrome | undefined
 
-    // Providers expect stable state objects, as App creates them, not a fresh one per access.
+    // Providers expect stable state objects, as App and ShellHost create them, not a fresh one per access.
     render(() => {
       const themeState = createThemeState()
+      const shellState = createShellState(registration)
       return (
       <HelpProvider value={createHelpState()}>
         <ThemeProvider value={themeState}>
+        <ShellProvider value={shellState}>
         <AppControllerProvider value={createFixtureController()}>
           <Shell
             onChromeReady={(handle) => {
@@ -44,6 +47,7 @@ describe.each(SHELLS)('shell "$id" block coverage', (registration) => {
             }}
           />
         </AppControllerProvider>
+        </ShellProvider>
         </ThemeProvider>
       </HelpProvider>
       )
@@ -56,7 +60,8 @@ describe.each(SHELLS)('shell "$id" block coverage', (registration) => {
         continue
       }
 
-      const matches = screen.queryAllByRole(block.role, block.name ? { name: block.name } : undefined)
+      // Mounted is the contract; a shell may keep a block in a hidden tab until the user opens it.
+      const matches = screen.queryAllByRole(block.role, { name: block.name, hidden: true })
       expect(matches.length, `shell "${registration.id}" must mount block "${block.id}"`).toBe(1)
     }
 

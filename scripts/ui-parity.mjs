@@ -9,8 +9,9 @@
 //   node scripts/ui-parity.mjs compare before after
 //
 // Sets land in test-results/ui-parity/<tag>/ (ignored by git). Override the
-// server with UI_PARITY_BASE, the output root with UI_PARITY_DIR, and the
-// theme under test with UI_PARITY_THEME (a theme id stored as the preference).
+// server with UI_PARITY_BASE, the output root with UI_PARITY_DIR, the theme
+// under test with UI_PARITY_THEME (a theme id stored as the preference), and
+// the shell with UI_PARITY_SHELL (default: the app default, tempered).
 import { chromium } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -19,6 +20,9 @@ import path from 'node:path'
 const base = process.env.UI_PARITY_BASE ?? 'http://localhost:5173'
 const root = process.env.UI_PARITY_DIR ?? path.join('test-results', 'ui-parity')
 const theme = process.env.UI_PARITY_THEME
+const shell = process.env.UI_PARITY_SHELL ?? 'tempered'
+// The collapsed rail's first section differs per shell.
+const firstSection = shell === 'classic' ? 'Tools' : 'Draw'
 
 const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
@@ -35,6 +39,22 @@ const states = [
       await page.getByRole('button', { name: /Linear$/ }).click()
     },
   },
+  ...(shell === 'tempered'
+    ? [
+      {
+        name: 'tab-annotate',
+        run: async (page) => {
+          await page.getByRole('tab', { name: 'Annotate' }).click()
+        },
+      },
+      {
+        name: 'tab-setup',
+        run: async (page) => {
+          await page.getByRole('tab', { name: 'Setup' }).click()
+        },
+      },
+    ]
+    : []),
   {
     name: 'collapsed',
     run: async (page) => {
@@ -42,11 +62,11 @@ const states = [
     },
   },
   {
-    name: 'flyout-tools',
+    name: 'flyout',
     run: async (page) => {
       await page.getByRole('button', { name: 'Collapse sidebar' }).click()
-      await page.getByRole('button', { name: 'Tools section' }).click()
-      await page.getByRole('region', { name: 'Tools flyout' }).waitFor()
+      await page.getByRole('button', { name: `${firstSection} section` }).click()
+      await page.getByRole('region', { name: `${firstSection} flyout` }).waitFor()
     },
   },
   {
@@ -81,11 +101,10 @@ async function capture(tag) {
           viewport: { width: viewport.width, height: viewport.height },
           deviceScaleFactor: 1,
         })
-        if (theme) {
-          await context.addInitScript((value) => {
-            window.localStorage.setItem('lp-sketch.theme.v1', value)
-          }, theme)
-        }
+        await context.addInitScript((preferences) => {
+          if (preferences.theme) window.localStorage.setItem('lp-sketch.theme.v1', preferences.theme)
+          window.localStorage.setItem('lp-sketch.shell.v1', preferences.shell)
+        }, { theme, shell })
         const page = await context.newPage()
         await page.goto(base, { waitUntil: 'load' })
         await page.locator('.drawing-stage').waitFor({ timeout: 90_000 })

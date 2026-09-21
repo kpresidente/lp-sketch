@@ -4,7 +4,7 @@ import {
   expectStatus,
   gotoApp,
   importPdfFromProjectPanel,
-  panelRegion,
+  openBlock,
 } from './helpers'
 
 test.describe('project operations', () => {
@@ -27,18 +27,17 @@ test.describe('project operations', () => {
 
   test('save and load project file', async ({ page }) => {
     await gotoApp(page)
-    const project = panelRegion(page, 'Project')
-
-    await page.getByPlaceholder('Project name...').fill('E2E Save Load')
+    await (await openBlock(page, 'Project name')).getByPlaceholder('Project name...').fill('E2E Save Load')
+    const file = await openBlock(page, 'File')
 
     const downloadPromise = page.waitForEvent('download')
-    await project.getByRole('button', { name: /Save$/ }).click()
+    await file.getByRole('button', { name: /Save$/ }).click()
     const download = await downloadPromise
     expect(download.suggestedFilename()).toContain('E2E Save Load.lps')
     await expectStatus(page, 'Saved E2E Save Load.lps')
 
     const chooserPromise = page.waitForEvent('filechooser')
-    await project.getByRole('button', { name: /Load$/ }).click()
+    await file.getByRole('button', { name: /Load$/ }).click()
     const chooser = await chooserPromise
     await chooser.setFiles(createProjectJsonPayload({ withLine: true }))
 
@@ -51,14 +50,14 @@ test.describe('project operations', () => {
     await gotoApp(page)
     await importPdfFromProjectPanel(page, 'export-check.pdf')
 
-    const project = panelRegion(page, 'Project')
-    await project.getByRole('button', { name: /PNG$/ }).click()
+    const exports = await openBlock(page, 'Export')
+    await exports.getByRole('button', { name: /PNG$/ }).click()
     await expectStatus(page, 'Exported PNG output.')
 
-    await project.getByRole('button', { name: /JPG$/ }).click()
+    await exports.getByRole('button', { name: /JPG$/ }).click()
     await expectStatus(page, 'Exported JPG output.')
 
-    await project.locator('button[title="Export PDF"]').click()
+    await exports.locator('button[title="Export PDF"]').click()
     await expectStatus(page, 'Exported PDF output.')
   })
 })

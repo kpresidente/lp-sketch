@@ -1,14 +1,15 @@
 import { createEffect, createUniqueId, For, on, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
-import ComponentsPanel from '../../components/sidebar/ComponentsPanel'
+import StatusMessages from '../../blocks/StatusMessages'
 import { workspaceCanvasSpikeEnabled } from '../../config/workspaceRenderer'
-import LayersPanel from '../../components/sidebar/LayersPanel'
-import ProjectPanel from '../../components/sidebar/ProjectPanel'
-import ScalePanel from '../../components/sidebar/ScalePanel'
-import StatusMessages from '../../components/sidebar/StatusMessages'
-import StylePanel from '../../components/sidebar/StylePanel'
-import ToolsPanel from '../../components/sidebar/ToolsPanel'
-import { PanelPresentationContext } from '../../components/sidebar/Panel'
+import DismissBackdrop from '../shared/DismissBackdrop'
+import ComponentsPanel from './panels/ComponentsPanel'
+import LayersPanel from './panels/LayersPanel'
+import { PanelPresentationContext } from './panels/Panel'
+import ProjectPanel from './panels/ProjectPanel'
+import ScalePanel from './panels/ScalePanel'
+import StylePanel from './panels/StylePanel'
+import ToolsPanel from './panels/ToolsPanel'
 import { MISC_ICON, SIDEBAR_SECTION_ICON, tablerIconClass } from '../../config/iconRegistry'
 import type { SidebarLayout, SidebarSection } from './useSidebarLayout'
 
@@ -34,34 +35,10 @@ export default function ClassicSidebar(props: { layout: SidebarLayout }) {
     else if (previous && props.layout.collapsed()) sectionButtons.get(previous)?.focus({ preventScroll: true })
   }))
 
-  function consumePointer(event: PointerEvent) {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-
   return (
     <>
     <Show when={props.layout.activeSection()}>
-      <div
-        class="sidebar-dismiss-backdrop"
-        aria-hidden="true"
-        onPointerDown={(event) => {
-          consumePointer(event)
-          event.currentTarget.setPointerCapture(event.pointerId)
-        }}
-        onPointerMove={consumePointer}
-        onPointerUp={consumePointer}
-        onPointerCancel={consumePointer}
-        onWheel={(event) => event.preventDefault()}
-        onContextMenu={(event) => event.preventDefault()}
-        onClick={(event) => {
-          // Keep the backdrop through pointerup and its compatibility click.
-          // Removing it on pointerdown can send the rest of a tap to the canvas.
-          event.preventDefault()
-          event.stopPropagation()
-          props.layout.closeFlyout()
-        }}
-      />
+      <DismissBackdrop onDismiss={props.layout.closeFlyout} />
     </Show>
     <aside
       class="sidebar"

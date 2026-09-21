@@ -4,13 +4,13 @@ import {
   clickStage,
   expectStatus,
   gotoApp,
-  panelRegion,
+  openBlock,
 } from './helpers'
 
 test.describe('geometry and annotation tools', () => {
   test('line tool supports placement and quick undo/redo', async ({ page }) => {
     await gotoApp(page)
-    await panelRegion(page, 'Components').getByRole('button', { name: /Linear$/ }).click()
+    await (await openBlock(page, 'Conductors')).getByRole('button', { name: /Linear$/ }).click()
 
     await clickStage(page, { x: 120, y: 140 })
     await clickStage(page, { x: 320, y: 220 })
@@ -28,15 +28,15 @@ test.describe('geometry and annotation tools', () => {
 
   test('arc and curve tools place geometry', async ({ page }) => {
     await gotoApp(page)
-    const components = panelRegion(page, 'Components')
+    const conductors = await openBlock(page, 'Conductors')
 
-    await components.getByRole('button', { name: /Arc$/ }).click()
+    await conductors.getByRole('button', { name: /Arc$/ }).click()
     await clickStage(page, { x: 400, y: 300 })
     await clickStage(page, { x: 350, y: 386 })
     await clickStage(page, { x: 350, y: 214 })
     await expect(page.locator('svg.overlay-layer path[stroke="#2e8b57"]')).toHaveCount(1)
 
-    await components.getByRole('button', { name: /Curve$/ }).click()
+    await conductors.getByRole('button', { name: /Curve$/ }).click()
     await clickStage(page, { x: 200, y: 380 })
     await clickStage(page, { x: 340, y: 300 })
     await clickStage(page, { x: 520, y: 360 })
@@ -49,21 +49,21 @@ test.describe('geometry and annotation tools', () => {
   test('text, arrow, and dimension text placement work together', async ({ page }) => {
     await gotoApp(page)
     await applyManualScale(page, '1', '20')
-    const tools = panelRegion(page, 'Tools')
+    const annotation = await openBlock(page, 'Annotation')
 
-    await tools.getByRole('button', { name: /Text$/ }).first().click()
+    await annotation.getByRole('button', { name: /Text$/ }).first().click()
     await page.getByRole('textbox', { name: 'Text' }).fill('E2E NOTE')
     await clickStage(page, { x: 340, y: 220 })
     await expectStatus(page, 'Text note placed.')
     await expect(page.locator('svg.overlay-layer text', { hasText: 'E2E NOTE' })).toHaveCount(1)
 
-    await tools.getByRole('button', { name: /Arrow$/ }).click()
+    await annotation.getByRole('button', { name: /Arrow$/ }).click()
     await clickStage(page, { x: 360, y: 280 })
     await clickStage(page, { x: 520, y: 340 })
     await expectStatus(page, 'Arrow placed.')
     await expect(page.locator('svg.overlay-layer line[marker-end="url(#arrow-head)"]')).toHaveCount(1)
 
-    await tools.getByRole('button', { name: /Dim Text$/ }).click()
+    await annotation.getByRole('button', { name: /Dim Text$/ }).click()
     const extensionLinesSwitch = page.getByRole('switch', { name: 'Dimension extension lines' })
     if ((await extensionLinesSwitch.getAttribute('aria-checked')) === 'false') {
       await extensionLinesSwitch.click()
@@ -78,16 +78,16 @@ test.describe('geometry and annotation tools', () => {
   test('measure and mark workflows clear correctly', async ({ page }) => {
     await gotoApp(page)
     await applyManualScale(page, '1', '20')
-    const tools = panelRegion(page, 'Tools')
+    const annotation = await openBlock(page, 'Annotation')
 
-    await tools.getByRole('button', { name: /Measure$/ }).click()
+    await annotation.getByRole('button', { name: /Measure$/ }).click()
     await clickStage(page, { x: 180, y: 180 })
     await clickStage(page, { x: 420, y: 180 })
     await expectStatus(page, 'Measurement point added.')
     await page.getByRole('button', { name: 'Clear', exact: true }).click()
     await expectStatus(page, 'Measurement path cleared.')
 
-    await tools.getByRole('button', { name: /Mark$/ }).click()
+    await annotation.getByRole('button', { name: /Mark$/ }).click()
     await clickStage(page, { x: 220, y: 280 })
     await clickStage(page, { x: 360, y: 280 })
     await expectStatus(page, 'Mark placed. New span starts from this mark.')
@@ -100,7 +100,7 @@ test.describe('geometry and annotation tools', () => {
 
   test('calibration sets scale from two points', async ({ page }) => {
     await gotoApp(page)
-    await panelRegion(page, 'Scale').getByRole('button', { name: /Calibrate/ }).click()
+    await (await openBlock(page, 'Drawing scale')).getByRole('button', { name: /Calibrate/ }).click()
 
     await clickStage(page, { x: 180, y: 160 })
     await clickStage(page, { x: 480, y: 160 })

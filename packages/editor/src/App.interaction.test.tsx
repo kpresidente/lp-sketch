@@ -87,6 +87,9 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
+  // The App suites exercise the controller through Classic's always-visible panels;
+  // Step 6 of the shells design splits them into shell-agnostic and per-shell tests.
+  window.localStorage.setItem('lp-sketch.shell.v1', 'classic')
   vi.spyOn(workspaceRenderer, 'workspaceCanvasSpikeEnabled').mockReturnValue(false)
 
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(

@@ -1,7 +1,16 @@
 /** @vitest-environment jsdom */
 import { cleanup, render, screen, waitFor } from '@solidjs/testing-library'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_SHELL, readShellPreference, SHELL_PREFERENCE_KEY, writeShellPreference } from './registry'
+import {
+  CLASSIC_SHELL,
+  DEFAULT_SHELL,
+  readShellPreference,
+  SHELL_PREFERENCE_KEY,
+  TEMPERED_SHELL,
+  writeShellPreference,
+  type ShellId,
+} from './registry'
+import { createShellState } from './ShellContext'
 import ShellHost from './ShellHost'
 import type { ShellComponent, ShellSlots } from './types'
 
@@ -20,7 +29,7 @@ describe('ShellHost', () => {
 
     render(() => (
       <ShellHost
-        shell={{ id: 'classic', label: 'Eager', kind: 'eager', component: Eager, waivedBlocks: {} }}
+        shell={{ id: 'tempered', label: 'Eager', kind: 'eager', component: Eager, waivedBlocks: {} }}
         slots={slots}
         onChromeReady={() => {}}
       />
@@ -55,14 +64,28 @@ describe('ShellHost', () => {
     expect(document.querySelector('.shell-loading')).toBeNull()
   })
 
-  it('falls back to the default shell for a missing or unknown preference', () => {
-    expect(readShellPreference()).toBe(DEFAULT_SHELL)
+  it('defaults to Tempered and falls back to it for a missing or unknown preference', () => {
+    expect(DEFAULT_SHELL).toBe(TEMPERED_SHELL)
+    expect(readShellPreference()).toBe(TEMPERED_SHELL)
 
     window.localStorage.setItem(SHELL_PREFERENCE_KEY, 'not-a-shell')
-    expect(readShellPreference()).toBe(DEFAULT_SHELL)
+    expect(readShellPreference()).toBe(TEMPERED_SHELL)
 
     writeShellPreference('classic')
     expect(window.localStorage.getItem(SHELL_PREFERENCE_KEY)).toBe('classic')
-    expect(readShellPreference().id).toBe('classic')
+    expect(readShellPreference()).toBe(CLASSIC_SHELL)
+  })
+
+  it('switches the active shell through the shell state and stores the choice', () => {
+    const state = createShellState(TEMPERED_SHELL)
+    expect(state.shell()).toBe(TEMPERED_SHELL)
+
+    state.setShell('classic')
+    expect(state.shell()).toBe(CLASSIC_SHELL)
+    expect(window.localStorage.getItem(SHELL_PREFERENCE_KEY)).toBe('classic')
+
+    state.setShell('unknown' as ShellId)
+    expect(state.shell()).toBe(CLASSIC_SHELL)
+    expect(window.localStorage.getItem(SHELL_PREFERENCE_KEY)).toBe('classic')
   })
 })

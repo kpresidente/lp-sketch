@@ -32,6 +32,12 @@ export const SIDEBAR_SECTION_ICON = {
   layers: 'stack-front',
 } as const
 
+export const TEMPERED_TAB_ICON = {
+  draw: 'pencil',
+  annotate: 'writing',
+  setup: 'settings',
+} as const
+
 export const COMMAND_ICON = {
   undo: 'arrow-back-up',
   redo: 'arrow-forward-up',

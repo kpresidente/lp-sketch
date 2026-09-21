@@ -79,7 +79,8 @@
   color: var(--text-on-accent);
 }
 
-.sidebar-dismiss-backdrop {
+/* Shared by every shell's modal chrome; see shells/shared/DismissBackdrop.tsx. */
+.shell-dismiss-backdrop {
   position: fixed;
   inset: 0;
   z-index: 33;
@@ -841,6 +842,75 @@ select.select-field:focus {
   margin-left: auto;
 }
 
+/* ──── STROKE SUMMARY (block) ──── */
+.stroke-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.stroke-summary-preview {
+  width: 92px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.stroke-summary-fill { fill: var(--bg-card); }
+
+.stroke-summary-letter {
+  font-family: var(--font);
+  font-size: 8.5px;
+  font-weight: 700;
+  fill: var(--text-primary);
+}
+
+.stroke-summary-text { min-width: 0; }
+
+.stroke-summary-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stroke-summary-meta {
+  margin-top: 1px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ──── READOUTS (block) ──── */
+.readouts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+}
+
+.readout b {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.readout.on {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.readout-spacer { flex: 1; }
+
 /* ──── SECTION LABEL ──── */
 .section-label {
   display: flex;
@@ -856,11 +926,6 @@ select.select-field:focus {
 }
 
 .section-label:first-child { margin-top: 0; }
-
-.panel-body > .section-label:not(:first-child) {
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
-}
 
 /* ──── SECTION HELP ICON ──── */
 .section-help-btn {
@@ -1066,6 +1131,22 @@ select.select-field:focus {
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+/* Layout hint from the shell; the controls are the same in every layout. */
+.properties-tool-options-inline[data-layout="vertical"] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.properties-tool-options-inline[data-layout="vertical"] .tb-sep {
+  width: 100%;
+  height: 1px;
+}
+
+.properties-tool-options-inline[data-layout="strip"] {
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .properties-slot {

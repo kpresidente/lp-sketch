@@ -38,10 +38,10 @@ The repository uses npm workspaces. Run development, build, test, and audit comm
 - `packages/core/src/types/` — Shared project and interaction types
 - `packages/core/src/lib/` — Pure geometry, snapping, spacing, legend, layers, and project calculations
 - `packages/editor/src/App.tsx` — Shared editor orchestration, tool state, pointer workflows
-- `packages/editor/src/components/` — Sidebar panels, bars, overlays, dialogs (the blocks shells arrange)
+- `packages/editor/src/components/` — Properties bar, quick-access rail, overlays, dialogs, help drawer
 - `packages/editor/src/controllers/` — Pointer event controllers
-- `packages/editor/src/shells/` — Shell registry, `ShellHost`, and the Classic shell that arranges blocks around the workspace
-- `packages/editor/src/blocks/` — Registry of blocks every shell must mount or waive
+- `packages/editor/src/shells/` — Shell registry, `ShellHost`, the Tempered shell (default) and the Classic shell (its panels compose the same blocks); a shell places blocks and never defines behavior
+- `packages/editor/src/blocks/` — The block components (tool groups, pickers, project actions, readouts, status) and the registry of blocks every shell must mount or waive
 - `packages/editor/src/themes/` — Theme registry, token stylesheets (`light.css` is the complete set), and bundled fonts; every theme passes `npm run audit:contrast`
 - `packages/editor/src/hooks/` — SolidJS reactive hooks
 - `packages/editor/src/lib/` — Browser-dependent rendering helpers, exports, autosave, file handling, reporting

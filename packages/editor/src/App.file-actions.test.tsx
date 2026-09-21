@@ -131,6 +131,9 @@ beforeAll(() => {
 
 beforeEach(() => {
   window.localStorage.clear()
+  // The App suites exercise the controller through Classic's always-visible panels;
+  // Step 6 of the shells design splits them into shell-agnostic and per-shell tests.
+  window.localStorage.setItem('lp-sketch.shell.v1', 'classic')
   renderProjectImageBlobMock.mockReset()
   renderProjectPdfBlobMock.mockReset()
   downloadBlobMock.mockReset()
