@@ -68,7 +68,7 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    expect(container.querySelector('line[stroke="#111827"][stroke-dasharray="5 3"]')).not.toBeNull()
+    expect(container.querySelector('line.ov-outline--selected[stroke-dasharray="5 3"]')).not.toBeNull()
     expect(container.querySelector('line[stroke="#2e8b57"][marker-end="url(#arrow-head)"]')).not.toBeNull()
     unmount()
 
@@ -78,7 +78,7 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    expect(unselectedContainer.querySelector('line[stroke="#111827"][stroke-dasharray="5 3"]')).toBeNull()
+    expect(unselectedContainer.querySelector('line.ov-outline--selected[stroke-dasharray="5 3"]')).toBeNull()
     expect(unselectedContainer.querySelector('line[stroke="#2e8b57"][marker-end="url(#arrow-head)"]')).not.toBeNull()
   })
 
@@ -104,7 +104,7 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    expect(container.querySelector('line[stroke="#111827"][stroke-dasharray="5 3"]')).not.toBeNull()
+    expect(container.querySelector('line.ov-outline--selected[stroke-dasharray="5 3"]')).not.toBeNull()
   })
 
   it('renders dimension linework when enabled on a dimension text element', () => {
@@ -156,7 +156,7 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    expect(container.querySelector('circle[stroke="#111827"][stroke-dasharray="4 2"]')).not.toBeNull()
+    expect(container.querySelector('circle.ov-outline--selected[stroke-dasharray="4 2"]')).not.toBeNull()
     unmount()
 
     const { container: unselectedContainer } = render(() => (
@@ -165,7 +165,7 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    expect(unselectedContainer.querySelector('circle[stroke="#111827"][stroke-dasharray="4 2"]')).toBeNull()
+    expect(unselectedContainer.querySelector('circle.ov-outline--selected[stroke-dasharray="4 2"]')).toBeNull()
   })
 
   it('renders downlead footage text as black annotation text near the symbol', () => {
@@ -228,11 +228,11 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    const highlight = container.querySelector('circle[stroke="#111827"]')
+    const highlight = container.querySelector('circle.ov-outline--selected')
     expect(highlight?.getAttribute('r')).toBe('8')
     expect(highlight?.getAttribute('stroke-width')).toBe('1.4')
     expect(
-      container.querySelector('line[stroke="#b91c1c"][x1="37"][y1="53"][x2="47"][y2="63"]'),
+      container.querySelector('line.ov-mark[x1="37"][y1="53"][x2="47"][y2="63"]'),
     ).not.toBeNull()
   })
 
@@ -329,7 +329,7 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    expect(container.querySelector('rect[stroke="#111827"][stroke-dasharray="4 2"]')).not.toBeNull()
+    expect(container.querySelector('rect.ov-outline--selected[stroke-dasharray="4 2"]')).not.toBeNull()
     expect(container.querySelector('polygon[fill="#ffffff"][stroke="#2e8b57"]')).not.toBeNull()
     expect(container.querySelector('circle[fill="#ffffff"][stroke="#2563eb"]')).not.toBeNull()
     expect(container.querySelector('circle[fill="#DC143C"][stroke="#DC143C"]')).not.toBeNull()
@@ -394,7 +394,7 @@ describe('overlay branch rendering', () => {
 
     expect(screen.getByText('General Notes')).toBeTruthy()
     expect(screen.getByText('1. Install per UL 96A.')).toBeTruthy()
-    expect(container.querySelector('rect[stroke="#111827"]')).not.toBeNull()
+    expect(container.querySelector('rect.ov-outline--selected')).not.toBeNull()
   })
 
   it('renders direction preview lines when provided', () => {
@@ -414,7 +414,7 @@ describe('overlay branch rendering', () => {
     ))
 
     const preview = document.querySelector(
-      'line[stroke="#1f2937"][stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
+      'line.ov-ghost[stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
     )
     expect(preview).not.toBeNull()
     expect(preview?.getAttribute('x1')).toBe('5')
@@ -668,7 +668,7 @@ describe('overlay branch rendering', () => {
     const defaultMarkerSquare = container.querySelector(
       'rect[data-snap-shape="square"]',
     )
-    expect(defaultMarkerSquare?.getAttribute('stroke')).toBe('#ef4444')
+    expect(defaultMarkerSquare?.classList.contains('ov-snap-box')).toBe(true)
     expect(Number.parseFloat(defaultMarkerSquare?.getAttribute('stroke-width') ?? '0')).toBeCloseTo(2.2, 2)
     unmount()
 
@@ -757,7 +757,7 @@ describe('overlay branch rendering', () => {
       </svg>
     ))
 
-    expect(document.querySelector('rect[width="7"][height="7"][stroke="#92400e"]')).not.toBeNull()
-    expect(document.querySelector('circle[r="3.6"][fill="#eff6ff"][stroke="#1d4ed8"]')).not.toBeNull()
+    expect(document.querySelector('rect.ov-auto-vertex--inside[width="7"][height="7"]')).not.toBeNull()
+    expect(document.querySelector('circle.ov-auto-vertex:not(.ov-auto-vertex--inside)[r="3.6"]')).not.toBeNull()
   })
 })

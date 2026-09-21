@@ -26,7 +26,8 @@ export default function MarksOverlay(props: MarksOverlayProps) {
                 cy={mark.position.y}
                 r={8}
                 fill="none"
-                stroke={isSelected() ? '#111827' : '#0369a1'}
+                class="ov-outline"
+                classList={{ 'ov-outline--selected': isSelected() }}
                 stroke-width={1.4}
                 stroke-dasharray="4 2"
                 opacity={isSelected() ? 0.55 : 0.4}
@@ -37,7 +38,7 @@ export default function MarksOverlay(props: MarksOverlayProps) {
               y1={mark.position.y - 5}
               x2={mark.position.x + 5}
               y2={mark.position.y + 5}
-              stroke="#b91c1c"
+              class="ov-mark"
               stroke-width={1.8}
             />
             <line
@@ -45,7 +46,7 @@ export default function MarksOverlay(props: MarksOverlayProps) {
               y1={mark.position.y + 5}
               x2={mark.position.x + 5}
               y2={mark.position.y - 5}
-              stroke="#b91c1c"
+              class="ov-mark"
               stroke-width={1.8}
             />
           </g>

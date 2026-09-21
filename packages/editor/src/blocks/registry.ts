@@ -14,6 +14,7 @@ export type BlockId =
   | 'status'
   | 'properties'
   | 'quick-access'
+  | 'theme'
 
 export interface BlockRegistration {
   id: BlockId
@@ -35,4 +36,5 @@ export const REQUIRED_BLOCKS: readonly BlockRegistration[] = [
   { id: 'status', role: 'status', source: 'components/sidebar/StatusMessages.tsx' },
   { id: 'properties', role: 'toolbar', name: 'Properties', source: 'components/PropertiesBar.tsx' },
   { id: 'quick-access', role: 'toolbar', name: 'Quick access', source: 'components/QuickAccessBar.tsx' },
+  { id: 'theme', role: 'radiogroup', name: 'Theme', source: 'components/ThemePicker.tsx' },
 ]

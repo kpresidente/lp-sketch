@@ -48,7 +48,8 @@ export default function GeneralNotesOverlay(props: GeneralNotesOverlayProps) {
                 width={size().width + 4 * designScale()}
                 height={size().height + 4 * designScale()}
                 fill="none"
-                stroke={isSelected() ? '#111827' : '#0369a1'}
+                class="ov-outline"
+                classList={{ 'ov-outline--selected': isSelected() }}
                 stroke-width={1.2 * designScale()}
                 stroke-dasharray={`${4 * designScale()} ${2 * designScale()}`}
                 rx={5 * designScale()}

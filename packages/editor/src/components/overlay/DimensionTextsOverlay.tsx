@@ -104,7 +104,8 @@ export default function DimensionTextsOverlay(props: DimensionTextsOverlayProps)
                 width={selectedWidth() + 8 * designScale()}
                 height={props.textLineHeightPx + 6 * designScale()}
                 fill="none"
-                stroke={isSelected() ? '#111827' : '#0369a1'}
+                class="ov-outline"
+                classList={{ 'ov-outline--selected': isSelected() }}
                 stroke-width={1.2 * designScale()}
                 stroke-dasharray={`${4 * designScale()} ${2 * designScale()}`}
                 rx={3 * designScale()}

@@ -1,0 +1,93 @@
+/* ──── LIGHT THEME (default) ────
+   The complete token set. Other themes override these on [data-theme];
+   any token a theme leaves out falls back to the value here. Layout
+   metrics (widths, radii, transitions) live in App.css because a theme
+   never changes layout. */
+:root {
+  color-scheme: light;
+
+  --bg-base: #e9edf2;
+  --bg-sidebar: #eef1f5;
+  --bg-card: #ffffff;
+  --bg-input: #f5f7fa;
+  --bg-subtle: #f8fafc;
+  --bg-hover: #e4e9f0;
+  --bg-active: #d7dfe9;
+  --bg-disabled: #e8edf3;
+  --bg-canvas: #fafbfc;
+  --bg-panel-header: #e2e8f0;
+  /* Keep structural dividers quieter than functional control outlines. */
+  --border: #b9c3d0;
+  --border-subtle: #e2e8f0;
+  --border-btn: #748196;
+  --border-strong: #4b5b71;
+  --border-focus: #2c4f8a;
+  --border-disabled: #adb8c6;
+  --text-primary: #111827;
+  --text-secondary: #27364b;
+  --text-tertiary: #46566c;
+  --text-muted: #526176;
+  --text-label: #37475b;
+  --text-disabled: #58677b;
+  /* Text and icons placed on accent, danger, and success fills. */
+  --text-on-accent: #ffffff;
+  --switch-off: #64748b;
+  --switch-thumb: #ffffff;
+  --accent: #2c4f8a;
+  --accent-hover: #1e3d72;
+  --accent-bright: #3a5fa0;
+  --accent-light: #dce5f4;
+  --accent-lighter: #edf1f9;
+  --accent-text: #1e3a6e;
+  --accent-marker: #3b6bc4;
+  --accent-tint: rgba(44, 79, 138, 0.12);
+  --focus-ring: rgba(44, 79, 138, 0.12);
+  --focus-ring-strong: rgba(104, 120, 160, 0.28);
+  --success: #15803d;
+  --success-bg: #dcfce7;
+  --error: #b91c1c;
+  --error-bg: #fee2e2;
+  --danger: #dc2626;
+  --highlight: #fef08a;
+  --tooltip-bg: #1e293b;
+  --tooltip-text: #f1f5f9;
+  --backdrop: rgba(15, 23, 42, 0.28);
+  --swatch-outline: rgba(0, 0, 0, 0.1);
+  /* Material colors carry domain meaning and are identical in every theme. */
+  --material-copper: #16a34a;
+  --material-aluminum: #2563eb;
+  --material-grounding: #DC143C;
+  --material-bimetallic: #7c3aed;
+  --material-tinned: #0891b2;
+  /* The PDF page stays white in every theme; only the surround changes. */
+  --pdf-page: #ffffff;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 8px 28px rgba(15, 23, 42, 0.22);
+  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --font: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Fira Code Variable', monospace;
+
+  /* Workspace interaction colors. Drawing content (material strokes, ink,
+     legend and notes chrome, dimension text) keeps fixed colors so the
+     screen matches the export. */
+  --ws-selection-stroke: #111827;
+  --ws-hover-stroke: #0369a1;
+  --ws-handle-fill: #ffffff;
+  --ws-handle-stroke: #0f172a;
+  --ws-snap-marker: #ef4444;
+  --ws-snap-contrast: #ffffff;
+  --ws-mark-stroke: #b91c1c;
+  --ws-preview-stroke: #0f766e;
+  --ws-preview-fill: #ffffff;
+  --ws-preview-mark-stroke: #b45309;
+  --ws-preview-mark-fill: #fff7ed;
+  --ws-preview-auto-stroke: #0369a1;
+  --ws-preview-inside-fill: #fffbeb;
+  --ws-preview-inside-stroke: #92400e;
+  --ws-preview-outside-fill: #eff6ff;
+  --ws-preview-outside-stroke: #1d4ed8;
+  --ws-ghost-stroke: #334155;
+  --ws-ghost-fill: #ffffff;
+}

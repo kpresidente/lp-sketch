@@ -43,7 +43,8 @@ export default function LinesOverlay(props: LinesOverlayProps) {
                 y1={line.start.y}
                 x2={line.end.x}
                 y2={line.end.y}
-                stroke={isSelected() ? '#111827' : '#0369a1'}
+                class="ov-outline"
+                classList={{ 'ov-outline--selected': isSelected() }}
                 stroke-width={(isSelected() ? 7 : 6) * designScale()}
                 stroke-dasharray={
                   isSelected()

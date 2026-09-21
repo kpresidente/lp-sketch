@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { REQUIRED_BLOCKS } from '../blocks/registry'
 import { AppControllerProvider } from '../context/AppControllerContext'
 import { createHelpState, HelpProvider } from '../context/HelpContext'
+import { createThemeState, ThemeProvider } from '../context/ThemeContext'
 import { SHELLS, type ShellRegistration } from './registry'
 import { createFixtureController } from './testing/createFixtureController'
 import type { ShellChrome, ShellComponent } from './types'
@@ -25,8 +26,12 @@ describe.each(SHELLS)('shell "$id" block coverage', (registration) => {
     const Shell = await resolveShell(registration)
     let chrome: ShellChrome | undefined
 
-    render(() => (
+    // Providers expect stable state objects, as App creates them, not a fresh one per access.
+    render(() => {
+      const themeState = createThemeState()
+      return (
       <HelpProvider value={createHelpState()}>
+        <ThemeProvider value={themeState}>
         <AppControllerProvider value={createFixtureController()}>
           <Shell
             onChromeReady={(handle) => {
@@ -39,8 +44,10 @@ describe.each(SHELLS)('shell "$id" block coverage', (registration) => {
             }}
           />
         </AppControllerProvider>
+        </ThemeProvider>
       </HelpProvider>
-    ))
+      )
+    })
 
     for (const block of REQUIRED_BLOCKS) {
       const waiver = registration.waivedBlocks[block.id]

@@ -141,3 +141,63 @@ Result: 18 of 18 identical.
 - `ShellHost` reads the shell preference once at mount. Runtime switching arrives with the shell picker in Step 5.
 - Sidebar, panel, bar, and rail CSS still live in `App.css`; Classic's stylesheet holds only the grid. Step 5 decides what moves when the fine-grained blocks are extracted.
 - The `.workspace` and `.workspace-stage-shell` class names and the `.sidebar .status-msg` e2e helpers are Step 6 work.
+
+## Step 4. Tokenize and add themes
+
+Visible change by design: a Theme control in the Project panel, bundled fonts, and a dark theme. The light theme otherwise renders as before (see the screenshot section).
+
+### What changed
+
+- `packages/editor/src/themes/light.css` (new): the complete token set on `:root`, moved out of `App.css`, plus new tokens for values that used to be literals (`--bg-subtle`, `--border-subtle`, `--text-on-accent`, `--switch-thumb`, `--accent-bright`, `--accent-tint`, `--focus-ring`, `--focus-ring-strong`, `--danger`, `--highlight`, `--tooltip-bg`, `--tooltip-text`, `--backdrop`, `--swatch-outline`, `--shadow-lg`, `--pdf-page`) and eighteen `--ws-*` workspace interaction tokens. `App.css` keeps only layout metrics in `:root`.
+- `packages/editor/src/themes/dark.css` (new): `:root[data-theme="dark"]` overriding every light token, built from the Nightshift prototype palette: near-black surfaces, cool grey text, amber accent, dark text on amber fills.
+- `packages/editor/src/themes/fonts.css` (new) and `styles.css`: Plus Jakarta Sans and Fira Code are bundled from `@fontsource-variable/plus-jakarta-sans` and `@fontsource-variable/fira-code` (editor package dependencies), the same pattern as the Tabler icon font. The Google Fonts links left `apps/web/index.html`; both builds emit the same woff2 files.
+- `packages/editor/src/themes/registry.ts` (new): `THEMES`, `THEME_PREFERENCE_KEY` (`lp-sketch.theme.v1`), `readThemePreference` (a theme id or `system`), `writeThemePreference` (`system` removes the key), `systemThemeId`, `resolveThemeId`.
+- `packages/editor/src/context/ThemeContext.tsx` (new): `createThemeState` (preference, resolved theme, `prefers-color-scheme` subscription), `ThemeProvider` (sets `data-theme` on the document root and updates `meta[name="theme-color"]`), `useTheme`. `App.tsx` creates the state once and mounts the provider between `HelpProvider` and `AppControllerProvider`.
+- `packages/editor/src/components/ThemePicker.tsx` (new block): System, Light, Dark as a radiogroup named "Theme" with its own section label and `help-theme` anchor. Classic places it at the bottom of the Project panel. Registered in `blocks/registry.ts`, so the coverage test requires it of every shell.
+- `App.css`: every color literal outside `:root` replaced with a token: fifteen `color: #fff` on accent fills, twelve white surfaces, two switch thumbs, the PDF page and wash, three subtle surfaces, the hover blue, the danger red, the badge and focus tints, the dialog backdrop, the swatch outline, and the page drop shadow. The help drawer and content stylesheets lost their four literals the same way.
+- Overlays: `components/overlay/overlay.css` (new) maps `ov-*` classes to the `--ws-*` tokens, and the overlay components carry those classes instead of stroke and fill attributes: selection and hover outlines on every element type and the symbol ring, construction marks, measure and mark and auto-spacing previews, snap markers, selection handles and guides, placement ghosts, the debug readout, and the preview arrow marker.
+- `scripts/contrast-audit.mjs`: reads `themes/light.css` as the base and every other theme file as an override set, requires each theme to define every light token, and runs the checks per theme. Three checks were added for on-page interaction strokes against `--pdf-page`, and the hard-coded white foreground became `--text-on-accent` and `--switch-thumb`.
+- `scripts/ui-parity.mjs`: `UI_PARITY_THEME` stores a theme preference before capture, so theme sets can be captured and compared.
+- Help: `help-theme` joined the required anchors (39 now) and the manual gained section 2.9 "Theme".
+- Tests: `themes/themes.test.ts` (token completeness, page and material invariants, preference round trips), `context/ThemeContext.test.tsx` (root attribute, OS scheme following, persistence). Selector updates in `App.interaction.test.tsx`, `OverlayBranches.test.tsx`, `SymbolGlyph.test.tsx`, and `e2e/geometry-tools.spec.ts` where assertions keyed on the old stroke literals now key on the `ov-*` classes. No assertions changed meaning.
+- `AGENTS.md` and `docs/ENGINEERING.md` list `themes/` and the theme context.
+
+### Decisions worth knowing
+
+1. Drawing content is not themed. Legend and notes chrome, dimension text, symbol labels, and the arrow-head marker are drawn in exports by `renderCore` with the same fixed colors, so theming them on screen would make the screen disagree with the export. The design document listed legend and notes chrome as themed; both the scope line and the Theme contract were corrected.
+2. Overlay colors go through classes and a stylesheet, not `stroke="var(...)"`. CSS variables inside SVG presentation attributes are not reliable across engines, and CSS properties beat presentation attributes anyway, so an element with an `ov-*` class needs no color attribute. Tests can query the class where they used to query the literal.
+3. The audit caught a real defect during the work: the first dark palette used the amber accent for the selection outline and handles, which is 1.86:1 against the white page. Dark now uses a deep amber (`#92400e`, 7:1) for those strokes with white handle fills, and the three page checks stay in the audit so no future theme repeats it.
+4. `light.css` is the complete set on `:root` and other themes override on `[data-theme]`, so a token a theme omits falls back to light by the cascade. Completeness is still enforced twice, by the audit and by `themes.test.ts`, so a theme cannot silently ride the fallback.
+5. Fonts are variable rather than static per weight: one latin file per family plus the subsets fontsource ships, all bundled. The family names carry fontsource's "Variable" suffix, so `index.css` and the `--font` tokens name `Plus Jakarta Sans Variable` and `Fira Code Variable`.
+6. Provider `value` props must be stable objects created once, exactly as `App` does. `value={createThemeState()}` in JSX compiles to a getter that builds a new state on every access; two of my own tests failed that way before the fix and the coverage test was corrected to match.
+7. The preference has three states. `system` follows `prefers-color-scheme` and switches live; a stored theme wins over the OS. With nothing stored, the app follows the OS, which is what the design document asked for.
+
+### Screenshot comparison
+
+`node scripts/ui-parity.mjs capture step4-light` against the Step 3 `before` set, then a pixel diff (PIL) split at the sidebar edge:
+
+| Capture | Changed pixels | Where |
+| --- | --- | --- |
+| Desktop default | 37,527 (2.9%) | Sidebar below y=648 only, where the Theme section pushes Tools down; workspace 160 px at the Zoom readout |
+| Desktop collapsed, flyout | 160 (0.01%) | The Zoom readout only |
+| Desktop help open | 37,367 (2.9%) | Sidebar below y=648 only; workspace 0 |
+| iPad landscape and portrait | same pattern | Sidebar below the new section; Zoom readout |
+
+Above the new section every sidebar pixel is identical, so the bundled Plus Jakarta Sans renders exactly as the Google-served font did. The 160 changed pixels in the workspace are the `Zoom: 100%` readout, where the bundled variable Fira Code differs from the static instance Google served. A dark set (`UI_PARITY_THEME=dark`) was captured and inspected at all three viewports: dark chrome, amber accent, white import placeholder card text, and the workspace surround at `--bg-canvas`.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | pass |
+| `npm run audit:contrast` | pass for light and dark, 33 checks each plus completeness |
+| `npm run build` | pass; help build verifies 39 anchors; fonts emitted as woff2 assets |
+| `npm run mobile:build` | pass; same woff2 assets in the iPad bundle |
+| `npm test` | 54 files, 448 tests, pass (2 files and 11 tests added) |
+| `npm run test:e2e` | 35 tests, pass, run alone |
+
+### Left for later steps
+
+- The `hivis` theme (Step 6) needs the heavier border and radius tokens the Hi-Vis prototype uses; `light.css` has no border-width token yet.
+- The Theme picker sits in Classic's Project panel. Tempered places the same block in its Setup tab in Step 5.
+- The `.overlay-layer` dotted grid and the `canvas-watermark` still read chrome tokens directly (`--border`, `--bg-card`); that is fine for two themes and can become `--ws-*` tokens if a theme needs a different surround treatment.

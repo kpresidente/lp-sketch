@@ -66,12 +66,12 @@ describe('SymbolGlyph', () => {
 
     const { container: unselectedContainer, unmount } = renderSymbol(symbol, false)
     const unselectedRing = unselectedContainer.querySelector('circle[r="9"][fill="none"]')
-    expect(unselectedRing?.getAttribute('stroke')).toBe('none')
+    expect(unselectedRing?.classList.contains('ov-outline')).toBe(false)
     unmount()
 
     const { container: selectedContainer } = renderSymbol(symbol, true)
     const selectedRing = selectedContainer.querySelector('circle[r="9"][fill="none"]')
-    expect(selectedRing?.getAttribute('stroke')).toBe('#111827')
+    expect(selectedRing?.classList.contains('ov-outline--selected')).toBe(true)
   })
 
   it('applies class-based fill/stroke behavior for air-terminal symbols', () => {

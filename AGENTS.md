@@ -42,6 +42,7 @@ The repository uses npm workspaces. Run development, build, test, and audit comm
 - `packages/editor/src/controllers/` — Pointer event controllers
 - `packages/editor/src/shells/` — Shell registry, `ShellHost`, and the Classic shell that arranges blocks around the workspace
 - `packages/editor/src/blocks/` — Registry of blocks every shell must mount or waive
+- `packages/editor/src/themes/` — Theme registry, token stylesheets (`light.css` is the complete set), and bundled fonts; every theme passes `npm run audit:contrast`
 - `packages/editor/src/hooks/` — SolidJS reactive hooks
 - `packages/editor/src/lib/` — Browser-dependent rendering helpers, exports, autosave, file handling, reporting
 - `packages/editor/src/workspace/` — Drawing stage component and shared canvas export renderer

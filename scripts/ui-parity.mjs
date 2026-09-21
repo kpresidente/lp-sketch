@@ -9,7 +9,8 @@
 //   node scripts/ui-parity.mjs compare before after
 //
 // Sets land in test-results/ui-parity/<tag>/ (ignored by git). Override the
-// server with UI_PARITY_BASE and the output root with UI_PARITY_DIR.
+// server with UI_PARITY_BASE, the output root with UI_PARITY_DIR, and the
+// theme under test with UI_PARITY_THEME (a theme id stored as the preference).
 import { chromium } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -17,6 +18,7 @@ import path from 'node:path'
 
 const base = process.env.UI_PARITY_BASE ?? 'http://localhost:5173'
 const root = process.env.UI_PARITY_DIR ?? path.join('test-results', 'ui-parity')
+const theme = process.env.UI_PARITY_THEME
 
 const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
@@ -79,6 +81,11 @@ async function capture(tag) {
           viewport: { width: viewport.width, height: viewport.height },
           deviceScaleFactor: 1,
         })
+        if (theme) {
+          await context.addInitScript((value) => {
+            window.localStorage.setItem('lp-sketch.theme.v1', value)
+          }, theme)
+        }
         const page = await context.newPage()
         await page.goto(base, { waitUntil: 'load' })
         await page.locator('.drawing-stage').waitFor({ timeout: 90_000 })

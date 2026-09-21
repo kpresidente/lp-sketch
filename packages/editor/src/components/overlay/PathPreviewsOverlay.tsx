@@ -24,7 +24,7 @@ export default function PathPreviewsOverlay(props: PathPreviewsOverlayProps) {
               y1={previous.y}
               x2={point.x}
               y2={point.y}
-              stroke="#0f766e"
+              class="ov-measure-path"
               stroke-width={2}
               stroke-dasharray="7 4"
             />
@@ -38,8 +38,7 @@ export default function PathPreviewsOverlay(props: PathPreviewsOverlayProps) {
             cx={point.x}
             cy={point.y}
             r={3.4}
-            fill="#ffffff"
-            stroke="#0f766e"
+            class="ov-measure-point"
             stroke-width={1.4}
           />
         )}
@@ -54,7 +53,7 @@ export default function PathPreviewsOverlay(props: PathPreviewsOverlayProps) {
               y1={previous.y}
               x2={point.x}
               y2={point.y}
-              stroke="#b45309"
+              class="ov-mark-path"
               stroke-width={2}
               stroke-dasharray="4 4"
             />
@@ -68,8 +67,7 @@ export default function PathPreviewsOverlay(props: PathPreviewsOverlayProps) {
             cx={point.x}
             cy={point.y}
             r={index() === 0 ? 4 : 3.2}
-            fill="#fff7ed"
-            stroke="#b45309"
+            class="ov-mark-point"
             stroke-width={1.4}
           />
         )}
@@ -84,7 +82,7 @@ export default function PathPreviewsOverlay(props: PathPreviewsOverlayProps) {
               y1={previous.y}
               x2={point.x}
               y2={point.y}
-              stroke="#0369a1"
+              class="ov-auto-path"
               stroke-width={2}
               stroke-dasharray="7 4"
             />
@@ -103,8 +101,7 @@ export default function PathPreviewsOverlay(props: PathPreviewsOverlayProps) {
                 y={point.y - 3.5}
                 width={7}
                 height={7}
-                fill="#fffbeb"
-                stroke="#92400e"
+                class="ov-auto-vertex ov-auto-vertex--inside"
                 stroke-width={1.3}
               />
             )
@@ -115,8 +112,7 @@ export default function PathPreviewsOverlay(props: PathPreviewsOverlayProps) {
               cx={point.x}
               cy={point.y}
               r={3.6}
-              fill="#eff6ff"
-              stroke="#1d4ed8"
+              class="ov-auto-vertex"
               stroke-width={1.3}
             />
           )

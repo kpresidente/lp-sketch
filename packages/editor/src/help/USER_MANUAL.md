@@ -149,6 +149,15 @@ On your next visit, if an autosaved draft is detected, it will be automatically 
 
 **Important:** Autosave uses browser local storage, which is specific to your browser and device. It is not a substitute for explicitly saving your project file.
 
+### 2.9. Theme {#help-theme}
+
+The **Theme** control in the Project panel sets the editor's appearance on this device:
+- **System** follows the light or dark appearance of the operating system and switches when it changes
+- **Light** is the standard appearance
+- **Dark** uses dark chrome with an amber accent for low-light work
+
+The theme changes the editor chrome and interaction colors such as selection outlines, handles, and snap markers. The PDF page, conductor material colors, legends, notes, dimension text, and every export look the same in every theme. The choice is stored on the device and is not part of the project file.
+
 ---
 
 ## 3. Tools {#help-tools}

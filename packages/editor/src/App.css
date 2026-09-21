@@ -2,57 +2,16 @@
    LP Sketch — Application Stylesheet
    ══════════════════════════════════════════ */
 
+/* Layout metrics only. Color, shadow, and font tokens live in themes/light.css
+   (the complete set) and are overridden per theme in themes/<id>.css. */
 :root {
-  --bg-base: #e9edf2;
-  --bg-sidebar: #eef1f5;
-  --bg-card: #ffffff;
-  --bg-input: #f5f7fa;
-  --bg-hover: #e4e9f0;
-  --bg-active: #d7dfe9;
-  --bg-disabled: #e8edf3;
-  --bg-canvas: #fafbfc;
-  --bg-panel-header: #e2e8f0;
-  /* Keep structural dividers quieter than functional control outlines. */
-  --border: #b9c3d0;
-  --border-btn: #748196;
-  --border-strong: #4b5b71;
-  --border-focus: #2c4f8a;
-  --border-disabled: #adb8c6;
-  --text-primary: #111827;
-  --text-secondary: #27364b;
-  --text-tertiary: #46566c;
-  --text-muted: #526176;
-  --text-label: #37475b;
-  --text-disabled: #58677b;
-  --switch-off: #64748b;
-  --accent: #2c4f8a;
-  --accent-hover: #1e3d72;
-  --accent-light: #dce5f4;
-  --accent-lighter: #edf1f9;
-  --accent-text: #1e3a6e;
-  --accent-marker: #3b6bc4;
-  --success: #15803d;
-  --success-bg: #dcfce7;
-  --error: #b91c1c;
-  --error-bg: #fee2e2;
-  --material-copper: #16a34a;
-  --material-aluminum: #2563eb;
-  --material-grounding: #DC143C;
-  --material-bimetallic: #7c3aed;
-  --material-tinned: #0891b2;
   --sidebar-width: 304px;
   --sidebar-rail-width: 64px;
   --toolbar-height: 44px;
   --radius: 6px;
   --radius-sm: 5px;
   --radius-lg: 8px;
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.06);
   --transition: 150ms ease;
-  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Fira Code', monospace;
 }
 
 /* ──── SIDEBAR ──── */
@@ -117,7 +76,7 @@
 .sidebar-section-button.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .sidebar-dismiss-backdrop {
@@ -206,7 +165,7 @@
 
 .logo-mark i {
   font-size: 18px;
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .logo-info {
@@ -236,7 +195,7 @@
   min-height: 18px;
   padding: 0 7px;
   border-radius: 999px;
-  background: rgba(44, 79, 138, 0.12);
+  background: var(--accent-tint);
   color: var(--accent);
   font-size: 10px;
   font-weight: 800;
@@ -335,7 +294,7 @@
 
 .input-field:focus {
   border-color: var(--accent);
-  background: #fff;
+  background: var(--bg-card);
   outline: 2px solid var(--border-focus);
   outline-offset: 1px;
 }
@@ -396,7 +355,7 @@ select.select-field:focus {
 .btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   box-shadow: var(--shadow-sm);
 }
 
@@ -487,11 +446,11 @@ select.select-field:focus {
 }
 
 .btn-grid-3 .btn.active:not(:disabled) i {
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .btn-grid-3 .btn.active:not(:disabled) .ti-custom-icon {
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .btn-row {
@@ -565,7 +524,7 @@ select.select-field:focus {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--switch-thumb);
   position: absolute;
   top: 2px;
   left: 2px;
@@ -654,7 +613,7 @@ select.select-field:focus {
   height: 16px;
   border-radius: 3px;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+  box-shadow: inset 0 0 0 1px var(--swatch-outline);
 }
 
 .material-item .mat-name {
@@ -724,13 +683,13 @@ select.select-field:focus {
 .scale-apply-btn.dirty {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .scale-apply-btn.dirty:hover:where(:not(:disabled)) {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .scale-apply-btn i {
@@ -1146,7 +1105,7 @@ select.select-field:focus {
 .properties-option-panel {
   width: 100%;
   max-width: 920px;
-  background: #f8fafc;
+  background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
@@ -1174,7 +1133,7 @@ select.select-field:focus {
   border-radius: var(--radius-sm);
   font-size: 10px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-on-accent);
   white-space: nowrap;
   min-width: 80px;
   justify-content: center;
@@ -1244,7 +1203,7 @@ select.select-field:focus {
   outline: 2px solid var(--border-focus);
   outline-offset: 1px;
   border-color: var(--accent);
-  background: #fff;
+  background: var(--bg-card);
 }
 
 .tb-input::placeholder {
@@ -1310,7 +1269,7 @@ select.select-field:focus {
   gap: 4px;
   height: 26px;
   padding: 0 10px;
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid var(--border-btn);
   border-radius: var(--radius-sm);
   font-family: var(--font);
@@ -1344,24 +1303,24 @@ select.select-field:focus {
 .tb-btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .tb-btn-primary:hover {
-  background: #3a5fa0;
-  border-color: #3a5fa0;
-  color: #fff;
+  background: var(--accent-bright);
+  border-color: var(--accent-bright);
+  color: var(--text-on-accent);
 }
 
 .tb-btn-danger {
-  color: #dc2626;
-  border-color: #dc2626;
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .tb-btn-danger:hover {
-  background: #dc2626;
-  color: #fff;
-  border-color: #dc2626;
+  background: var(--danger);
+  color: var(--text-on-accent);
+  border-color: var(--danger);
 }
 
 .tb-quick-tools {
@@ -1390,13 +1349,13 @@ select.select-field:focus {
 .tb-icon-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .tb-icon-btn.active:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .tb-toggle-group {
@@ -1410,7 +1369,7 @@ select.select-field:focus {
 .tb-toggle-btn {
   height: 26px;
   padding: 0 10px;
-  background: #fff;
+  background: var(--bg-card);
   border: none;
   border-right: 1px solid var(--border-btn);
   font-family: var(--font);
@@ -1433,7 +1392,7 @@ select.select-field:focus {
 
 .tb-toggle-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .tb-toggle-btn:focus-visible {
@@ -1442,7 +1401,7 @@ select.select-field:focus {
 }
 
 .tb-toggle-btn.active:focus-visible {
-  box-shadow: inset 0 0 0 2px #fff;
+  box-shadow: inset 0 0 0 2px var(--text-on-accent);
 }
 
 .tb-switch-wrap {
@@ -1470,7 +1429,7 @@ select.select-field:focus {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--switch-thumb);
   position: absolute;
   top: 2px;
   left: 2px;
@@ -1569,7 +1528,7 @@ select.select-field:focus {
   position: fixed;
   z-index: 40;
   min-width: 200px;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
@@ -1632,13 +1591,13 @@ select.select-field:focus {
 .legend-label-table {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
+  background: var(--bg-card);
   font-size: 12px;
 }
 
 .legend-label-table th,
 .legend-label-table td {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-subtle);
   padding: 6px 8px;
   text-align: left;
   vertical-align: middle;
@@ -1648,8 +1607,8 @@ select.select-field:focus {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #f8fafc;
-  color: #334155;
+  background: var(--bg-subtle);
+  color: var(--text-label);
   font-size: 11px;
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -1693,7 +1652,7 @@ select.select-field:focus {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(15, 23, 42, 0.28);
+  background: var(--backdrop);
 }
 
 .report-dialog {
@@ -1740,7 +1699,7 @@ select.select-field:focus {
   height: 34px;
   border: 1px solid var(--border-btn);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--bg-card);
   color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
@@ -1758,7 +1717,7 @@ select.select-field:focus {
 .quick-access-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .quick-access-btn:focus-visible {
@@ -1798,7 +1757,7 @@ select.select-field:focus {
   top: 0;
   min-width: 280px;
   max-width: min(360px, 70vw);
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid var(--border-btn);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
@@ -1821,7 +1780,7 @@ select.select-field:focus {
   right: calc(100% + 10px);
   top: 0;
   width: min(760px, 84vw);
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid var(--border-btn);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
@@ -1863,7 +1822,7 @@ select.select-field:focus {
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--bg-card);
   padding: 4px;
 }
 
@@ -1910,7 +1869,7 @@ select.select-field:focus {
   width: 100%;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--bg-card);
   color: var(--text-primary);
   min-height: 28px;
   display: grid;
@@ -1959,7 +1918,7 @@ select.select-field:focus {
   min-height: 230px;
   border: 1px solid var(--border-btn);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--bg-card);
   font-family: var(--font);
   font-size: 12px;
   color: var(--text-primary);
@@ -1970,7 +1929,7 @@ select.select-field:focus {
   outline: 2px solid var(--border-focus);
   outline-offset: 1px;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(44, 79, 138, 0.12);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 /* ──── DRAWING STAGE ──── */
@@ -2021,12 +1980,12 @@ select.select-field:focus {
 
 .canvas-watermark .wm-drop-zone.active {
   border-color: var(--accent);
-  background: rgba(30, 64, 175, 0.08);
+  background: var(--accent-tint);
 }
 
 .canvas-watermark .wm-drop-zone:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(104, 120, 160, 0.28);
+  box-shadow: 0 0 0 4px var(--focus-ring-strong);
 }
 
 .canvas-watermark .wm-drop-zone i {
@@ -2056,15 +2015,15 @@ select.select-field:focus {
   position: absolute;
   top: 0;
   left: 0;
-  background: #ffffff;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.22);
+  background: var(--pdf-page);
+  box-shadow: var(--shadow-lg);
   will-change: transform;
 }
 
 .pdf-transparency-wash {
   position: absolute;
   inset: 0;
-  background: #ffffff;
+  background: var(--pdf-page);
   pointer-events: none;
 }
 
@@ -2090,8 +2049,8 @@ select.select-field:focus {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--bg-subtle);
+  color: var(--text-primary);
   padding: 24px;
 }
 
@@ -2103,7 +2062,7 @@ select.select-field:focus {
 .app-error-boundary-message {
   margin: 0;
   max-width: 720px;
-  color: #475569;
+  color: var(--text-tertiary);
   text-align: center;
 }
 

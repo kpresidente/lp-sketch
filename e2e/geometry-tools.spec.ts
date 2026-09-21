@@ -91,11 +91,11 @@ test.describe('geometry and annotation tools', () => {
     await clickStage(page, { x: 220, y: 280 })
     await clickStage(page, { x: 360, y: 280 })
     await expectStatus(page, 'Mark placed. New span starts from this mark.')
-    await expect(page.locator('svg.overlay-layer line[stroke="#b91c1c"]')).toHaveCount(2)
+    await expect(page.locator('svg.overlay-layer line.ov-mark')).toHaveCount(2)
 
     await page.getByRole('button', { name: 'Clear All', exact: true }).click()
     await expectStatus(page, 'Cleared marks on this page.')
-    await expect(page.locator('svg.overlay-layer line[stroke="#b91c1c"]')).toHaveCount(0)
+    await expect(page.locator('svg.overlay-layer line.ov-mark')).toHaveCount(0)
   })
 
   test('calibration sets scale from two points', async ({ page }) => {

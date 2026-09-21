@@ -50,10 +50,12 @@ Root scripts preserve the existing development workflow. Vite loads environment 
   - Shell registry, `ShellHost`, the Classic shell, and the required-block registry every shell must mount or waive
 - `packages/editor/src/workspace/`
   - Drawing stage component and the shared canvas export renderer
+- `packages/editor/src/themes/`
+  - Theme registry and token stylesheets; `light.css` is the complete set, other themes override it on `[data-theme]`
 - `packages/editor/src/hooks/`
   - SolidJS reactive hooks (autosave, PDF renderer, file actions, shortcuts)
 - `packages/editor/src/context/`
-  - Context providers: AppControllerContext (the controller every block reads), HelpContext (help drawer)
+  - Context providers: AppControllerContext (the controller every block reads), HelpContext (help drawer), ThemeContext (theme preference and `data-theme`)
 - `packages/core/src/config/` and `packages/editor/src/config/`
   - Domain constants in core; runtime limits and icon registry in editor
 - `packages/core/src/types/`

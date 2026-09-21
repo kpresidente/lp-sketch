@@ -364,15 +364,6 @@ export default function SymbolGlyph(props: SymbolGlyphProps): JSX.Element {
   const rotation = () => symbolRotationDeg(props.symbol)
   const designScale = () => props.annotationScale ?? 1
   const half = () => HALF * designScale()
-  const stroke = () => {
-    if (props.selected) {
-      return '#111827'
-    }
-    if (props.hovered) {
-      return '#0369a1'
-    }
-    return 'none'
-  }
 
   return (
     <g
@@ -405,7 +396,7 @@ export default function SymbolGlyph(props: SymbolGlyphProps): JSX.Element {
         cy={0}
         r={half() + 2 * designScale()}
         fill="none"
-        stroke={stroke()}
+        classList={{ 'ov-outline': !!(props.selected || props.hovered), 'ov-outline--selected': !!props.selected }}
         stroke-width={(props.selected ? 1.2 : 1.1) * designScale()}
         stroke-dasharray={
           props.selected

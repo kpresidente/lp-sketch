@@ -129,7 +129,7 @@
 
 .help-drawer-search-input:focus {
   border-color: var(--accent);
-  background: #fff;
+  background: var(--bg-card);
   outline: 2px solid var(--border-focus);
   outline-offset: 1px;
 }
@@ -252,8 +252,8 @@
   z-index: 50;
   max-width: 300px;
   padding: 8px 12px;
-  background: #1e293b;
-  color: #f1f5f9;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
   font-family: var(--font);
   font-size: 12px;
   line-height: 1.5;

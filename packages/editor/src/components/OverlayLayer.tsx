@@ -3,6 +3,7 @@ import PathPreviewsOverlay from './overlay/PathPreviewsOverlay'
 import PersistentElementsOverlay from './overlay/PersistentElementsOverlay'
 import ToolPreviewsOverlay from './overlay/ToolPreviewsOverlay'
 import type { OverlayLayerProps } from './overlay/types'
+import './overlay/overlay.css'
 
 export default function OverlayLayer(props: OverlayLayerProps) {
   return (

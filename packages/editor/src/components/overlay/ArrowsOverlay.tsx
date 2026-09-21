@@ -30,7 +30,8 @@ export default function ArrowsOverlay(props: ArrowsOverlayProps) {
                 y1={arrow.tail.y}
                 x2={arrow.head.x}
                 y2={arrow.head.y}
-                stroke={isSelected() ? '#111827' : '#0369a1'}
+                class="ov-outline"
+                classList={{ 'ov-outline--selected': isSelected() }}
                 stroke-width={(isSelected() ? 7 : 6) * designScale()}
                 stroke-dasharray={
                   isSelected()

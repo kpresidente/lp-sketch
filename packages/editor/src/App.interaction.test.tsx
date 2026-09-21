@@ -819,7 +819,7 @@ describe('pen canvas input', () => {
     await tap(stage, 'pen', 10, 320)
     expect(deleteButton.disabled).toBe(false)
     await tap(stage, 'pen', 10, 320, 320)
-    expect(container.querySelectorAll('svg.overlay-layer line[stroke="#111827"]')).toHaveLength(2)
+    expect(container.querySelectorAll('svg.overlay-layer line.ov-outline--selected')).toHaveLength(2)
 
     await fireEvent.click(deleteButton)
     expect(container.querySelectorAll(lineSelector)).toHaveLength(0)
@@ -1655,7 +1655,7 @@ describe('App interaction integration', () => {
     })
 
     expect(
-      container.querySelector('svg.overlay-layer line[stroke="#374151"][stroke-dasharray="6 4"]'),
+      container.querySelector('svg.overlay-layer line.ov-ghost[stroke-dasharray="6 4"]'),
     ).not.toBeNull()
 
     await fireEvent.click(screen.getByRole('button', { name: 'Arc' }))
@@ -1675,7 +1675,7 @@ describe('App interaction integration', () => {
     })
 
     expect(
-      container.querySelector('svg.overlay-layer line[stroke="#334155"][stroke-dasharray="6 4"]'),
+      container.querySelector('svg.overlay-layer line.ov-ghost[stroke-dasharray="6 4"]'),
     ).not.toBeNull()
 
     await fireEvent.pointerDown(stage, {
@@ -1694,7 +1694,7 @@ describe('App interaction integration', () => {
     })
 
     expect(
-      container.querySelector('svg.overlay-layer path[stroke="#334155"][stroke-dasharray="6 4"]'),
+      container.querySelector('svg.overlay-layer path.ov-ghost[stroke-dasharray="6 4"]'),
     ).not.toBeNull()
 
     await fireEvent.click(screen.getByRole('button', { name: 'Arrow' }))
@@ -1715,7 +1715,7 @@ describe('App interaction integration', () => {
 
     expect(
       container.querySelector(
-        'svg.overlay-layer line[stroke="#1f2937"][stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
+        'svg.overlay-layer line.ov-ghost[stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
       ),
     ).not.toBeNull()
 
@@ -1736,7 +1736,7 @@ describe('App interaction integration', () => {
     })
 
     expect(
-      container.querySelector('svg.overlay-layer line[stroke="#0f766e"][stroke-dasharray="8 3"]'),
+      container.querySelector('svg.overlay-layer line.ov-measure-path[stroke-dasharray="8 3"]'),
     ).not.toBeNull()
   })
 
@@ -2035,7 +2035,7 @@ describe('App interaction integration', () => {
     })
     expect(
       container.querySelector(
-        'svg.overlay-layer line[stroke="#1f2937"][stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
+        'svg.overlay-layer line.ov-ghost[stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
       ),
     ).not.toBeNull()
 
@@ -2044,7 +2044,7 @@ describe('App interaction integration', () => {
     expect(screen.getByText('Click tail point')).toBeTruthy()
     expect(
       container.querySelector(
-        'svg.overlay-layer line[stroke="#1f2937"][stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
+        'svg.overlay-layer line.ov-ghost[stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
       ),
     ).toBeNull()
 
@@ -2675,7 +2675,7 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
 
-    expect(container.querySelectorAll('svg.overlay-layer line[stroke="#111827"]')).toHaveLength(2)
+    expect(container.querySelectorAll('svg.overlay-layer line.ov-outline--selected')).toHaveLength(2)
     expect(container.querySelector('circle[data-selection-handle]')).toBeNull()
 
     const dragStart = screenToOverlayDoc(container, { x: 220, y: 220 })
@@ -2881,7 +2881,7 @@ describe('App interaction integration', () => {
     })
 
     expect(container.querySelector('.toolbar-active-tool')?.textContent).toContain('Select')
-    expect(container.querySelector('svg.overlay-layer line[stroke="#111827"]')).not.toBeNull()
+    expect(container.querySelector('svg.overlay-layer line.ov-outline--selected')).not.toBeNull()
   })
 
   it('supports touch long-press as secondary input for auto-spacing', async () => {
@@ -3446,7 +3446,7 @@ describe('App interaction integration', () => {
     })
 
     expect(
-      container.querySelector('svg.overlay-layer line[stroke="#0369a1"][stroke-dasharray]'),
+      container.querySelector('svg.overlay-layer line.ov-outline:not(.ov-outline--selected)[stroke-dasharray]'),
     ).not.toBeNull()
     expect(container.querySelector('g[data-snap-marker="active"]')).toBeNull()
 
@@ -3458,7 +3458,7 @@ describe('App interaction integration', () => {
     })
 
     expect(
-      container.querySelector('svg.overlay-layer line[stroke="#0369a1"][stroke-dasharray]'),
+      container.querySelector('svg.overlay-layer line.ov-outline:not(.ov-outline--selected)[stroke-dasharray]'),
     ).toBeNull()
   })
 
@@ -3509,9 +3509,9 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
 
-    expect(container.querySelector('svg.overlay-layer circle[stroke="#0369a1"][stroke-dasharray]')).not.toBeNull()
+    expect(container.querySelector('svg.overlay-layer circle.ov-outline:not(.ov-outline--selected)[stroke-dasharray]')).not.toBeNull()
     expect(
-      container.querySelector('svg.overlay-layer line[stroke="#0369a1"][stroke-dasharray]'),
+      container.querySelector('svg.overlay-layer line.ov-outline:not(.ov-outline--selected)[stroke-dasharray]'),
     ).toBeNull()
 
     await fireEvent.pointerDown(stage, {
@@ -3530,7 +3530,7 @@ describe('App interaction integration', () => {
     })
 
     await fireEvent.keyDown(window, { key: 'Delete' })
-    expect(container.querySelector('svg.overlay-layer line[stroke="#b91c1c"]')).toBeNull()
+    expect(container.querySelector('svg.overlay-layer line.ov-mark')).toBeNull()
     expect(container.querySelector('svg.overlay-layer line[stroke="#2e8b57"][stroke-dasharray]')).not.toBeNull()
   })
 
@@ -3689,7 +3689,7 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
 
-    expect(container.querySelector('svg.overlay-layer line[stroke="#111827"][stroke-dasharray]')).not.toBeNull()
+    expect(container.querySelector('svg.overlay-layer line.ov-outline--selected[stroke-dasharray]')).not.toBeNull()
 
     await fireEvent.pointerDown(stage, {
       button: 0,
@@ -3706,7 +3706,7 @@ describe('App interaction integration', () => {
       pointerType: 'mouse',
     })
 
-    expect(container.querySelector('svg.overlay-layer line[stroke="#111827"][stroke-dasharray]')).toBeNull()
+    expect(container.querySelector('svg.overlay-layer line.ov-outline--selected[stroke-dasharray]')).toBeNull()
   })
 
   it('prefers symbol selection over overlapping line candidates', async () => {
@@ -5502,7 +5502,7 @@ describe('App interaction integration', () => {
     })
 
     const preview = container.querySelector(
-      'svg.overlay-layer line[stroke="#1f2937"][stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
+      'svg.overlay-layer line.ov-ghost[stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
     )
     expect(preview).not.toBeNull()
     if (!preview) {
@@ -5539,7 +5539,7 @@ describe('App interaction integration', () => {
     })
 
     const preview = container.querySelector(
-      'svg.overlay-layer line[stroke="#1f2937"][stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
+      'svg.overlay-layer line.ov-ghost[stroke-dasharray="4 4"][marker-end="url(#preview-arrow)"]',
     )
     expect(preview).not.toBeNull()
     if (!preview) {

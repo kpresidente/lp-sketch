@@ -135,6 +135,7 @@ const REQUIRED_ANCHORS = [
   // Subsection-level
   'help-project-name', 'help-project-file', 'help-project-export',
   'help-project-report', 'help-project-pages', 'help-project-pdf-background',
+  'help-theme',
   'help-tools-mode', 'help-tools-undo-redo', 'help-tools-snap-to-points',
   'help-tools-angle-snap', 'help-tools-auto-connectors', 'help-tools-annotation',
   'help-components-conductors', 'help-components-air-terminals',

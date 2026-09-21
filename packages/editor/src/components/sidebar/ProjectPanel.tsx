@@ -3,6 +3,7 @@ import Panel from './Panel'
 import { PROJECT_ACTION_ICON, tablerIconClass } from '../../config/iconRegistry'
 import { useAppController } from '../../context/AppControllerContext'
 import { SectionHelp } from './SectionHelp'
+import ThemePicker from '../ThemePicker'
 
 export default function ProjectPanel() {
   const props = useAppController()
@@ -171,6 +172,8 @@ export default function ProjectPanel() {
           Import a PDF to enable transparency control.
         </div>
       )}
+
+      <ThemePicker />
     </Panel>
   )
 }

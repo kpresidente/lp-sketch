@@ -1,0 +1,88 @@
+/* ──── DARK THEME ────
+   Nightshift palette from prototypes/ui-refresh/01-nightshift.html: near-black
+   surfaces, cool grey text, amber accent. Defines every token light.css defines;
+   the contrast audit and themes.test.ts enforce that. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-base: #121417;
+  --bg-sidebar: #181b20;
+  --bg-card: #1e2228;
+  --bg-input: #14171b;
+  --bg-subtle: #1a1e24;
+  --bg-hover: #262b33;
+  --bg-active: #2e343d;
+  --bg-disabled: #1b1f25;
+  --bg-canvas: #0f1114;
+  --bg-panel-header: #232830;
+  --border: #2c323b;
+  --border-subtle: #262b33;
+  --border-btn: #727b89;
+  --border-strong: #8a93a0;
+  --border-focus: #f2b33d;
+  --border-disabled: #3a414c;
+  --text-primary: #eef0f3;
+  --text-secondary: #c3cad4;
+  --text-tertiary: #a9b1bc;
+  --text-muted: #9aa3af;
+  --text-label: #b3bac5;
+  --text-disabled: #8f98a4;
+  --text-on-accent: #121417;
+  --switch-off: #727b89;
+  --switch-thumb: #121417;
+  --accent: #f2b33d;
+  --accent-hover: #ffcf66;
+  --accent-bright: #ffc65c;
+  --accent-light: #3b3220;
+  --accent-lighter: #2b2820;
+  --accent-text: #ffd47a;
+  --accent-marker: #f2b33d;
+  --accent-tint: rgba(242, 179, 61, 0.14);
+  --focus-ring: rgba(242, 179, 61, 0.22);
+  --focus-ring-strong: rgba(242, 179, 61, 0.35);
+  --success: #4ade80;
+  --success-bg: #14301f;
+  --error: #f87171;
+  --error-bg: #3a1c1c;
+  --danger: #ef4444;
+  --highlight: #6b5b1a;
+  --tooltip-bg: #eef0f3;
+  --tooltip-text: #121417;
+  --backdrop: rgba(0, 0, 0, 0.55);
+  --swatch-outline: rgba(255, 255, 255, 0.16);
+  --material-copper: #16a34a;
+  --material-aluminum: #2563eb;
+  --material-grounding: #DC143C;
+  --material-bimetallic: #7c3aed;
+  --material-tinned: #0891b2;
+  --pdf-page: #ffffff;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.6);
+  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --font: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Fira Code Variable', monospace;
+
+  /* On-page colors stay dark because the page itself stays white: the contrast
+     audit holds selection and handle strokes to 3:1 against it. Selection uses
+     a deep amber so it still reads as this theme's accent family. */
+  --ws-selection-stroke: #92400e;
+  --ws-hover-stroke: #0369a1;
+  --ws-handle-fill: #ffffff;
+  --ws-handle-stroke: #92400e;
+  --ws-snap-marker: #ef4444;
+  --ws-snap-contrast: #ffffff;
+  --ws-mark-stroke: #b91c1c;
+  --ws-preview-stroke: #0f766e;
+  --ws-preview-fill: #ffffff;
+  --ws-preview-mark-stroke: #b45309;
+  --ws-preview-mark-fill: #fff7ed;
+  --ws-preview-auto-stroke: #0369a1;
+  --ws-preview-inside-fill: #fffbeb;
+  --ws-preview-inside-stroke: #92400e;
+  --ws-preview-outside-fill: #eff6ff;
+  --ws-preview-outside-stroke: #1d4ed8;
+  --ws-ghost-stroke: #334155;
+  --ws-ghost-fill: #ffffff;
+}

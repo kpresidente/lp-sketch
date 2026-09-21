@@ -1,0 +1,39 @@
+/* ──── WORKSPACE INTERACTION COLORS ────
+   Classes on overlay elements resolve to the --ws-* theme tokens. CSS
+   properties beat SVG presentation attributes, so an element with one of
+   these classes needs no stroke or fill attribute for the themed color.
+   Drawing content (material strokes, ink, legend and notes chrome,
+   dimension text) keeps fixed attributes so the screen matches exports. */
+
+/* Selection and hover outlines around any element, including symbol rings. */
+.ov-outline { stroke: var(--ws-hover-stroke); }
+.ov-outline--selected { stroke: var(--ws-selection-stroke); }
+
+/* Construction marks. */
+.ov-mark { stroke: var(--ws-mark-stroke); }
+
+/* Measure, mark, and auto-spacing path previews. */
+.ov-measure-path { stroke: var(--ws-preview-stroke); }
+.ov-measure-point { fill: var(--ws-preview-fill); stroke: var(--ws-preview-stroke); }
+.ov-mark-path { stroke: var(--ws-preview-mark-stroke); }
+.ov-mark-point { fill: var(--ws-preview-mark-fill); stroke: var(--ws-preview-mark-stroke); }
+.ov-auto-path { stroke: var(--ws-preview-auto-stroke); }
+.ov-auto-vertex { fill: var(--ws-preview-outside-fill); stroke: var(--ws-preview-outside-stroke); }
+.ov-auto-vertex--inside { fill: var(--ws-preview-inside-fill); stroke: var(--ws-preview-inside-stroke); }
+
+/* Snap markers. */
+.ov-snap { stroke: var(--ws-snap-marker); }
+.ov-snap-box { fill: var(--ws-snap-contrast); stroke: var(--ws-snap-marker); }
+.ov-snap-point { fill: var(--ws-snap-marker); stroke: var(--ws-snap-contrast); }
+
+/* Selection handles, their guide lines and labels, and the debug readout. */
+.ov-handle { fill: var(--ws-handle-fill); stroke: var(--ws-handle-stroke); }
+.ov-handle-guide { stroke: var(--ws-handle-stroke); }
+.ov-handle-label { fill: var(--ws-handle-stroke); }
+.ov-debug { fill: var(--ws-handle-stroke); stroke: var(--ws-handle-fill); }
+
+/* Placement previews that ghost the next line, arc, curve, or arrow. */
+.ov-ghost { stroke: var(--ws-ghost-stroke); }
+.ov-ghost-point { fill: var(--ws-ghost-fill); stroke: var(--ws-ghost-stroke); }
+.ov-ghost-label { fill: var(--ws-ghost-stroke); }
+.ov-preview-arrow { fill: var(--ws-ghost-stroke); }

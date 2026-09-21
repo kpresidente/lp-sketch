@@ -82,8 +82,8 @@ Registries make the contracts explicit and testable:
 ### Theme
 
 - A theme is a complete token set. Missing tokens fall back to `light`, never to raw colors.
-- Tokens cover chrome and the workspace-facing set: canvas surround, selection stroke and fill, hover stroke, snap marker, mark stroke, path preview, legend and notes chrome. Material colors stay fixed across themes because they carry domain meaning.
-- Fonts are self-hosted per theme so the iPad bundle renders identically offline. Today the web entry loads Plus Jakarta Sans from Google Fonts and the mobile entry loads nothing.
+- Tokens cover chrome and the workspace-facing interaction set: canvas surround, selection stroke and handle fill, hover stroke, snap marker, mark stroke, path and placement previews. Material colors, legend and notes chrome, dimension text, and symbol labels stay fixed across themes because they are exported drawing content. On-page interaction strokes must keep 3:1 against the white page in every theme; the audit checks this.
+- Fonts are self-hosted per theme so the iPad bundle renders identically offline. Since step 4 both apps bundle Plus Jakarta Sans and Fira Code as variable fonts from `@fontsource-variable` packages through `themes/fonts.css`; before that the web entry loaded them from Google Fonts and the mobile entry loaded nothing.
 - Each theme passes `npm run audit:contrast`. The audit reads `:root` from `App.css` today and must learn to read one theme block at a time.
 
 ### Preferences
@@ -174,8 +174,8 @@ Checklist:
 
 Scope:
 
-- Replace the 45 hard-coded color values outside `:root` in `App.css` with tokens, including the white fills, the hover blue, and the danger red.
-- Replace the hard-coded overlay colors with tokens read through CSS variables: selected stroke, hover stroke, mark stroke, path preview stroke, legend and notes chrome, arrow marker fill. Material colors stay as they are.
+- Replace the 45 hard-coded hex values and seven rgba shadows and tints outside `:root` in `App.css` with tokens, including the white fills, the hover blue, and the danger red. The help drawer stylesheets carry four more.
+- Replace the hard-coded overlay interaction colors with tokens applied through classes: selection and hover outlines, selection handles, snap markers, construction marks, measure and auto-spacing path previews, placement ghosts and the preview arrow marker. Legend and notes chrome, dimension text, symbol labels, and the arrow-head marker are exported drawing content that the canvas renderer draws with the same fixed colors, so they stay fixed like the material colors and the screen keeps matching the export.
 - Add `ThemeProvider`, `themes/registry.ts`, and `data-theme` on the app root. Move the `:root` block into `themes/light.css` and add `themes/dark.css` from the Nightshift prototype palette.
 - Self-host fonts through package assets rather than Google Fonts, for both apps.
 - Extend `scripts/contrast-audit.mjs` to audit every theme file.
@@ -190,14 +190,14 @@ Acceptance:
 
 Checklist:
 
-- [ ] Chrome colors tokenized
-- [ ] Overlay colors tokenized
-- [ ] `ThemeProvider` and registry
-- [ ] `light` and `dark` themes
-- [ ] Fonts self-hosted in both apps
-- [ ] Contrast audit runs per theme
-- [ ] Theme picker block, with a help anchor
-- [ ] Suites green
+- [x] Chrome colors tokenized
+- [x] Overlay colors tokenized
+- [x] `ThemeProvider` and registry
+- [x] `light` and `dark` themes
+- [x] Fonts self-hosted in both apps
+- [x] Contrast audit runs per theme
+- [x] Theme picker block, with a help anchor
+- [x] Suites green
 
 ### Step 5. Build the Tempered shell and make it the default
 
@@ -271,7 +271,7 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 | 1. Consolidate the controller | in review | `codex/monorepo-foundation` | Implemented 2026-09-20; see the implementation notes, step 1 |
 | 2. Extract the Workspace | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; see the implementation notes, step 2 |
 | 3. Shell boundary with Classic | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 18 of 18 screenshots identical; see the implementation notes, step 3 |
-| 4. Tokens and themes | not started | | |
+| 4. Tokens and themes | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; light and dark pass the audit; see the implementation notes, step 4 |
 | 5. Tempered shell as default | not started | | |
 | 6. Hardening | not started | | |
 

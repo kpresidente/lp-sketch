@@ -14,12 +14,9 @@ import type {
 const SNAP_MARKER_HALF_PX = 7
 const SNAP_MARKER_POINT_RADIUS_PX = 3.6
 const SNAP_MARKER_STROKE_PX = 2.2
-const SNAP_MARKER_COLOR = '#ef4444'
 const SELECTION_HANDLE_RADIUS_PX = 6
 const SELECTION_HANDLE_STROKE_PX = 1.8
 const SELECTION_HANDLE_GUIDE_STROKE_PX = 1.4
-const SELECTION_HANDLE_COLOR = '#0f172a'
-const SELECTION_HANDLE_FILL = '#ffffff'
 
 type ToolPreviewsOverlayProps = Pick<
   OverlayLayerProps,
@@ -57,8 +54,7 @@ function SnapMarker(props: {
             y={point().y - props.halfSize}
             width={props.halfSize * 2}
             height={props.halfSize * 2}
-            fill="#ffffff"
-            stroke={SNAP_MARKER_COLOR}
+            class="ov-snap-box"
             stroke-width={props.strokeWidth}
             opacity={0.95}
           />
@@ -71,7 +67,7 @@ function SnapMarker(props: {
               y1={point().y - props.halfSize}
               x2={point().x + props.halfSize}
               y2={point().y + props.halfSize}
-              stroke={SNAP_MARKER_COLOR}
+              class="ov-snap"
               stroke-width={props.strokeWidth}
               stroke-linecap="round"
               opacity={0.95}
@@ -82,7 +78,7 @@ function SnapMarker(props: {
               y1={point().y + props.halfSize}
               x2={point().x + props.halfSize}
               y2={point().y - props.halfSize}
-              stroke={SNAP_MARKER_COLOR}
+              class="ov-snap"
               stroke-width={props.strokeWidth}
               stroke-linecap="round"
               opacity={0.95}
@@ -95,8 +91,7 @@ function SnapMarker(props: {
             cx={point().x}
             cy={point().y}
             r={props.pointRadius}
-            fill={SNAP_MARKER_COLOR}
-            stroke="#ffffff"
+            class="ov-snap-point"
             stroke-width={props.strokeWidth * 0.6}
             opacity={0.95}
           />
@@ -109,7 +104,7 @@ function SnapMarker(props: {
               y1={point().y + props.halfSize}
               x2={point().x - props.halfSize}
               y2={point().y - props.halfSize}
-              stroke={SNAP_MARKER_COLOR}
+              class="ov-snap"
               stroke-width={props.strokeWidth}
               stroke-linecap="round"
               opacity={0.95}
@@ -120,7 +115,7 @@ function SnapMarker(props: {
               y1={point().y - props.halfSize}
               x2={point().x + props.halfSize}
               y2={point().y - props.halfSize}
-              stroke={SNAP_MARKER_COLOR}
+              class="ov-snap"
               stroke-width={props.strokeWidth}
               stroke-linecap="round"
               opacity={0.95}
@@ -134,8 +129,7 @@ function SnapMarker(props: {
             y={point().y - props.halfSize}
             width={props.halfSize * 2}
             height={props.halfSize * 2}
-            fill="#ffffff"
-            stroke={SNAP_MARKER_COLOR}
+            class="ov-snap-box"
             stroke-width={props.strokeWidth}
             opacity={0.95}
             transform={`rotate(45 ${point().x} ${point().y})`}
@@ -149,7 +143,7 @@ function SnapMarker(props: {
               y1={point().y}
               x2={point().x + props.halfSize}
               y2={point().y}
-              stroke={SNAP_MARKER_COLOR}
+              class="ov-snap"
               stroke-width={props.strokeWidth}
               stroke-linecap="round"
               opacity={0.95}
@@ -160,7 +154,7 @@ function SnapMarker(props: {
               y1={point().y - props.halfSize}
               x2={point().x}
               y2={point().y + props.halfSize}
-              stroke={SNAP_MARKER_COLOR}
+              class="ov-snap"
               stroke-width={props.strokeWidth}
               stroke-linecap="round"
               opacity={0.95}
@@ -183,14 +177,13 @@ function ArcPointMarker(props: {
         cx={props.point.x}
         cy={props.point.y}
         r={5 * props.scale}
-        fill="#ffffff"
-        stroke="#334155"
+        class="ov-ghost-point"
         stroke-width={1.4 * props.scale}
       />
       <text
         x={props.point.x + 7 * props.scale}
         y={props.point.y - 7 * props.scale}
-        fill="#334155"
+        class="ov-ghost-label"
         font-size={`${11 * props.scale}px`}
         font-family="Segoe UI, Arial, sans-serif"
         dominant-baseline="middle"
@@ -213,8 +206,7 @@ function SelectionHandleMarker(props: {
       cx={props.point.x}
       cy={props.point.y}
       r={props.radius}
-      fill={SELECTION_HANDLE_FILL}
-      stroke={SELECTION_HANDLE_COLOR}
+      class="ov-handle"
       stroke-width={props.strokeWidth}
     />
   )
@@ -242,7 +234,7 @@ function SelectionHandleOverlay(props: {
           y1={start.y}
           x2={end.x}
           y2={end.y}
-          stroke={SELECTION_HANDLE_COLOR}
+          class="ov-handle-guide"
           stroke-width={props.guideStrokeWidth}
           stroke-dasharray={dash}
           opacity={0.45}
@@ -288,7 +280,7 @@ function SelectionHandleOverlay(props: {
         <text
           x={props.preview.start.x + props.radius + 2}
           y={props.preview.start.y - props.radius - 1}
-          fill={SELECTION_HANDLE_COLOR}
+          class="ov-handle-label"
           font-size={fontSize}
           font-family="Segoe UI, Arial, sans-serif"
         >
@@ -297,7 +289,7 @@ function SelectionHandleOverlay(props: {
         <text
           x={props.preview.through.x + props.radius + 2}
           y={props.preview.through.y - props.radius - 1}
-          fill={SELECTION_HANDLE_COLOR}
+          class="ov-handle-label"
           font-size={fontSize}
           font-family="Segoe UI, Arial, sans-serif"
         >
@@ -306,7 +298,7 @@ function SelectionHandleOverlay(props: {
         <text
           x={props.preview.end.x + props.radius + 2}
           y={props.preview.end.y - props.radius - 1}
-          fill={SELECTION_HANDLE_COLOR}
+          class="ov-handle-label"
           font-size={fontSize}
           font-family="Segoe UI, Arial, sans-serif"
         >
@@ -323,7 +315,7 @@ function SelectionHandleOverlay(props: {
         y1={props.preview.center.y}
         x2={props.preview.handle.x}
         y2={props.preview.handle.y}
-        stroke={SELECTION_HANDLE_COLOR}
+        class="ov-handle-guide"
         stroke-width={props.guideStrokeWidth}
         stroke-dasharray={dash}
         opacity={0.45}
@@ -364,8 +356,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
             data-selection-debug-text="active"
             x={debugX()}
             y={debugY()}
-            fill="#0f172a"
-            stroke="#ffffff"
+            class="ov-debug"
             stroke-width={debugStrokeWidth()}
             paint-order="stroke"
             font-size={debugFontSize()}
@@ -407,7 +398,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
               y1={preview().start.y}
               x2={preview().end.x}
               y2={preview().end.y}
-              stroke="#334155"
+              class="ov-ghost"
               stroke-width={2}
               stroke-dasharray="6 4"
             />
@@ -423,7 +414,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
             <path
               d={preview().path}
               fill="none"
-              stroke="#334155"
+              class="ov-ghost"
               stroke-width={2}
               stroke-dasharray="6 4"
             />
@@ -441,7 +432,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
             y1={preview().start.y}
             x2={preview().end.x}
             y2={preview().end.y}
-            stroke="#374151"
+            class="ov-ghost"
             stroke-width={2}
             stroke-dasharray="6 4"
           />
@@ -587,7 +578,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
             y1={preview().start.y}
             x2={preview().end.x}
             y2={preview().end.y}
-            stroke="#1f2937"
+            class="ov-ghost"
             stroke-width={2}
             stroke-dasharray="4 4"
             marker-end="url(#preview-arrow)"
@@ -602,7 +593,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
             y1={preview().start.y}
             x2={preview().end.x}
             y2={preview().end.y}
-            stroke="#1f2937"
+            class="ov-ghost"
             stroke-width={2}
             stroke-dasharray="4 4"
             marker-end="url(#preview-arrow)"
@@ -617,7 +608,7 @@ export default function ToolPreviewsOverlay(props: ToolPreviewsOverlayProps) {
             y1={preview().start.y}
             x2={preview().end.x}
             y2={preview().end.y}
-            stroke="#0f766e"
+            class="ov-measure-path"
             stroke-width={2}
             stroke-dasharray="8 3"
           />

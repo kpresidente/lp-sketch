@@ -40,7 +40,8 @@ export default function CurvesOverlay(props: CurvesOverlayProps) {
               <path
                 d={path}
                 fill="none"
-                stroke={isSelected() ? '#111827' : '#0369a1'}
+                class="ov-outline"
+                classList={{ 'ov-outline--selected': isSelected() }}
                 stroke-width={(isSelected() ? 7 : 6) * designScale()}
                 stroke-dasharray={
                   isSelected()
