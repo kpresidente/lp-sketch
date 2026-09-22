@@ -25,6 +25,12 @@ export const CLASS_LABEL: Record<WireClass, string> = {
   class2: 'Class II',
 }
 
+/** Short form a narrow shell may show in place of the full label. */
+export const CLASS_SHORT_LABEL: Record<WireClass, string> = {
+  class1: 'I',
+  class2: 'II',
+}
+
 export const DESIGN_SCALE_OPTIONS: readonly DesignScale[] = ['small', 'medium', 'large']
 
 export const DESIGN_SCALE_LABEL: Record<DesignScale, string> = {

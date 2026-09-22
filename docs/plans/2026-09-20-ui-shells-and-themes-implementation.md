@@ -304,3 +304,47 @@ Hi-Vis was checked in the browser at desktop width: black 2px rules, black activ
 - Whether Classic stays registered after Tempered has been the default for a release is still open (design document, open question 1). Retiring it would remove `shells/classic/`, its shell test, `e2e/sidebar.spec.ts`, and the Classic column of the manual's table.
 - The prototype's zoom widget still needs controller zoom actions before a shell can place it.
 - A per-platform default shell (open question 2) is cheap once a touch-first shell exists.
+
+## Hover shell
+
+The first shell built after the plan, through the recipe step 6 wrote into `docs/ENGINEERING.md`. Visible change by design: a third layout, "Hover", offered by the Layout block. Tempered stays the default.
+
+### What changed
+
+- `packages/editor/src/shells/hover/` (new): `HoverShell` (the workspace fills the screen; the chrome floats over it as translucent pills), `useHoverLayout` (one transient open-popover signal; Hover stores no preference), `hover.css`, and `HoverShell.test.tsx` (5 tests). Registered in `shells/registry.ts` as the first `lazy` shell, so its chunk loads on first use and the lazy path in `ShellHost` is now exercised by real code.
+- Placement, per `prototypes/ui-refresh/03-hover.html`: a project pill top-left (mark, project name or app name, the status block as its subtitle, and a Setup button that opens a popover with project name, file, export, report, pages, PDF background, drawing scale, annotation size, theme, and layout); a dock top-center (the mode block, icon-only, plus one button per tool group whose popover holds that group's blocks: Conductors, Air Terminals, Connections, Downleads with Penetrations and Grounding, Annotate with the annotation tools and Layers); the history block top-right; the material and class blocks as a rail on the left; the quick-access rail on the right; the properties bar with the readouts under it at the bottom; the snapping block in the bottom-left corner. The stroke summary is waived because the rail shows material and class directly.
+- Popovers are the shell's modal chrome, like the other shells' flyouts: one open at a time, the workspace `inert`, the shared `DismissBackdrop` behind them, tool choice and Escape close them, focus returns to the button that opened them, the same button toggles. A dock group lights up while the active tool belongs to it; that mapping is placement knowledge in the shell, the blocks still own the tools.
+- The pills use theme tokens only (`color-mix` of `--bg-card` for the glass, `--border-subtle`, `--shadow-lg`, the accent for active state), so light, dark, and Hi-Vis all apply. Below 1240 px the dock drops its labels; below 1000 px it moves to a second row and the side rails start lower, which is how iPad portrait fits.
+- Two blocks gained hooks a narrow shell can use without changing their names: `ModeSwitch` wraps its label in `.btn-text`, and `ClassPicker` carries an `aria-hidden` `.btn-text-short` ("I", "II") beside the full label, hidden by a base rule in `App.css`. Hover hides the mode labels and shows the short class labels; the accessible names are unchanged.
+- The reveal helpers generalized from tab panels to any hidden container whose opener points at it with `aria-controls`: `testing/screen.ts` (`revealControl`) and `e2e/helpers.ts` (`openBlock`). Tempered's tabs already used `aria-controls`; Hover's dock and Setup buttons do too, so a behavior test that reaches a block inside a popover works on Hover as well.
+- `scripts/ui-parity.mjs` keeps a state list per shell (`shellStates`) and rejects an unknown `UI_PARITY_SHELL`; Hover's set opens the Conductors and Setup popovers.
+- `e2e/hover.spec.ts` (new, 5 tests): the dock's one-at-a-time popovers with the inert workspace, closing on tool choice, Escape, and an outside tap without drawing, the Setup popover applying a scale and the rail changing the stroke, iPad portrait and landscape keeping every pill inside the viewport, and the switch back to Tempered.
+- `playwright.config.ts` takes `LP_E2E_PORT` and starts Vite with `--strictPort`; `gotoApp` asserts the page title before anything else. See decision 2.
+- Manual: the layout table in 1.4 gained a Hover column and 2.10 a Hover bullet. `AGENTS.md`, `docs/ENGINEERING.md`, and the design document's future-shells and tracking tables record the shell.
+
+### Decisions worth knowing
+
+1. Every block stays mounted with `hidden` when its popover is closed, as Tempered's tabs do, so the coverage test sees all of them, the reveal helpers can open them, and opening a popover costs no render.
+2. Mid-way through, the e2e port was taken by another project's preview server (a different app answered on 4173) and Playwright reused it, since `reuseExistingServer` is on for local runs. The runs against it were meaningless, and telling them apart from real failures took a while. The config now takes `LP_E2E_PORT`, Vite runs with `--strictPort`, and `gotoApp` fails immediately with the foreign title instead of letting specs fail in confusing ways.
+3. The Hover spec's last test first reloaded after switching to Tempered and expected Tempered to survive, which it cannot while the test's own init script pins Hover on every load. That was my error, not the shell's; the test now checks the stored preference. The Tempered spec's switch test reloads legitimately because it pins nothing.
+4. The material dots keep a fixed white label with a shadow over the swatch, the one non-token color in the shell, because the swatches are fixed drawing colors in every theme.
+5. Hover is not made the iPad default. The design document's open question 2 is still the user's call; a per-platform default would be a small change in `App` props now that a touch-first shell exists.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | pass |
+| `npm run audit:contrast` | unchanged (no new tokens) |
+| `npm run build` | pass; the Hover chunk is emitted separately; 40 help anchors |
+| `npm run mobile:build` | pass; same in the iPad bundle |
+| `npm test` | 57 files, 467 tests, pass (1 file and 5 tests added; the coverage test now covers three shells) |
+| `npm run test:e2e` | 45 tests, pass, run alone on `LP_E2E_PORT=4179` (40 before plus 5 Hover) |
+
+Screenshots: `UI_PARITY_SHELL=hover` captured 18 shots (three viewports by default, linear-tool, popover-conductors, popover-setup, quick-customizer, help-open). Desktop matches the prototype's arrangement with light glass pills on the light theme; at iPad portrait the dock sits on its own row under the project and history pills and the rails start below it, and no pill leaves the viewport (the spec checks every pill's box at both iPad sizes).
+
+### Left for later
+
+- The prototype's zoom pill (out, readout, in, fit) still waits on controller zoom actions; the bottom-right corner is empty.
+- The dock could show the active tool's own name and icon instead of the group's while a tool in that group is active, as the prototype does; the mapping already exists.
+- Whether the iPad app should open in Hover (open question 2).

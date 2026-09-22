@@ -30,8 +30,7 @@ export default function ModeSwitch() {
               <Show when={TOOL_CUSTOM_ICON[mode.tool]} fallback={<i class={tablerIconClass(TOOL_ICON[mode.tool])} />}>
                 {(name) => <CustomIcon name={name()} />}
               </Show>
-              {' '}
-              {mode.label}
+              <span class="btn-text">{mode.label}</span>
             </button>
           )}
         </For>

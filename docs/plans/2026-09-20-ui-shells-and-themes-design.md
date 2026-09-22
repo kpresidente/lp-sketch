@@ -260,7 +260,7 @@ Each future shell reuses the block registry. The list records what each one need
 | --- | --- | --- |
 | Nightshift | `01-nightshift.html` | Right inspector with tabs; tool options in `vertical` layout; ships with the `dark` theme by default |
 | Vellum | `02-vellum.html` | Ribbon with mixed large and small clusters; title-block strip; CAD status strip; needs a `paper` theme |
-| Hover | `03-hover.html` | Floating glass pills; pop-out tool groups; touch-first sizing; likely the iPad default candidate |
+| Hover | `03-hover.html` | Implemented 2026-09-22 in `shells/hover/` (lazy): floating pills over a full-bleed workspace, a dock whose group buttons open popovers of blocks, touch sizing; the stroke summary is waived. Whether it becomes the iPad default is open question 2 |
 | Hi-Vis | `05-hivis.html` | Bottom tray with two-row groups; oversized targets; pairs with the `hivis` theme but is a separate shell |
 | Ledger | `06-ledger.html` | Serif header with meta table; labelled rail with grouped pop-outs; specification panel with a searchable component catalog |
 
@@ -276,6 +276,7 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 | 4. Tokens and themes | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; light and dark pass the audit; see the implementation notes, step 4 |
 | 5. Tempered shell as default | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 28 blocks, Tempered mounts all, Classic waives two; see the implementation notes, step 5 |
 | 6. Hardening | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; three themes pass the audit; see the implementation notes, step 6 |
+| Hover shell (after the plan) | in review | `codex/monorepo-foundation` | Implemented 2026-09-22 through the step 6 recipe; see the implementation notes, Hover shell |
 
 Statuses: not started, in progress, in review, done.
 

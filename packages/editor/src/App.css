@@ -378,6 +378,9 @@ select.select-field:focus {
   font-size: 15px;
 }
 
+/* A block may carry a short label beside its full one; a narrow shell shows it instead. */
+.btn-text-short { display: none; }
+
 .ti-custom-icon {
   display: inline-flex;
   align-items: center;

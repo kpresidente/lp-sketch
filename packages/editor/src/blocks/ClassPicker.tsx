@@ -1,7 +1,7 @@
 import { For } from 'solid-js'
 import { SectionHelp } from '../components/SectionHelp'
 import { useAppController } from '../context/AppControllerContext'
-import { CLASS_LABEL, type WireClass } from './labels'
+import { CLASS_LABEL, CLASS_SHORT_LABEL, type WireClass } from './labels'
 
 const CLASSES: readonly WireClass[] = ['class1', 'class2']
 
@@ -22,7 +22,8 @@ export default function ClassPicker() {
               title={CLASS_LABEL[wireClass]}
               onClick={() => props.onSetActiveClass(wireClass)}
             >
-              {CLASS_LABEL[wireClass]}
+              <span class="btn-text">{CLASS_LABEL[wireClass]}</span>
+              <span class="btn-text-short" aria-hidden="true">{CLASS_SHORT_LABEL[wireClass]}</span>
             </button>
           )}
         </For>

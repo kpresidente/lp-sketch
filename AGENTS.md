@@ -40,7 +40,7 @@ The repository uses npm workspaces. Run development, build, test, and audit comm
 - `packages/editor/src/App.tsx` — Shared editor orchestration, tool state, pointer workflows
 - `packages/editor/src/components/` — Properties bar, quick-access rail, overlays, dialogs, help drawer
 - `packages/editor/src/controllers/` — Pointer event controllers
-- `packages/editor/src/shells/` — Shell registry, `ShellHost`, the Tempered shell (default) and the Classic shell (its panels compose the same blocks); a shell places blocks and never defines behavior
+- `packages/editor/src/shells/` — Shell registry, `ShellHost`, the Tempered shell (default), the Classic shell (its panels compose the same blocks), and the lazy Hover shell (floating pills with popovers); a shell places blocks and never defines behavior
 - `packages/editor/src/blocks/` — The block components (tool groups, pickers, project actions, readouts, status) and the registry of blocks every shell must mount or waive
 - `packages/editor/src/testing/` — Test helpers for behavior suites, such as the shell-aware `screen` that reveals a control's sidebar tab
 - `packages/editor/src/themes/` — Theme registry, token stylesheets (`light.css` is the complete set; `dark.css` and `hivis.css` override it, including rule weight and radii), and bundled fonts; every theme passes `npm run audit:contrast`

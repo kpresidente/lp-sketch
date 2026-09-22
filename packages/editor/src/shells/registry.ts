@@ -3,7 +3,7 @@ import ClassicShell from './classic/ClassicShell'
 import TemperedShell from './tempered/TemperedShell'
 import type { ShellComponent } from './types'
 
-export type ShellId = 'tempered' | 'classic'
+export type ShellId = 'tempered' | 'classic' | 'hover'
 
 /** Global device preference. Never enters project JSON, autosave, or history. */
 export const SHELL_PREFERENCE_KEY = 'lp-sketch.shell.v1'
@@ -52,8 +52,20 @@ export const CLASSIC_SHELL: ShellRegistration = {
   },
 }
 
+// Hover loads on first use; its chunk carries the shell, its stylesheet, and nothing else.
+export const HOVER_SHELL: ShellRegistration = {
+  id: 'hover',
+  label: 'Hover',
+  kind: 'lazy',
+  load: () => import('./hover/HoverShell'),
+  waivedBlocks: {
+    'stroke-summary':
+      'Hover shows the selected material and class directly on its material rail, so a stroke summary would repeat them.',
+  },
+}
+
 /** In the order the shell picker offers them; the default comes first. */
-export const SHELLS: readonly ShellRegistration[] = [TEMPERED_SHELL, CLASSIC_SHELL]
+export const SHELLS: readonly ShellRegistration[] = [TEMPERED_SHELL, CLASSIC_SHELL, HOVER_SHELL]
 
 export const DEFAULT_SHELL: ShellRegistration = TEMPERED_SHELL
 

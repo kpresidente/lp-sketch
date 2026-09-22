@@ -11,7 +11,7 @@
 // Sets land in test-results/ui-parity/<tag>/ (ignored by git). Override the
 // server with UI_PARITY_BASE, the output root with UI_PARITY_DIR, the theme
 // under test with UI_PARITY_THEME (a theme id stored as the preference), and
-// the shell with UI_PARITY_SHELL (default: the app default, tempered).
+// the shell with UI_PARITY_SHELL (tempered, classic, or hover; default tempered).
 import { chromium } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -21,8 +21,6 @@ const base = process.env.UI_PARITY_BASE ?? 'http://localhost:5173'
 const root = process.env.UI_PARITY_DIR ?? path.join('test-results', 'ui-parity')
 const theme = process.env.UI_PARITY_THEME
 const shell = process.env.UI_PARITY_SHELL ?? 'tempered'
-// The collapsed rail's first section differs per shell.
-const firstSection = shell === 'classic' ? 'Tools' : 'Draw'
 
 const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
@@ -31,44 +29,66 @@ const viewports = [
 ]
 
 // Chrome states, each on a fresh page so stored preferences never leak between them.
+// The default, customizer, and help states exist on every shell; the rest open the
+// chrome only that shell has.
+const linearTool = async (page) => {
+  await page.getByRole('button', { name: /Linear$/ }).click()
+}
+const collapsedRail = async (page) => {
+  await page.getByRole('button', { name: 'Collapse sidebar' }).click()
+}
+const flyout = (section) => async (page) => {
+  await collapsedRail(page)
+  await page.getByRole('button', { name: `${section} section` }).click()
+  await page.getByRole('region', { name: `${section} flyout` }).waitFor()
+}
+const popover = (name) => async (page) => {
+  await page.getByRole('button', { name, exact: true }).click()
+  await page.getByRole('region', { name: `${name} popover` }).waitFor()
+}
+const shellStates = {
+  tempered: [
+    { name: 'linear-tool', run: linearTool },
+    {
+      name: 'tab-annotate',
+      run: async (page) => {
+        await page.getByRole('tab', { name: 'Annotate' }).click()
+      },
+    },
+    {
+      name: 'tab-setup',
+      run: async (page) => {
+        await page.getByRole('tab', { name: 'Setup' }).click()
+      },
+    },
+    { name: 'collapsed', run: collapsedRail },
+    { name: 'flyout', run: flyout('Draw') },
+  ],
+  classic: [
+    { name: 'linear-tool', run: linearTool },
+    { name: 'collapsed', run: collapsedRail },
+    { name: 'flyout', run: flyout('Tools') },
+  ],
+  hover: [
+    {
+      name: 'linear-tool',
+      run: async (page) => {
+        await popover('Conductors')(page)
+        await linearTool(page)
+      },
+    },
+    { name: 'popover-conductors', run: popover('Conductors') },
+    { name: 'popover-setup', run: popover('Setup') },
+  ],
+}
+if (!shellStates[shell]) {
+  console.error(`unknown shell "${shell}"; expected one of ${Object.keys(shellStates).join(', ')}`)
+  process.exit(2)
+}
+
 const states = [
   { name: 'default', run: async () => {} },
-  {
-    name: 'linear-tool',
-    run: async (page) => {
-      await page.getByRole('button', { name: /Linear$/ }).click()
-    },
-  },
-  ...(shell === 'tempered'
-    ? [
-      {
-        name: 'tab-annotate',
-        run: async (page) => {
-          await page.getByRole('tab', { name: 'Annotate' }).click()
-        },
-      },
-      {
-        name: 'tab-setup',
-        run: async (page) => {
-          await page.getByRole('tab', { name: 'Setup' }).click()
-        },
-      },
-    ]
-    : []),
-  {
-    name: 'collapsed',
-    run: async (page) => {
-      await page.getByRole('button', { name: 'Collapse sidebar' }).click()
-    },
-  },
-  {
-    name: 'flyout',
-    run: async (page) => {
-      await page.getByRole('button', { name: 'Collapse sidebar' }).click()
-      await page.getByRole('button', { name: `${firstSection} section` }).click()
-      await page.getByRole('region', { name: `${firstSection} flyout` }).waitFor()
-    },
-  },
+  ...shellStates[shell],
   {
     name: 'quick-customizer',
     run: async (page) => {

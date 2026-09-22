@@ -4,18 +4,20 @@ type Role = Parameters<typeof base.getByRole>[0]
 type RoleOptions = Parameters<typeof base.getByRole>[1]
 
 /**
- * Clicks the sidebar tab that holds `element` when a shell keeps that tab
- * hidden until opened. A no-op for controls that are already reachable.
+ * Opens whatever chrome hides `element`: a shell may keep a control behind a
+ * sidebar tab or a popover until the user opens it, and the opener always
+ * points at the hidden container through `aria-controls`. A no-op for
+ * controls that are already reachable.
  */
-export function revealTab(element: HTMLElement): void {
-  const panel = element.closest('[role="tabpanel"]')
-  if (!(panel instanceof HTMLElement) || !panel.hidden) {
-    return
-  }
-  const tabId = panel.getAttribute('aria-labelledby')
-  const tab = tabId ? document.getElementById(tabId) : null
-  if (tab) {
-    fireEvent.click(tab)
+export function revealControl(element: HTMLElement): void {
+  let hidden = element.closest('[hidden]')
+  for (let depth = 0; hidden instanceof HTMLElement && depth < 4; depth += 1) {
+    const opener = hidden.id ? document.querySelector<HTMLElement>(`[aria-controls="${hidden.id}"]`) : null
+    if (!opener) {
+      return
+    }
+    fireEvent.click(opener)
+    hidden = hidden.parentElement?.closest('[hidden]') ?? null
   }
 }
 
@@ -24,16 +26,16 @@ function getByRole<T extends HTMLElement = HTMLElement>(role: Role, options?: Ro
   if (visible) {
     return visible
   }
-  // Not visible on this shell: take the mounted match and open its tab, as a user would.
+  // Not visible on this shell: take the mounted match and open its chrome, as a user would.
   const hidden = base.getByRole<T>(role, { ...options, hidden: true })
-  revealTab(hidden)
+  revealControl(hidden)
   return hidden
 }
 
 /**
  * `screen` for behavior tests, which must read the same on any shell. Only
  * `getByRole` differs from testing-library's: when no visible control matches,
- * it reveals the sidebar tab holding the hidden match and returns it.
+ * it opens the tab or popover holding the hidden match and returns it.
  * `queryByRole` stays literal so an absence check means absence.
  */
 export const screen = { ...base, getByRole }

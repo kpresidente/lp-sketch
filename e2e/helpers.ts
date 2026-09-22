@@ -52,6 +52,8 @@ export async function gotoApp(page: Page, options: GotoAppOptions = {}): Promise
     }, options.shell)
   }
   await page.goto('/')
+  // Fail fast if another project's server holds the port (Playwright reuses whatever answers).
+  await expect(page).toHaveTitle('LP Sketch')
   const drawingStage = page.locator('.drawing-stage')
   await expect(drawingStage).toBeVisible()
   return drawingStage
@@ -59,8 +61,9 @@ export async function gotoApp(page: Page, options: GotoAppOptions = {}): Promise
 
 /**
  * A block by its landmark name (see `packages/editor/src/blocks/registry.ts`).
- * A shell may keep a block in a sidebar tab that is hidden until opened, so
- * this reveals that tab first; a shell that shows every block just returns it.
+ * A shell may keep a block behind a tab or popover that is hidden until opened;
+ * the opener points at that container through `aria-controls`, so this clicks
+ * it first. A shell that shows every block just returns it.
  */
 export async function openBlock(
   page: Page,
@@ -69,11 +72,11 @@ export async function openBlock(
 ): Promise<Locator> {
   const block = page.getByRole(role, { name, exact: true, includeHidden: true })
   if (!(await block.isVisible())) {
-    const tabPanel = block.locator('xpath=ancestor::*[@role="tabpanel"][1]')
-    if ((await tabPanel.count()) > 0) {
-      const tabId = await tabPanel.getAttribute('aria-labelledby')
-      if (tabId) {
-        await page.locator(`[id="${tabId}"]`).click()
+    const hidden = block.locator('xpath=ancestor::*[@hidden][1]')
+    if ((await hidden.count()) > 0) {
+      const id = await hidden.getAttribute('id')
+      if (id) {
+        await page.locator(`[aria-controls="${id}"]`).first().click()
       }
     }
   }

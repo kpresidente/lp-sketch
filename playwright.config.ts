@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const PORT = 4173
+// Override when another project holds the default port; a foreign server on the port
+// would otherwise be reused and tested (gotoApp also checks the page title).
+const PORT = Number(process.env.LP_E2E_PORT ?? 4173)
 const BASE_URL = `http://127.0.0.1:${PORT}`
 const isWindows = process.platform === 'win32'
 
@@ -19,7 +21,7 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
-    command: `npm run dev -- --host 127.0.0.1 --port ${PORT}`,
+    command: `npm run dev -- --host 127.0.0.1 --port ${PORT} --strictPort`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

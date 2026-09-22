@@ -38,17 +38,21 @@ LP Sketch is a lightning protection system design communication tool. It allows 
 
 This manual names controls, not places. Every control group keeps its name and behavior in every [layout](#help-layout); the table shows where each one sits.
 
-| Controls | Tempered (default) | Classic |
-|----------|--------------------|---------|
-| Material, Class, Annotation Size | Stroke widget at the top of the sidebar | Material and Scale panels |
-| Mode, Conductors, Air Terminals, Connections, Downleads, Penetrations, Grounding, Snapping, History | Draw tab | Tools and Components panels |
-| Annotation tools, Layers | Annotate tab | Tools and Layers panels |
-| Name, File, Export, Report, Pages, PDF Background, Drawing Scale, Theme, Layout | Setup tab | Project and Scale panels |
-| Active tool, tool options, live measurements, zoom | Properties bar above the drawing | Properties bar above the drawing |
-| Page, scale, snapping, selection, and history readouts | Status strip below the drawing | Inside the panels |
-| Status messages | Sidebar footer | Sidebar footer |
+| Controls | Tempered (default) | Classic | Hover |
+|----------|--------------------|---------|-------|
+| Material, Class | Stroke widget at the top of the sidebar | Material panel | Material rail on the left |
+| Annotation Size | Stroke widget | Scale panel | Setup popover |
+| Mode | Draw tab | Tools panel | Dock at the top |
+| Conductors, Air Terminals, Connections, Downleads, Penetrations, Grounding | Draw tab | Components panel | Dock popovers (Penetrations and Grounding with Downleads) |
+| Snapping | Draw tab | Tools panel | Pill in the bottom-left corner |
+| History | Draw tab | Tools panel | Pill in the top-right corner |
+| Annotation tools, Layers | Annotate tab | Tools and Layers panels | Annotate popover |
+| Name, File, Export, Report, Pages, PDF Background, Drawing Scale, Theme, Layout | Setup tab | Project and Scale panels | Setup popover, from the project pill |
+| Active tool, tool options, live measurements, zoom | Properties bar above the drawing | Properties bar above the drawing | Strip at the bottom |
+| Page, scale, snapping, selection, and history readouts | Status strip below the drawing | Inside the panels | Below the tool options in the bottom strip |
+| Status messages | Sidebar footer | Sidebar footer | Project pill |
 
-Use **Collapse sidebar** in the sidebar heading to give the drawing more space. The compact rail has one section button per tab (**Draw**, **Annotate**, **Setup**) in the Tempered layout, or one per panel in Classic (**Project**, **Tools**, **Components**, **Material**, **Scale**, and **Layers**). Both layouts work in the browser and the iPad app, and your collapse/expand choice is remembered on the device.
+Use **Collapse sidebar** in the sidebar heading to give the drawing more space. The compact rail has one section button per tab (**Draw**, **Annotate**, **Setup**) in the Tempered layout, or one per panel in Classic (**Project**, **Tools**, **Components**, **Material**, **Scale**, and **Layers**). Both layouts work in the browser and the iPad app, and your collapse/expand choice is remembered on the device. The Hover layout has no sidebar: its pills float over the drawing, and its popovers close the same way the flyouts do.
 
 The sidebar stays on the left in both portrait and landscape, whether expanded or collapsed. Rotating the tablet or narrowing the browser window does not move it above the workspace.
 
@@ -176,6 +180,7 @@ The theme changes the editor chrome and interaction colors such as selection out
 The **Layout** control next to Theme chooses how the editor chrome is arranged on this device. Every layout offers the same tools, controls, and names; only their placement changes.
 - **Tempered** (default) keeps the stroke widget at the top of the sidebar, sorts the controls into the Draw, Annotate, and Setup tabs, puts tool options in the bar above the drawing, and shows page, scale, snapping, selection, and history readouts in the strip below it
 - **Classic** shows every control at once in six collapsible panels: Project, Tools, Components, Material, Scale, and Layers
+- **Hover** floats the controls over the drawing as translucent pills: a dock of tool groups at the top whose buttons open popovers, the material rail on the left, the quick-access rail on the right, the tool options and readouts at the bottom, and the snapping switches in the corner. The project pill opens the setup popover. Made for touch
 
 Switching applies immediately and keeps the open project, the active tool, and the drawing. The choice is stored on the device and is not part of the project file.
 
