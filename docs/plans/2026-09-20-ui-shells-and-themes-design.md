@@ -84,7 +84,7 @@ Registries make the contracts explicit and testable:
 ### Theme
 
 - A theme is a complete token set. Missing tokens fall back to `light`, never to raw colors.
-- Tokens cover chrome and the workspace-facing interaction set: canvas surround, selection stroke and handle fill, hover stroke, snap marker, mark stroke, path and placement previews. Material colors, legend and notes chrome, dimension text, and symbol labels stay fixed across themes because they are exported drawing content. On-page interaction strokes must keep 3:1 against the white page in every theme; the audit checks this.
+- Tokens cover chrome and the workspace-facing interaction set: canvas surround, selection stroke and handle fill, hover stroke, snap marker, mark stroke, path and placement previews. Since step 6 they also cover rule weight (`--border-width`) and the three corner radii, which is how Hi-Vis gets heavier rules without touching layout metrics. Material colors, legend and notes chrome, dimension text, and symbol labels stay fixed across themes because they are exported drawing content. On-page interaction strokes must keep 3:1 against the white page in every theme; the audit checks this.
 - Fonts are self-hosted per theme so the iPad bundle renders identically offline. Since step 4 both apps bundle Plus Jakarta Sans and Fira Code as variable fonts from `@fontsource-variable` packages through `themes/fonts.css`; before that the web entry loaded them from Google Fonts and the mobile entry loaded nothing.
 - Each theme passes `npm run audit:contrast`. The audit reads `:root` from `App.css` today and must learn to read one theme block at a time.
 
@@ -234,7 +234,7 @@ Scope:
 - Split tests into behavior tests (shell-agnostic, run once against the default shell) and shell tests (small, one file per shell). The e2e side landed in step 5 (`openBlock` reveals a block's tab; `expectStatus` queries the block's own class; `sidebar.spec.ts` and `tempered.spec.ts` are the shell specs). What remains is the unit side: the five App suites pin Classic; move the shell-agnostic ones onto the default shell with the same reveal idea, and keep the collapsible-sidebar and panel-region tests as Classic's shell test.
 - Rewrite `packages/editor/src/help/USER_MANUAL.md` around blocks and tasks rather than locations. The required anchor list in `build-help.mjs` stays the same; the prose stops saying "in the Tools panel".
 - Namespace remaining shell preferences per the Preferences table, with one-time migration of the old keys.
-- Add the `hivis` theme from the Hi-Vis prototype palette, including the heavier border and radius tokens it needs, and run the contrast audit on it.
+- Add the `hivis` theme from the Hi-Vis prototype palette, including the heavier border and radius tokens it needs, and run the contrast audit on it. Implemented with `--border-width` (new) and the three radii moved from `App.css` into the theme token set; Hi-Vis uses a black accent with yellow text on it so the audit's outline and switch pairs pass.
 - Document how to add a shell and how to add a theme in `docs/ENGINEERING.md`, including the coverage test and the audit as gates.
 
 Acceptance:
@@ -244,13 +244,13 @@ Acceptance:
 
 Checklist:
 
-- [ ] Behavior and shell test split
-- [ ] Shell-coupled e2e helpers replaced
-- [ ] Manual rewritten around blocks
-- [ ] Preference keys namespaced and migrated
-- [ ] `hivis` theme
-- [ ] Engineering guide updated
-- [ ] Suites and audits green
+- [x] Behavior and shell test split (`testing/screen.ts` reveals a control's tab; `shells/classic/ClassicShell.test.tsx` holds Classic's chrome tests)
+- [x] Shell-coupled e2e helpers replaced (`expectStatus` and `expectError` query the status and alert roles; blocks by landmark since step 5)
+- [x] Manual rewritten around blocks (section 1.4 maps every control group to its place per layout; the prose names controls)
+- [x] Preference keys namespaced and migrated (inventory in `docs/ENGINEERING.md`; nothing outside the table remained)
+- [x] `hivis` theme (with `--border-width` and the radii as theme tokens)
+- [x] Engineering guide updated
+- [x] Suites and audits green
 
 ## Future shells
 
@@ -275,7 +275,7 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 | 3. Shell boundary with Classic | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 18 of 18 screenshots identical; see the implementation notes, step 3 |
 | 4. Tokens and themes | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; light and dark pass the audit; see the implementation notes, step 4 |
 | 5. Tempered shell as default | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 28 blocks, Tempered mounts all, Classic waives two; see the implementation notes, step 5 |
-| 6. Hardening | not started | | |
+| 6. Hardening | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; three themes pass the audit; see the implementation notes, step 6 |
 
 Statuses: not started, in progress, in review, done.
 

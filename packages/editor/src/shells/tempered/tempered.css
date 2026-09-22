@@ -27,7 +27,7 @@
   flex-direction: column;
   min-height: 0;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
+  border-right: var(--border-width) solid var(--border);
   z-index: 2;
 }
 
@@ -45,7 +45,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: var(--border-width) solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -157,7 +157,7 @@
   margin: 10px 12px 0;
   padding: 10px 12px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xs);
 }
@@ -193,7 +193,7 @@
   height: 26px;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg-card);
   color: var(--text-tertiary);
@@ -238,7 +238,7 @@
   display: flex;
   gap: 0;
   padding: 2px;
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-card);
 }
@@ -271,7 +271,7 @@
   gap: 2px;
   flex-shrink: 0;
   padding: 10px 12px 0;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: var(--border-width) solid var(--border-subtle);
 }
 
 .tempered-tab {
@@ -336,7 +336,7 @@
 .tempered-side [data-block="mode"] .btn-row {
   gap: 0;
   padding: 2px;
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: 7px;
   background: var(--bg-card);
 }
@@ -370,7 +370,7 @@
   min-height: 60px;
   padding: 4px;
   gap: 5px;
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--bg-card);
   box-shadow: var(--shadow-xs);
@@ -420,7 +420,7 @@
 .tempered-side [data-block="snapping"],
 .tempered-side [data-block="history"] {
   padding-top: 10px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: var(--border-width) solid var(--border-subtle);
 }
 
 .tempered-side [data-block="history"] {
@@ -439,7 +439,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--bg-card);
-  border: 1px solid var(--border-btn);
+  border: var(--border-width) solid var(--border-btn);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
@@ -462,7 +462,7 @@
   justify-content: space-between;
   padding: 4px 8px 4px 16px;
   background: var(--bg-panel-header);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
 }
 
 .tempered-flyout-title {
@@ -475,7 +475,7 @@
 .tempered-foot {
   flex-shrink: 0;
   margin-top: auto;
-  border-top: 1px solid var(--border-subtle);
+  border-top: var(--border-width) solid var(--border-subtle);
 }
 
 .tempered-foot .status-bar {
@@ -496,7 +496,7 @@
   width: max-content;
   max-width: min(420px, calc(100vw - var(--sidebar-rail-width) - 28px));
   margin: 0;
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-card);
   box-shadow: var(--shadow-xs);
@@ -515,7 +515,7 @@
 .tempered-workspace .properties-bar {
   min-height: 46px;
   padding: 5px 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
 }
 
 .tempered-workspace .toolbar-active-tool {
@@ -540,7 +540,7 @@
   height: 26px;
   padding: 0 14px;
   background: var(--bg-card);
-  border-top: 1px solid var(--border);
+  border-top: var(--border-width) solid var(--border);
   overflow: hidden;
 }
 

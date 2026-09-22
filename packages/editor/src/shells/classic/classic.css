@@ -28,5 +28,5 @@
 .panel-body > .block + .block > .section-label:first-child {
   margin-top: 0;
   padding-top: 10px;
-  border-top: 1px solid var(--border);
+  border-top: var(--border-width) solid var(--border);
 }

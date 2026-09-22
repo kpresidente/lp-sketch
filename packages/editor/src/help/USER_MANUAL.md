@@ -34,35 +34,45 @@ LP Sketch is a lightning protection system design communication tool. It allows 
 5. **Save your project** -- Save to a `.lps` file for future editing
 6. **Export** -- Export as PNG, JPG, or flattened PDF for handoff
 
-### 1.4. Sidebar and Collapsed Rail
+### 1.4. Where Controls Live {#help-introduction-where}
 
-The default layout keeps the stroke widget (material, class, and annotation size) at the top of the sidebar and sorts the rest into three tabs: **Draw** (mode, conductors, components, snapping, history), **Annotate** (annotation tools and layers), and **Setup** (project name, file, export, report, pages, PDF background, drawing scale, theme, and layout). The Classic layout shows the same controls as six panels instead; see the Layout section under Project.
+This manual names controls, not places. Every control group keeps its name and behavior in every [layout](#help-layout); the table shows where each one sits.
 
-Use **Collapse sidebar** in the sidebar heading to give the drawing more space. The compact rail has one section button per tab (**Draw**, **Annotate**, **Setup**) in the default layout, or six in Classic (**Project**, **Tools**, **Components**, **Material**, **Scale**, and **Layers**). This layout is available in both the browser and iPad app, and your collapse/expand choice is remembered on the device.
+| Controls | Tempered (default) | Classic |
+|----------|--------------------|---------|
+| Material, Class, Annotation Size | Stroke widget at the top of the sidebar | Material and Scale panels |
+| Mode, Conductors, Air Terminals, Connections, Downleads, Penetrations, Grounding, Snapping, History | Draw tab | Tools and Components panels |
+| Annotation tools, Layers | Annotate tab | Tools and Layers panels |
+| Name, File, Export, Report, Pages, PDF Background, Drawing Scale, Theme, Layout | Setup tab | Project and Scale panels |
+| Active tool, tool options, live measurements, zoom | Properties bar above the drawing | Properties bar above the drawing |
+| Page, scale, snapping, selection, and history readouts | Status strip below the drawing | Inside the panels |
+| Status messages | Sidebar footer | Sidebar footer |
+
+Use **Collapse sidebar** in the sidebar heading to give the drawing more space. The compact rail has one section button per tab (**Draw**, **Annotate**, **Setup**) in the Tempered layout, or one per panel in Classic (**Project**, **Tools**, **Components**, **Material**, **Scale**, and **Layers**). Both layouts work in the browser and the iPad app, and your collapse/expand choice is remembered on the device.
 
 The sidebar stays on the left in both portrait and landscape, whether expanded or collapsed. Rotating the tablet or narrowing the browser window does not move it above the workspace.
 
-Tap a section button to open its panel beside the sidebar. Tap another section to switch panels, or tap the same section again to close it. The panel scrolls when its controls do not fit on screen.
+Tap a section button to open its flyout beside the rail. Tap another section to switch flyouts, or tap the same section again to close it. The flyout scrolls when its controls do not fit on screen.
 
-- Choosing a tool or component closes the panel so you can work on the drawing.
-- Changing settings, material, scale values, or layer switches keeps the panel open.
-- Tapping outside the sidebar and panel only closes the panel. That first tap does not draw, select, pan, or activate a control underneath it.
-- The panel's close button or **Escape** also closes it. Escape returns focus to its section button and preserves an unfinished conductor.
+- Choosing a tool or component closes the flyout so you can work on the drawing.
+- Changing settings, material, scale values, or layer switches keeps the flyout open.
+- Tapping outside the rail and flyout only closes the flyout. That first tap does not draw, select, pan, or activate a control underneath it.
+- The flyout's close button or **Escape** also closes it. Escape returns focus to its section button and preserves an unfinished conductor.
 - Use **Expand sidebar** in the heading to restore the full sidebar.
 
 ---
 
 ## 2. Project {#help-project}
 
-The **Project** panel in the sidebar manages your project identity, file operations, page navigation, and PDF background settings.
+The project controls cover the project name, files, exports, reports, pages, and the PDF background. They sit in the Setup tab of the Tempered layout or the Project panel of Classic (see [Where Controls Live](#help-introduction-where)).
 
 ### 2.1. Project Name {#help-project-name}
 
-Enter a name for your project in the text field at the top of the Project panel. This name is stored in the project file and helps identify your work when saving and loading projects.
+Enter a name for your project in the **Name** field. This name is stored in the project file and helps identify your work when saving and loading projects.
 
 ### 2.2. PDF Import {#help-project-file}
 
-Click **Import PDF** in the File section of the Project panel and select a PDF file. You can also drag and drop a PDF file directly onto the canvas.
+Click **Import PDF** in the **File** controls and select a PDF file. You can also drag and drop a PDF file directly onto the canvas.
 
 **Requirements:**
 - Maximum file size: 25 MB
@@ -87,7 +97,7 @@ Once imported, the PDF renders as a locked background. You cannot edit the PDF c
 
 ### 2.4. Exporting {#help-project-export}
 
-LP Sketch supports three export formats, available from the Export section of the Project panel:
+LP Sketch supports three export formats, available from the **Export** controls:
 
 | Format | Description |
 |--------|-------------|
@@ -108,7 +118,7 @@ The PDF export creates a true flattened PDF -- the original background PDF with 
 
 ### 2.5. Reporting Bugs and Features {#help-project-report}
 
-The **Report** section in the Project panel provides two buttons for submitting feedback:
+The **Report** controls provide two buttons for submitting feedback:
 
 - **Bug** -- Opens the report dialog with the Bug type pre-selected. Use this for defects, unexpected behavior, or anything that appears broken.
 - **Feature** -- Opens the report dialog with the Feature type pre-selected. Use this to suggest new capabilities or improvements.
@@ -117,7 +127,7 @@ The dialog collects a title, description, and optional reproduction steps. Submi
 
 ### 2.6. Pages {#help-project-pages}
 
-The **Pages** section in the Project panel lets you navigate between pages of a multi-page PDF.
+The **Pages** controls let you navigate between pages of a multi-page PDF.
 
 - **Back** -- Navigate to the previous page
 - **Forward** -- Navigate to the next page
@@ -133,7 +143,7 @@ Elements placed on one page do not appear on other pages. When you switch pages,
 
 ### 2.7. PDF Background Transparency {#help-project-pdf-background}
 
-The **PDF Background** transparency slider in the Project panel lets you fade the background PDF. This can be useful when:
+The **PDF Background** transparency slider lets you fade the background PDF. This can be useful when:
 - The PDF has dark line work that competes with your annotations
 - You want to emphasize the LP overlay while presenting or reviewing
 - You need better contrast for specific conductor colors
@@ -153,10 +163,11 @@ On your next visit, if an autosaved draft is detected, it will be automatically 
 
 ### 2.9. Theme {#help-theme}
 
-The **Theme** control in the Setup tab (or the Project panel in the Classic layout) sets the editor's appearance on this device:
+The **Theme** control sets the editor's appearance on this device:
 - **System** follows the light or dark appearance of the operating system and switches when it changes
 - **Light** is the standard appearance
 - **Dark** uses dark chrome with an amber accent for low-light work
+- **Hi-Vis** uses black text and rules on white with safety-yellow highlights, heavier borders, and hard shadows for bright or outdoor conditions
 
 The theme changes the editor chrome and interaction colors such as selection outlines, handles, and snap markers. The PDF page, conductor material colors, legends, notes, dimension text, and every export look the same in every theme. The choice is stored on the device and is not part of the project file.
 
@@ -172,7 +183,7 @@ Switching applies immediately and keeps the open project, the active tool, and t
 
 ## 3. Tools {#help-tools}
 
-The **Tools** panel in the sidebar provides mode selection, history controls, snapping toggles, auto-connector settings, and annotation tools.
+The tool controls cover the pointer mode, history, snapping and auto-connectors, and the annotation tools. In the Tempered layout the **Mode**, **Snapping**, and **History** controls sit in the Draw tab and the **Annotation** tools in the Annotate tab; Classic shows them all in the Tools panel.
 
 ### 3.1. Mode {#help-tools-mode}
 
@@ -189,19 +200,19 @@ LP Sketch maintains a history of up to **100 snapshots** of your project state. 
 - **Undo** (Ctrl+Z) restores the previous state
 - **Redo** (Ctrl+Shift+Z or Ctrl+Y) re-applies an undone change
 
-The current history depth is displayed in the Tools panel ("Past: X | Future: Y").
+The current history depth is shown beside the **Undo** and **Redo** buttons ("Past: X | Future: Y") and, in the Tempered layout, in the status strip below the drawing.
 
 After an undo, if you make a new change, the redo (future) history is cleared -- you cannot redo past a branch point.
 
 ### 3.3. Snap to Points {#help-tools-snap-to-points}
 
-Toggle **Snap to Points** in the Tools panel to enable or disable geometric snapping. When enabled, your cursor snaps to nearby geometric features (endpoints, basepoints, intersections, etc.) while placing elements.
+Toggle **Snap to Points** in the **Snapping** controls to enable or disable geometric snapping. When enabled, your cursor snaps to nearby geometric features (endpoints, basepoints, intersections, etc.) while placing elements.
 
 For the full list of snap types and snap controls, see [Snapping System](#help-snapping).
 
 ### 3.4. Angle Snap {#help-tools-angle-snap}
 
-Toggle **Angle Snap (15°)** in the Tools panel to constrain angles to 15-degree increments. This applies to linear conductor segments, directional symbol placement, arrows, dimension text measurement direction, and mark tool segments.
+Toggle **Angle Snap (15°)** in the **Snapping** controls to constrain angles to 15-degree increments. This applies to linear conductor segments, directional symbol placement, arrows, dimension text measurement direction, and mark tool segments.
 
 Hold **Ctrl** while clicking to temporarily disable angle snapping for that click. See [Angle Snapping](#help-snapping-angle) for details.
 
@@ -220,7 +231,7 @@ Auto-placed connectors are identical to manually placed connectors -- they can b
 | **T-junction** | 3 branches | Standard connector ([Mechanical or Cadweld](#help-components-connections)) |
 | **Crossrun** | 4+ branches | Crossrun connector ([Mechanical Crossrun or Cadweld Crossrun](#help-components-connections)) |
 
-**Connector types:** Two families are available, selectable from the Tools panel:
+**Connector types:** Two families are available, selectable from the **Snapping** controls:
 
 | Family | T-junction symbol | Crossrun symbol |
 |--------|------------------|-----------------|
@@ -232,14 +243,14 @@ Auto-placed connectors are identical to manually placed connectors -- they can b
 - Otherwise, the connector takes the material of the converging conductors
 
 **Controls:**
-- **Toggle on/off** -- The "Auto-Connectors" switch in the Tools panel enables or disables automatic connector placement during future draw operations
+- **Toggle on/off** -- The "Auto-Connectors" switch in the **Snapping** controls enables or disables automatic connector placement during future draw operations
 - **Connector type** -- Choose between "Mechanical" and "Cadweld" using the buttons below the toggle
 
 **Mechanical vs. Cadweld:** Mechanical connectors (bolted clamps) are standard for most installations. Cadweld (exothermic weld) connections are often preferred for buried connections or where a permanent, maintenance-free joint is required. Note that Class II installations do not permit crimp-type connectors, and Cadweld is not appropriate for aluminum conductors (see [Material Restrictions](#help-material-restrictions)).
 
 ### 3.6. Annotation Tools {#help-tools-annotation}
 
-The **Annotation** section of the Tools panel provides tools for adding text, dimensions, arrows, legends, notes, measurements, marks, and break indicators to your design.
+The **Annotation** controls provide tools for adding text, dimensions, arrows, legends, notes, measurements, marks, and break indicators to your design.
 
 #### 3.6.1. Text {#help-tools-annotation-text}
 
@@ -348,7 +359,7 @@ Construction marks are snappable -- other tools will snap to marks just like the
 The **Break** symbol marks a break in a conductor run -- for example, where a rooftop conductor exits the sheet and continues on an adjacent building or plan.
 
 **How to use:**
-1. Select the **Break** tool from the Tools panel (Annotation section)
+1. Select the **Break** tool from the **Annotation** controls
 2. Click to set the position
 3. Click again to set the direction the conductor continues
 
@@ -358,7 +369,7 @@ The **Break** symbol marks a break in a conductor run -- for example, where a ro
 
 ## 4. Components {#help-components}
 
-The **Components** panel in the sidebar provides tools for drawing conductors and placing LP system components. Select a tool from the panel, then click on the canvas to draw or place.
+The component controls (**Conductors**, **Air Terminals**, **Connections**, **Downleads**, **Penetrations**, and **Grounding**) draw conductors and place LP system components. They sit in the Draw tab of the Tempered layout or the Components panel of Classic. Select a tool, then click on the canvas to draw or place.
 
 ### 4.1. Conductors {#help-components-conductors}
 
@@ -516,7 +527,7 @@ Ground rods are directional -- the direction indicates which way the rod is orie
 
 ## 5. Material {#help-material}
 
-The **Material** panel in the sidebar controls the active wire class and material for new elements.
+The **Class** and **Material** controls set the active wire class and material for new elements. They sit in the stroke widget at the top of the sidebar in the Tempered layout, which also summarizes the current stroke, or in the Material panel of Classic.
 
 ### 5.1. Wire Classes {#help-material-class}
 
@@ -524,7 +535,7 @@ Class I and Class II are building classifications based on height. Class I cover
 
 For mixed buildings (such as a steeple rising above a lower main roof), Class II requirements apply only to the portion exceeding 75 feet. Class II conductors from the taller portion must run continuous to ground and interconnect with the balance of the system.
 
-Select the active class from the Material panel. LP Sketch renders the two classes as:
+Select the active class with the **Class** control. LP Sketch renders the two classes as:
 
 | Class | Visual | Stroke |
 |-------|--------|--------|
@@ -544,7 +555,7 @@ LP Sketch uses color to represent conductor and component materials. When you se
 | Red | Grounding | Gnd | Grounding system conductors and components |
 | Purple | Bimetallic | Bi | Bimetallic connection components (junctions between dissimilar metals) |
 
-Select the active material from the Material panel in the sidebar.
+Select the active material with the **Material** control.
 
 ### 5.3. Material Restrictions {#help-material-restrictions}
 
@@ -570,13 +581,13 @@ Not all tools and components are available with every material. These restrictio
 
 ## 6. Scale {#help-scale}
 
-The **Scale** panel in the sidebar controls the drawing scale, calibration, and annotation sizing.
+The **Drawing Scale** and **Annotation Size** controls set the drawing scale, calibration, and annotation sizing. In the Tempered layout, Drawing Scale sits in the Setup tab and Annotation Size in the stroke widget; Classic shows both in the Scale panel.
 
 ### 6.1. Drawing Scale {#help-scale-drawing-scale}
 
 Before measurements, dimension texts, and [auto-spacing](#help-components-air-terminals-linear) tools will work correctly, you must establish the drawing scale. On multi-page PDFs, each page has its own independent scale.
 
-**Manual scale entry:** In the Scale panel, enter the scale ratio as inches-to-feet. For example, if your drawing is at 1/8" = 1'-0", enter `1` in the inches field and `8` in the feet field, then click **Apply Scale**.
+**Manual scale entry:** In the **Drawing Scale** controls, enter the scale ratio as inches-to-feet. For example, if your drawing is at 1/8" = 1'-0", enter `1` in the inches field and `8` in the feet field, then click **Apply Scale**.
 
 The current scale is displayed as a badge below the scale controls (e.g., "1 in = 8 ft"). You can also set the scale by [calibration](#help-scale-calibration).
 
@@ -585,12 +596,12 @@ The current scale is displayed as a badge below the scale controls (e.g., "1 in 
 The **Calibrate** tool establishes the drawing scale by measuring a known distance on the PDF. This method is often more accurate than manual entry because it accounts for any scaling that occurred during PDF generation.
 
 **How to use:**
-1. Click the **Calibrate** button in the Scale panel (or select it from the [quick-access toolbar](#help-quick-access))
+1. Click the **Calibrate** button in the **Drawing Scale** controls (or select it from the [quick-access toolbar](#help-quick-access))
 2. Click the first endpoint of a known dimension on the PDF
 3. Click the second endpoint -- the [properties bar](#help-properties-bar) shows a real-distance input field
 4. Type the real-world distance in feet and press **Enter** (or click **Apply**); press **Escape** to cancel
 
-The scale is immediately applied and displayed in the Scale panel.
+The scale is immediately applied and shown in the scale badge and, in the Tempered layout, in the status strip below the drawing.
 
 ### 6.3. Annotation Size {#help-scale-annotation-size}
 
@@ -602,13 +613,13 @@ The annotation size setting controls the visual scale of all annotations, symbol
 | **Medium** | 1.5x | 21px |
 | **Large** | 2.0x | 28px |
 
-Choose the size that provides the best readability for your particular PDF sheet size. Select from the Scale panel in the sidebar.
+Choose the size that provides the best readability for your particular PDF sheet size. Select it with the **Annotation Size** control.
 
 ---
 
 ## 7. Layers {#help-layers}
 
-The **Layers** panel in the sidebar controls layer visibility. LP Sketch organizes all design elements across four layers.
+The **Layers** switches control layer visibility. They sit in the Annotate tab of the Tempered layout or the Layers panel of Classic. LP Sketch organizes all design elements across four layers.
 
 ### 7.1. Layer Contents {#help-layers-contents}
 
@@ -621,7 +632,7 @@ The **Layers** panel in the sidebar controls layer visibility. LP Sketch organiz
 
 ### 7.2. Layer Visibility {#help-layers-visibility}
 
-Toggle layer visibility from the Layers panel. When a layer is hidden:
+Toggle layer visibility with the **Layers** switches. When a layer is hidden:
 - Its elements are not displayed on the canvas
 - Its elements are **excluded from exports** (PNG, JPG, PDF)
 - Its elements are still present in the project data and will reappear when the layer is made visible
@@ -891,7 +902,7 @@ When snapping is active and your cursor is near a snappable feature, a snap mark
 
 ### 11.2. Snap Controls {#help-snapping-controls}
 
-- **[Snap to Points](#help-tools-snap-to-points)** toggle in the Tools panel (or [quick-access bar](#help-quick-access)) -- enables/disables geometric snapping
+- **[Snap to Points](#help-tools-snap-to-points)** toggle in the **Snapping** controls (or [quick-access bar](#help-quick-access)) -- enables/disables geometric snapping
 - **Hold Shift** while clicking -- temporarily disables snapping for that click
 - **Hold Ctrl** while clicking -- temporarily disables [angle snapping](#help-snapping-angle) for that click
 

@@ -64,6 +64,11 @@
   --font: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Fira Code Variable', monospace;
 
+  --border-width: 1px;
+  --radius: 6px;
+  --radius-sm: 5px;
+  --radius-lg: 8px;
+
   /* On-page colors stay dark because the page itself stays white: the contrast
      audit holds selection and handle strokes to 3:1 against it. Selection uses
      a deep amber so it still reads as this theme's accent family. */

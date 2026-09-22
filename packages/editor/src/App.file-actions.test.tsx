@@ -72,7 +72,7 @@ vi.mock('./lib/telemetry', () => ({
   reportHandledOperationTelemetry: reportHandledOperationTelemetryMock,
 }))
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@solidjs/testing-library'
+import { cleanup, fireEvent, render, waitFor } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   AUTOSAVE_STORAGE_KEY,
@@ -81,6 +81,8 @@ import {
 } from './config/runtimeLimits'
 import { createDefaultProject } from '@lp-sketch/core/model/defaultProject'
 import App from './App'
+// Behavior tests run on the default shell; this screen reveals the sidebar tab holding a control.
+import { screen } from './testing/screen'
 
 const fakeCanvasContext = {
   clearRect: vi.fn(),
@@ -131,9 +133,6 @@ beforeAll(() => {
 
 beforeEach(() => {
   window.localStorage.clear()
-  // The App suites exercise the controller through Classic's always-visible panels;
-  // Step 6 of the shells design splits them into shell-agnostic and per-shell tests.
-  window.localStorage.setItem('lp-sketch.shell.v1', 'classic')
   renderProjectImageBlobMock.mockReset()
   renderProjectPdfBlobMock.mockReset()
   downloadBlobMock.mockReset()
@@ -254,7 +253,7 @@ describe('App file actions integration', () => {
     expect(exportFile.mock.calls[3][1].type).toBe('application/json')
     expect(downloadBlobMock).not.toHaveBeenCalled()
     expect(downloadTextFileMock).not.toHaveBeenCalled()
-  })
+  }, 10_000)
 
   it('waits for platform delivery and does not report a cancelled export as successful', async () => {
     let finishExport!: (result: 'completed' | 'cancelled') => void
@@ -353,7 +352,7 @@ describe('App file actions integration', () => {
         page_count: 1,
       }),
     )
-  })
+  }, 10_000)
 
   it('loads projects with migrated status and reports validation and fallback load errors', async () => {
     const { container } = render(() => <App />)

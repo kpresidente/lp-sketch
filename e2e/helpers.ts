@@ -36,7 +36,8 @@ export async function disableNativeFileDialogs(page: Page) {
   })
 }
 
-export type ShellId = 'tempered' | 'classic'
+/** A registered shell id (see packages/editor/src/shells/registry.ts). */
+export type ShellId = string
 
 export interface GotoAppOptions {
   /** Pins a shell for a shell-specific spec. Behavior specs run on the default shell. */
@@ -122,15 +123,16 @@ export async function dragLocatorToStagePoint(
   await page.mouse.up()
 }
 
+/** The status block's live region; a shell places it, the block owns the role. */
 export async function expectStatus(page: Page, text: string | RegExp) {
-  const locator = page.locator('.status-msg').filter({
+  const locator = page.getByRole('status').filter({
     hasText: text instanceof RegExp ? text : new RegExp(escapeRegExp(text)),
   })
   await expect(locator.last()).toBeVisible()
 }
 
 export async function expectError(page: Page, text: string | RegExp) {
-  const locator = page.locator('.status-msg.error').filter({
+  const locator = page.getByRole('alert').filter({
     hasText: text instanceof RegExp ? text : new RegExp(escapeRegExp(text)),
   })
   await expect(locator.last()).toBeVisible()

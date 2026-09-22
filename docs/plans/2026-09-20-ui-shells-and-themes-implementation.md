@@ -263,3 +263,44 @@ Visible change by design: the app opens in the Tempered layout. The Classic layo
 - Zoom controls (out, readout, in, fit) need controller actions before a shell can place them; the context bar keeps the zoom readout meanwhile.
 - Classic's sidebar and panel styles still live in `App.css`; they can move to `classic.css` now that the panels are Classic-owned.
 - The manual still names Classic panels in places ("the Tools panel"); the step 6 rewrite around blocks removes that.
+
+## Step 6. Hardening
+
+Visible change by design: a third theme, Hi-Vis. Everything else is tests, documentation, and the token plumbing the theme needed.
+
+### What changed
+
+- `packages/editor/src/themes/hivis.css` (new): `:root[data-theme="hivis"]` from the Hi-Vis prototype palette: white surfaces, black text and rules, safety yellow for selected and highlighted state, hard offset shadows. Active fills are black with yellow text, so every active state stays far above 7:1, and the selected material chip is yellow with a black outline. Registered in `themes/registry.ts` (label "Hi-Vis", light color scheme, yellow browser theme color) and imported by `ThemeContext`; the Theme block offers it automatically.
+- Rule weight and radii became theme tokens: `--border-width` (new) and `--radius`, `--radius-sm`, `--radius-lg` (moved from `App.css`) live in `light.css`, and every `1px solid var(--border...)` in `App.css`, `tempered.css`, `classic.css`, and the two help stylesheets now reads `var(--border-width)`. Light and dark keep 1px and 6/5/8 px; Hi-Vis uses 2px and 10/8/12 px. Because they are tokens, the audit and `themes.test.ts` require every theme to define them.
+- `themes/themes.test.ts` now derives the override themes from the registry (every theme but light) instead of naming dark, so a fourth theme needs no test edits; it also pins that only Hi-Vis changes the rule weight.
+- Unit test split. `packages/editor/src/testing/screen.ts` (new) exports a `screen` whose `getByRole` reveals the sidebar tab holding a hidden control before returning it and leaves `queryByRole` literal. The five App suites import it, dropped their Classic pin, and now run on the default shell. The collapsible-sidebar tests and the panel-binding assertions moved to `shells/classic/ClassicShell.test.tsx` (new, 8 tests, pins Classic); `shells/testing/installAppTestEnvironment.ts` (new) holds the jsdom stubs both shell tests need, and `TemperedShell.test.tsx` uses it too. Three calibration tests that asserted the scale text with `getByText` now assert the badge by its title, because the Tempered status strip repeats the text.
+- e2e helpers: `expectStatus` and `expectError` query the `status` and `alert` roles the status block owns instead of a class, and `ShellId` is any registered id, so a new shell touches nothing under `e2e/` except its own spec.
+- Manual: section 1.4 became "Where Controls Live", a table mapping every control group to its place in each layout, with the collapsed-rail behavior below it; every "in the Tools panel" style sentence now names the control ("the **Snapping** controls", "the **Class** control", "the **Layers** switches"), and the collapsed-rail flyout is called a flyout in both layouts. Section 2.9 lists Hi-Vis. The anchor list in `build-help.mjs` is unchanged at 40; the new 1.4 anchor `help-introduction-where` is optional.
+- `docs/ENGINEERING.md`: a "Shells, Blocks, and Themes" section with the steps and gates for adding a shell and adding a theme, a table of every device preference key and its owner, and the behavior versus shell test split under Test Strategy.
+
+### Decisions worth knowing
+
+1. Preference keys needed no further migration. The inventory (`lp-sketch.theme.v1`, `lp-sketch.shell.v1`, `lp-sketch.quick-access.v1`, three `lp-sketch.help.*.v1` keys, and the per-shell `lp-sketch.shell.<id>.*` keys) already matched the design table; the only pre-shell key, `lp-sketch.sidebar.collapsed.v1`, is still read once and removed by Classic's step 3 migration. The engineering guide records the inventory so the next key lands in the right namespace.
+2. `screen.getByRole` reveals a tab as a side effect rather than requiring an explicit `openBlock` call at every site. A user has to open the tab too, so the behavior is faithful, and the alternative was several hundred call-site edits across suites that already read naturally. Absence checks stay honest because `queryByRole` does not reveal.
+3. Hi-Vis inverts the accent convention: `--accent` is black and `--text-on-accent` is yellow, with yellow reserved for `--accent-light` (selected material, scale badge) and the switch thumb. A yellow accent fill with dark text would have passed the text checks but failed the audit's outline-on-tint and switch-thumb pairs, which is the audit doing its job.
+4. Borders scale with the theme but layout metrics do not: widths, rail width, toolbar height, and transitions stay in `App.css`. A 2px rule shrinks a control's content box by a pixel per side under `box-sizing: border-box`; the tiles, chips, and segmented controls absorb that without changing size.
+5. The manual still has section titles named after the Classic panels (Project, Tools, Components, Material, Scale, Layers) because those anchors are required by the help build and the titles read fine as topics; only the prose changed.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | pass |
+| `npm run audit:contrast` | pass for light, dark, and hivis; completeness plus 33 checks each |
+| `npm run build` | pass; help build verifies 40 anchors |
+| `npm run mobile:build` | pass; same 40 anchors in the iPad bundle |
+| `npm test` | 56 files, 461 tests, pass (1 file and 5 tests added: Classic's shell test gained the panel-binding and composition tests, the theme test gained the metrics test). The five App suites ran on Tempered. Two export tests in `App.file-actions.test.tsx` now carry the 10 s budget their sibling had; both timed out at 5 s on a run where the whole suite took twice its usual time. |
+| `npm run test:e2e` | 40 tests, pass, run alone |
+
+Hi-Vis was checked in the browser at desktop width: black 2px rules, black active fills with yellow text, yellow selected chip, rounder tiles with hard shadows, and the status strip and footer readable; a `step5-tempered`-style set of 24 shots (`UI_PARITY_THEME=hivis`) covers the three viewports, both tabs, the collapsed rail, the flyout, the customizer, and the help drawer.
+
+### Left for later steps
+
+- Whether Classic stays registered after Tempered has been the default for a release is still open (design document, open question 1). Retiring it would remove `shells/classic/`, its shell test, `e2e/sidebar.spec.ts`, and the Classic column of the manual's table.
+- The prototype's zoom widget still needs controller zoom actions before a shell can place it.
+- A per-platform default shell (open question 2) is cheap once a touch-first shell exists.

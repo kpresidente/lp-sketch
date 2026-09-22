@@ -14,92 +14,14 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
   default: 'mock-worker-url',
 }))
 
-import { cleanup, fireEvent, render, screen, within } from '@solidjs/testing-library'
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, within } from '@solidjs/testing-library'
+import { describe, expect, it } from 'vitest'
 import App from '../../App'
 import { SHELL_PREFERENCE_KEY } from '../registry'
+import { installAppTestEnvironment } from '../testing/installAppTestEnvironment'
 import { TEMPERED_COLLAPSED_KEY, TEMPERED_TAB_KEY } from './useTemperedLayout'
 
-const fakeCanvasContext = {
-  clearRect: vi.fn(),
-  fillRect: vi.fn(),
-  scale: vi.fn(),
-  drawImage: vi.fn(),
-  setLineDash: vi.fn(),
-  beginPath: vi.fn(),
-  moveTo: vi.fn(),
-  lineTo: vi.fn(),
-  quadraticCurveTo: vi.fn(),
-  bezierCurveTo: vi.fn(),
-  stroke: vi.fn(),
-  fill: vi.fn(),
-  fillText: vi.fn(),
-  measureText: vi.fn((text: string) => ({ width: text.length * 7 })),
-  closePath: vi.fn(),
-  arc: vi.fn(),
-  rect: vi.fn(),
-  save: vi.fn(),
-  restore: vi.fn(),
-  translate: vi.fn(),
-  rotate: vi.fn(),
-  strokeStyle: '',
-  fillStyle: '',
-  lineWidth: 1,
-  lineCap: 'butt' as CanvasLineCap,
-  lineJoin: 'miter' as CanvasLineJoin,
-  font: '',
-  textBaseline: 'alphabetic' as CanvasTextBaseline,
-  textAlign: 'left' as CanvasTextAlign,
-}
-
-const originalRequestAnimationFrame = globalThis.requestAnimationFrame
-const originalCancelAnimationFrame = globalThis.cancelAnimationFrame
-
-beforeAll(() => {
-  if (typeof globalThis.PointerEvent === 'undefined') {
-    vi.stubGlobal('PointerEvent', MouseEvent)
-  }
-  if (!HTMLElement.prototype.setPointerCapture) {
-    HTMLElement.prototype.setPointerCapture = () => undefined
-  }
-  if (!HTMLElement.prototype.releasePointerCapture) {
-    HTMLElement.prototype.releasePointerCapture = () => undefined
-  }
-  if (!HTMLElement.prototype.hasPointerCapture) {
-    HTMLElement.prototype.hasPointerCapture = () => false
-  }
-})
-
-beforeEach(() => {
-  window.localStorage.clear()
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
-    fakeCanvasContext as unknown as CanvasRenderingContext2D,
-  )
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
-    x: 0,
-    y: 0,
-    left: 0,
-    top: 0,
-    right: 1200,
-    bottom: 800,
-    width: 1200,
-    height: 800,
-    toJSON: () => ({}),
-  } as DOMRect)
-  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
-    callback(16)
-    return 1
-  }) as typeof globalThis.requestAnimationFrame
-  globalThis.cancelAnimationFrame = ((_: number) => undefined) as typeof globalThis.cancelAnimationFrame
-})
-
-afterEach(() => {
-  cleanup()
-  vi.restoreAllMocks()
-  globalThis.requestAnimationFrame = originalRequestAnimationFrame
-  globalThis.cancelAnimationFrame = originalCancelAnimationFrame
-  window.localStorage.clear()
-})
+installAppTestEnvironment()
 
 const tab = (name: string) => screen.getByRole('tab', { name })
 const group = (name: string) => screen.getByRole('group', { name })

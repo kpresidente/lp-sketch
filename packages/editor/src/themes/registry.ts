@@ -1,4 +1,4 @@
-export type ThemeId = 'light' | 'dark'
+export type ThemeId = 'light' | 'dark' | 'hivis'
 
 /** What the device stores: a theme, or "system" to follow prefers-color-scheme. */
 export type ThemePreference = ThemeId | 'system'
@@ -36,6 +36,14 @@ export const THEMES: readonly ThemeRegistration[] = [
     colorScheme: 'dark',
     themeColor: '#181b20',
     stylesheet: 'themes/dark.css',
+    fonts: FONTS,
+  },
+  {
+    id: 'hivis',
+    label: 'Hi-Vis',
+    colorScheme: 'light',
+    themeColor: '#ffd400',
+    stylesheet: 'themes/hivis.css',
     fonts: FONTS,
   },
 ]

@@ -1,8 +1,8 @@
 /* ──── LIGHT THEME (default) ────
    The complete token set. Other themes override these on [data-theme];
    any token a theme leaves out falls back to the value here. Layout
-   metrics (widths, radii, transitions) live in App.css because a theme
-   never changes layout. */
+   metrics (widths, heights, transitions) live in App.css because a theme
+   never changes layout; rule weight and radii are tokens here. */
 :root {
   color-scheme: light;
 
@@ -68,6 +68,13 @@
   --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.06);
   --font: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Fira Code Variable', monospace;
+
+  /* Rule weight and corner radii. A theme may make the chrome heavier or rounder;
+     shells never set these. */
+  --border-width: 1px;
+  --radius: 6px;
+  --radius-sm: 5px;
+  --radius-lg: 8px;
 
   /* Workspace interaction colors. Drawing content (material strokes, ink,
      legend and notes chrome, dimension text) keeps fixed colors so the

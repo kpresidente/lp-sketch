@@ -21,6 +21,7 @@ import {
 } from '../themes/registry'
 import '../themes/light.css'
 import '../themes/dark.css'
+import '../themes/hivis.css'
 
 export interface ThemeState {
   /** What the device stores: a theme id or "system". */

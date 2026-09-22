@@ -14,9 +14,11 @@ vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({
   default: 'mock-worker-url',
 }))
 
-import { cleanup, fireEvent, render, screen, within } from '@solidjs/testing-library'
+import { cleanup, fireEvent, render, within } from '@solidjs/testing-library'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+// Behavior tests run on the default shell; this screen reveals the sidebar tab holding a control.
+import { screen } from './testing/screen'
 import * as workspaceRenderer from './config/workspaceRenderer'
 
 vi.setConfig({ testTimeout: 15000 })
@@ -79,9 +81,6 @@ beforeAll(() => {
 })
 
 beforeEach(() => {
-  // The App suites exercise the controller through Classic's always-visible panels;
-  // Step 6 of the shells design splits them into shell-agnostic and per-shell tests.
-  window.localStorage.setItem('lp-sketch.shell.v1', 'classic')
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
     fakeCanvasContext as unknown as CanvasRenderingContext2D,
   )
@@ -121,23 +120,11 @@ describe('App accessibility semantics', () => {
     expect(within(sidebar).queryByText('on')).toBeNull()
   })
 
-  it('exposes sidebar landmark, panel region bindings, and keyboard-importable skeleton actions', async () => {
+  it('exposes the sidebar landmark and keyboard-importable skeleton actions', () => {
     render(() => <App />)
 
     const sidebar = screen.getByLabelText('Primary controls')
     expect(sidebar.tagName).toBe('ASIDE')
-
-    const projectPanelToggle = screen.getByRole('button', { name: 'Project' })
-    const controlsId = projectPanelToggle.getAttribute('aria-controls')
-    expect(projectPanelToggle.getAttribute('aria-expanded')).toBe('true')
-    expect(controlsId).toBeTruthy()
-
-    const projectPanelRegion = document.getElementById(controlsId || '')
-    expect(projectPanelRegion).toBeTruthy()
-    expect(projectPanelRegion?.getAttribute('role')).toBe('region')
-
-    await fireEvent.click(projectPanelToggle)
-    expect(projectPanelToggle.getAttribute('aria-expanded')).toBe('false')
 
     expect(screen.getByLabelText('Drawing canvas')).toBeTruthy()
     expect(

@@ -30,7 +30,7 @@
   color: var(--text-primary);
   margin: 28px 0 12px;
   padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
   letter-spacing: -0.2px;
 }
 
@@ -110,7 +110,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
   background: var(--bg-input);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: 3px;
   padding: 1px 5px;
   color: var(--accent-text);
@@ -122,7 +122,7 @@
   margin: 0 0 10px;
   padding: 10px 12px;
   background: var(--bg-input);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius-sm);
   overflow-x: auto;
   font-size: 12px;
@@ -140,7 +140,7 @@
 .help-content .help-table-wrap {
   overflow-x: auto;
   margin: 0 0 10px;
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius-sm);
 }
 
@@ -159,7 +159,7 @@
   color: var(--text-secondary);
   text-align: left;
   padding: 7px 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -252,5 +252,5 @@
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
 }
