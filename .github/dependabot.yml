@@ -7,6 +7,23 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "deps"
+    groups:
+      # vitest and its plugins pin each other as peers, so they can only move together.
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+      # One PR for the routine bumps. Major versions stay separate, so a breaking one
+      # (pdfjs-dist 6 needs code changes, for example) never blocks the rest.
+      npm-minor-and-patch:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "vitest"
+          - "@vitest/*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -15,3 +32,7 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

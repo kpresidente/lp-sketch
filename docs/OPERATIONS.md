@@ -23,8 +23,9 @@ Required branch settings:
 - The root `xcode → uuid` override pins `uuid` to `11.1.1` for GHSA-w5hq-g745-h8pq. Capacitor's CLI uses xcode's UUID v4 generation, which remains compatible. Remove the scoped override when upstream adopts a patched version.
 
 - Dependabot: `.github/dependabot.yml`
-  - npm updates: weekly, max 10 open PRs, prefix `deps`
-  - GitHub Actions updates: weekly, max 5 open PRs, prefix `ci`
+  - npm updates: weekly, max 10 open PRs, prefix `deps`. Grouped: `vitest` with `@vitest/*` (they pin each other as peers), and every minor and patch bump in one PR. Major bumps get a PR each, so one breaking upgrade never blocks the rest.
+  - GitHub Actions updates: weekly, max 5 open PRs, prefix `ci`, one grouped PR.
+  - Dependabot's workflow runs cannot read repository secrets, so the Azure workflow builds its PRs without deploying them (`skip_deploy_on_missing_secrets`) and skips the close job when Dependabot closes a PR itself.
 - `pdfjs-dist` is pinned to `5.5.207`: the broader caret range includes releases affected by [GHSA-hq66-cqwq-w95j](https://github.com/advisories/GHSA-hq66-cqwq-w95j). Validate a patched release before widening this range.
 
 ## Release Process
