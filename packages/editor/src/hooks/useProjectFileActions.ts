@@ -1,0 +1,680 @@
+import { getDocument } from 'pdfjs-dist'
+import type { Accessor, Setter } from 'solid-js'
+import {
+  MAX_PDF_IMPORT_BYTES,
+  MAX_PDF_IMPORT_PAGES,
+  MAX_PDF_VIEWPORT_PT,
+  MAX_PROJECT_ELEMENT_COUNT,
+  MAX_PROJECT_LOAD_BYTES,
+} from '../config/runtimeLimits'
+import { clearAutosaveDraft } from '../lib/autosave'
+import { cloneProject } from '@lp-sketch/core/lib/projectState'
+import { arrayBufferToBase64, downloadBlob, downloadTextFile, sha256Hex } from '../lib/files'
+import { renderProjectImageBlob, renderProjectPdfBlob } from '../lib/export'
+import type { FileExporter } from '../lib/fileExport'
+import { projectElementCount } from '@lp-sketch/core/lib/projectLimits'
+import { reportHandledOperationTelemetry } from '../lib/telemetry'
+import { migrateProjectForLoad } from '@lp-sketch/core/model/migration'
+import { asProject, validateProject } from '@lp-sketch/core/model/validation'
+import type { LpProject, Selection } from '@lp-sketch/core/types/project'
+
+const PROJECT_FILE_ACCEPT = { 'application/json': ['.lps', '.json'] }
+const PROJECT_SAVE_EXTENSION = 'lps'
+
+interface FilePickerWindow {
+  showOpenFilePicker?: (options?: {
+    multiple?: boolean
+    types?: Array<{ description?: string; accept: Record<string, string[]> }>
+    excludeAcceptAllOption?: boolean
+  }) => Promise<Array<{ getFile: () => Promise<File> }>>
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string
+    types?: Array<{ description?: string; accept: Record<string, string[]> }>
+    excludeAcceptAllOption?: boolean
+  }) => Promise<{
+    createWritable: () => Promise<{
+      write: (data: Blob | string | ArrayBuffer | Uint8Array) => Promise<void>
+      close: () => Promise<void>
+    }>
+  }>
+}
+
+interface UseProjectFileActionsOptions {
+  project: Accessor<LpProject>
+  visibleProject: Accessor<LpProject>
+  replaceProject: (nextProject: LpProject, resetHistory?: boolean) => void
+  clearTransientToolState: () => void
+  setSelected: Setter<Selection | null>
+  setMultiSelection: Setter<Selection[]>
+  setStatus: (message: string) => void
+  setError: (message: string) => void
+  getPdfCanvas: () => HTMLCanvasElement | undefined
+  exportFile?: FileExporter
+  confirmDiscardExistingDrawing?: (elementCount: number) => boolean | Promise<boolean>
+}
+
+export function useProjectFileActions(options: UseProjectFileActionsOptions) {
+  const supportsNativeFileDialogs =
+    typeof window !== 'undefined' &&
+    typeof (window as unknown as FilePickerWindow).showOpenFilePicker === 'function' &&
+    typeof (window as unknown as FilePickerWindow).showSaveFilePicker === 'function'
+
+  function isPickerAbortError(error: unknown): boolean {
+    return error instanceof DOMException && error.name === 'AbortError'
+  }
+
+  async function writeHandleBlob(
+    handle: Awaited<ReturnType<NonNullable<FilePickerWindow['showSaveFilePicker']>>>,
+    blob: Blob,
+  ) {
+    const writable = await handle.createWritable()
+    await writable.write(blob)
+    await writable.close()
+  }
+
+  async function writeHandleText(
+    handle: Awaited<ReturnType<NonNullable<FilePickerWindow['showSaveFilePicker']>>>,
+    content: string,
+  ) {
+    const writable = await handle.createWritable()
+    await writable.write(content)
+    await writable.close()
+  }
+
+  async function pickSingleFile(
+    options: Parameters<NonNullable<FilePickerWindow['showOpenFilePicker']>>[0],
+  ): Promise<File | null> {
+    const pickerWindow = window as unknown as FilePickerWindow
+    if (!pickerWindow.showOpenFilePicker) {
+      return null
+    }
+
+    const handles = await pickerWindow.showOpenFilePicker({
+      multiple: false,
+      ...options,
+    })
+    const handle = handles[0]
+    if (!handle) {
+      return null
+    }
+    return handle.getFile()
+  }
+
+  async function openSaveHandle(
+    options: Parameters<NonNullable<FilePickerWindow['showSaveFilePicker']>>[0],
+  ) {
+    const pickerWindow = window as unknown as FilePickerWindow
+    if (!pickerWindow.showSaveFilePicker) {
+      return null
+    }
+
+    return pickerWindow.showSaveFilePicker(options)
+  }
+
+  function clampPdfTransparency(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0
+    }
+
+    return Math.max(0, Math.min(1, value))
+  }
+
+  function createDefaultViewByPage(pageCount: number): Record<number, { zoom: number; pan: { x: number; y: number } }> {
+    const byPage: Record<number, { zoom: number; pan: { x: number; y: number } }> = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = { zoom: 1, pan: { x: 24, y: 24 } }
+    }
+    return byPage
+  }
+
+  function createDefaultScaleByPage(pageCount: number): Record<
+    number,
+    {
+      isSet: boolean
+      method: 'manual' | 'calibrated' | null
+      realUnitsPerPoint: number | null
+      displayUnits: 'ft-in' | 'decimal-ft' | 'm' | null
+    }
+  > {
+    const byPage: Record<
+      number,
+      {
+        isSet: boolean
+        method: 'manual' | 'calibrated' | null
+        realUnitsPerPoint: number | null
+        displayUnits: 'ft-in' | 'decimal-ft' | 'm' | null
+      }
+    > = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = {
+        isSet: false,
+        method: null,
+        realUnitsPerPoint: null,
+        displayUnits: null,
+      }
+    }
+    return byPage
+  }
+
+  function createTransparencyByPage(pageCount: number, transparency: number): Record<number, number> {
+    const byPage: Record<number, number> = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = transparency
+    }
+    return byPage
+  }
+
+  function createEmptyNotesByPage(pageCount: number): Record<number, string[]> {
+    const byPage: Record<number, string[]> = {}
+    for (let page = 1; page <= pageCount; page += 1) {
+      byPage[page] = []
+    }
+    return byPage
+  }
+
+  function mbLimitLabel(bytes: number): string {
+    return `${Math.round(bytes / (1024 * 1024))} MB`
+  }
+
+  function asRecord(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null
+  }
+
+  function arrayLength(value: unknown): number {
+    return Array.isArray(value) ? value.length : 0
+  }
+
+  function summarizeProjectCandidate(candidate: unknown) {
+    const record = asRecord(candidate)
+    const elements = asRecord(record?.elements)
+    const construction = asRecord(record?.construction)
+    const legend = asRecord(record?.legend)
+    const generalNotes = asRecord(record?.generalNotes)
+    const pdf = asRecord(record?.pdf)
+
+    return {
+      schema_version: typeof record?.schemaVersion === 'string' ? record.schemaVersion : null,
+      pdf_source_type:
+        pdf?.sourceType === 'embedded' || pdf?.sourceType === 'referenced'
+          ? pdf.sourceType
+          : null,
+      symbol_count: arrayLength(elements?.symbols),
+      element_count:
+        arrayLength(elements?.lines) +
+        arrayLength(elements?.arcs) +
+        arrayLength(elements?.curves) +
+        arrayLength(elements?.symbols) +
+        arrayLength(elements?.texts) +
+        arrayLength(elements?.arrows) +
+        arrayLength(elements?.dimensionTexts) +
+        arrayLength(construction?.marks) +
+        arrayLength(legend?.placements) +
+        arrayLength(generalNotes?.placements) +
+        arrayLength(generalNotes?.notes),
+    }
+  }
+
+  function exportTelemetryContext(format: 'png' | 'jpg' | 'pdf') {
+    const project = options.visibleProject()
+    return {
+      format,
+      has_background_canvas: Boolean(options.getPdfCanvas()),
+      current_page: project.view.currentPage,
+      page_count: project.pdf.pageCount,
+    }
+  }
+
+  function normalizedFilenameBase() {
+    const raw = (options.project().projectMeta.name || 'lp-sketch').trim()
+    const cleaned = raw
+      .replace(/[^\w.-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+    return cleaned || 'lp-sketch'
+  }
+
+  function resetSelectionAndTransient() {
+    options.clearTransientToolState()
+    options.setSelected(null)
+    options.setMultiSelection([])
+  }
+
+  async function confirmDiscardExistingDrawing(): Promise<boolean> {
+    const elementCount = projectElementCount(options.project())
+    if (elementCount === 0) {
+      return true
+    }
+
+    if (options.confirmDiscardExistingDrawing) {
+      return options.confirmDiscardExistingDrawing(elementCount)
+    }
+
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') {
+      return true
+    }
+
+    const noun = elementCount === 1 ? 'element' : 'elements'
+    return window.confirm(
+      `Importing a new PDF will delete ${elementCount} existing drawing ${noun}. Continue?`,
+    )
+  }
+
+  async function importPdfFile(file: File) {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      options.setError('Please select a PDF file.')
+      return
+    }
+
+    if (file.size > MAX_PDF_IMPORT_BYTES) {
+      options.setError(`PDF file exceeds ${mbLimitLabel(MAX_PDF_IMPORT_BYTES)} limit.`)
+      return
+    }
+
+    const confirmed = await confirmDiscardExistingDrawing()
+    if (!confirmed) {
+      options.setStatus('PDF import canceled.')
+      return
+    }
+
+    let loadedPdf: Awaited<ReturnType<typeof getDocument>['promise']> | null = null
+
+    try {
+      const original = new Uint8Array(await file.arrayBuffer())
+      const hash = await sha256Hex(original.slice().buffer)
+      loadedPdf = await getDocument({ data: original.slice() }).promise
+
+      if (loadedPdf.numPages > MAX_PDF_IMPORT_PAGES) {
+        options.setError(
+          `This PDF has ${loadedPdf.numPages} pages. The maximum supported is ${MAX_PDF_IMPORT_PAGES}.`,
+        )
+        return
+      }
+
+      if (loadedPdf.numPages < 1) {
+        throw new Error('PDF has no pages and cannot be imported.')
+      }
+
+      const pages: Array<{ page: number; widthPt: number; heightPt: number }> = []
+      for (let pageNumber = 1; pageNumber <= loadedPdf.numPages; pageNumber += 1) {
+        const page = await loadedPdf.getPage(pageNumber)
+        const viewport = page.getViewport({ scale: 1 })
+        if (
+          !Number.isFinite(viewport.width) ||
+          !Number.isFinite(viewport.height) ||
+          viewport.width <= 0 ||
+          viewport.height <= 0 ||
+          viewport.width > MAX_PDF_VIEWPORT_PT ||
+          viewport.height > MAX_PDF_VIEWPORT_PT
+        ) {
+          throw new Error(
+            `PDF page ${pageNumber} dimensions exceed supported limits (${MAX_PDF_VIEWPORT_PT}pt max width/height).`,
+          )
+        }
+
+        pages.push({
+          page: pageNumber,
+          widthPt: viewport.width,
+          heightPt: viewport.height,
+        })
+      }
+
+      const base64Data = arrayBufferToBase64(original.buffer)
+      const previous = options.project()
+      const firstPage = pages[0]
+      const pageCount = pages.length
+      const defaultTransparency = clampPdfTransparency(previous.settings.pdfTransparency)
+      const viewByPage = createDefaultViewByPage(pageCount)
+      const scaleByPage = createDefaultScaleByPage(pageCount)
+      const transparencyByPage = createTransparencyByPage(pageCount, defaultTransparency)
+
+      const nextProject: LpProject = {
+        ...cloneProject(previous),
+        projectMeta: {
+          ...previous.projectMeta,
+          updatedAt: new Date().toISOString(),
+        },
+        pdf: {
+          sourceType: 'embedded',
+          name: file.name,
+          sha256: hash,
+          page: 1,
+          pageCount,
+          pages,
+          widthPt: firstPage.widthPt,
+          heightPt: firstPage.heightPt,
+          dataBase64: base64Data,
+          path: null,
+        },
+        scale: {
+          isSet: false,
+          method: null,
+          realUnitsPerPoint: null,
+          displayUnits: null,
+          byPage: scaleByPage,
+        },
+        settings: {
+          ...previous.settings,
+          pdfTransparency: defaultTransparency,
+          pdfTransparencyByPage: transparencyByPage,
+        },
+        view: {
+          currentPage: 1,
+          zoom: 1,
+          pan: { x: 24, y: 24 },
+          byPage: viewByPage,
+        },
+        elements: {
+          lines: [],
+          arcs: [],
+          curves: [],
+          symbols: [],
+          texts: [],
+          arrows: [],
+          dimensionTexts: [],
+        },
+        construction: {
+          marks: [],
+        },
+        legend: {
+          items: [],
+          placements: [],
+          customSuffixes: {},
+        },
+        generalNotes: {
+          notes: [],
+          notesByPage: createEmptyNotesByPage(pageCount),
+          placements: [],
+        },
+      }
+
+      options.replaceProject(nextProject)
+      clearAutosaveDraft()
+      resetSelectionAndTransient()
+      options.setStatus(`Imported ${file.name}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to import PDF.'
+      reportHandledOperationTelemetry('project_import_pdf_failed', message, {
+        file_name: file.name,
+        file_size: file.size,
+      })
+      options.setError(message)
+    } finally {
+      if (loadedPdf) {
+        try {
+          await loadedPdf.destroy()
+        } catch {
+          // Ignore cleanup failures.
+        }
+      }
+    }
+  }
+
+  async function handleImportPdf(event: Event) {
+    const target = event.target as HTMLInputElement
+    const file = target.files?.[0]
+    target.value = ''
+
+    if (!file) {
+      return
+    }
+
+    await importPdfFile(file)
+  }
+
+  function handleImportPdfDrop(file: File) {
+    void importPdfFile(file)
+  }
+
+  async function loadProjectFile(file: File | null) {
+    if (!file) {
+      return
+    }
+
+    if (file.size > MAX_PROJECT_LOAD_BYTES) {
+      options.setError(`Project file exceeds ${mbLimitLabel(MAX_PROJECT_LOAD_BYTES)} limit.`)
+      return
+    }
+
+    let projectCandidate: unknown = null
+
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text) as unknown
+      projectCandidate = parsed
+      const migration = migrateProjectForLoad(parsed)
+      projectCandidate = migration.project
+      const validation = validateProject(migration.project)
+
+      if (!validation.valid) {
+        const details = validation.errors.slice(0, 4).join('; ')
+        throw new Error(`Project file failed schema validation. ${details}`)
+      }
+
+      const loadedProject = asProject(migration.project)
+      const totalElements = projectElementCount(loadedProject)
+      if (totalElements > MAX_PROJECT_ELEMENT_COUNT) {
+        throw new Error(
+          `Project exceeds safety limits: ${totalElements} elements (max ${MAX_PROJECT_ELEMENT_COUNT}).`,
+        )
+      }
+
+      options.replaceProject(cloneProject(loadedProject))
+      resetSelectionAndTransient()
+      if (migration.migrated) {
+        options.setStatus(`Loaded ${file.name} (migrated ${migration.fromVersion} -> ${migration.toVersion})`)
+      } else {
+        options.setStatus(`Loaded ${file.name}`)
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load project file.'
+      reportHandledOperationTelemetry('project_load_failed', message, {
+        file_name: file.name,
+        file_size: file.size,
+        ...summarizeProjectCandidate(projectCandidate),
+      })
+      options.setError(message)
+    }
+  }
+
+  async function handleLoadProject(event: Event) {
+    const target = event.target as HTMLInputElement
+    const file = target.files?.[0] ?? null
+    target.value = ''
+    await loadProjectFile(file)
+  }
+
+  async function handleImportPdfPicker() {
+    if (!supportsNativeFileDialogs) {
+      return
+    }
+
+    try {
+      const file = await pickSingleFile({
+        types: [
+          {
+            description: 'PDF documents',
+            accept: { 'application/pdf': ['.pdf'] },
+          },
+        ],
+        excludeAcceptAllOption: false,
+      })
+      if (!file) {
+        return
+      }
+
+      await importPdfFile(file)
+    } catch (error) {
+      if (isPickerAbortError(error)) {
+        return
+      }
+      const message = error instanceof Error ? error.message : 'Unable to import PDF.'
+      reportHandledOperationTelemetry('project_import_pdf_failed', message)
+      options.setError(message)
+    }
+  }
+
+  async function handleLoadProjectPicker() {
+    if (!supportsNativeFileDialogs) {
+      return
+    }
+
+    try {
+      const file = await pickSingleFile({
+        types: [
+          {
+            description: 'LP Sketch projects',
+            accept: PROJECT_FILE_ACCEPT,
+          },
+        ],
+        excludeAcceptAllOption: false,
+      })
+      await loadProjectFile(file)
+    } catch (error) {
+      if (isPickerAbortError(error)) {
+        return
+      }
+      const message = error instanceof Error ? error.message : 'Unable to load project file.'
+      reportHandledOperationTelemetry('project_load_failed', message)
+      options.setError(message)
+    }
+  }
+
+  async function handleSaveProject() {
+    try {
+      const data = JSON.stringify(options.project(), null, 2)
+      const filename = `${options.project().projectMeta.name || 'lp-sketch'}.${PROJECT_SAVE_EXTENSION}`
+      if (options.exportFile) {
+        const result = await options.exportFile(filename, new Blob([data], { type: 'application/json' }))
+        if (result === 'cancelled') {
+          options.setStatus('Export cancelled.')
+          return
+        }
+      } else if (supportsNativeFileDialogs) {
+        const handle = await openSaveHandle({
+          suggestedName: filename,
+          types: [
+            {
+              description: 'LP Sketch project',
+              accept: PROJECT_FILE_ACCEPT,
+            },
+          ],
+          excludeAcceptAllOption: false,
+        })
+        if (!handle) {
+          return
+        }
+        await writeHandleText(handle, data)
+      } else {
+        downloadTextFile(filename, data)
+      }
+      options.setStatus(`Saved ${filename}`)
+    } catch (error) {
+      if (isPickerAbortError(error)) {
+        return
+      }
+      const message = error instanceof Error ? error.message : 'Unable to save project file.'
+      options.setError(message)
+    }
+  }
+
+  async function handleExportImage(format: 'png' | 'jpg') {
+    try {
+      const blob = await renderProjectImageBlob(
+        options.visibleProject(),
+        format,
+        options.getPdfCanvas(),
+      )
+
+      if (options.exportFile) {
+        if (await options.exportFile(`${normalizedFilenameBase()}.${format}`, blob) === 'cancelled') {
+          options.setStatus('Export cancelled.')
+          return
+        }
+      } else if (supportsNativeFileDialogs) {
+        const handle = await openSaveHandle({
+          suggestedName: `${normalizedFilenameBase()}.${format}`,
+          types: [
+            {
+              description: format === 'png' ? 'PNG image' : 'JPEG image',
+              accept: {
+                [format === 'png' ? 'image/png' : 'image/jpeg']: [`.${format}`],
+              },
+            },
+          ],
+          excludeAcceptAllOption: false,
+        })
+        if (!handle) {
+          return
+        }
+        await writeHandleBlob(handle, blob)
+      } else {
+        downloadBlob(`${normalizedFilenameBase()}.${format}`, blob)
+      }
+
+      options.setStatus(`Exported ${format.toUpperCase()} output.`)
+    } catch (error) {
+      if (isPickerAbortError(error)) {
+        return
+      }
+      const message = error instanceof Error ? error.message : `Unable to export ${format.toUpperCase()}.`
+      reportHandledOperationTelemetry('project_export_failed', message, exportTelemetryContext(format))
+      options.setError(message)
+    }
+  }
+
+  async function handleExportPdf() {
+    try {
+      const blob = await renderProjectPdfBlob(
+        options.visibleProject(),
+        options.getPdfCanvas(),
+      )
+
+      if (options.exportFile) {
+        if (await options.exportFile(`${normalizedFilenameBase()}.pdf`, blob) === 'cancelled') {
+          options.setStatus('Export cancelled.')
+          return
+        }
+      } else if (supportsNativeFileDialogs) {
+        const handle = await openSaveHandle({
+          suggestedName: `${normalizedFilenameBase()}.pdf`,
+          types: [
+            {
+              description: 'PDF document',
+              accept: { 'application/pdf': ['.pdf'] },
+            },
+          ],
+          excludeAcceptAllOption: false,
+        })
+        if (!handle) {
+          return
+        }
+        await writeHandleBlob(handle, blob)
+      } else {
+        downloadBlob(`${normalizedFilenameBase()}.pdf`, blob)
+      }
+
+      options.setStatus('Exported PDF output.')
+    } catch (error) {
+      if (isPickerAbortError(error)) {
+        return
+      }
+      const message = error instanceof Error ? error.message : 'Unable to export PDF.'
+      reportHandledOperationTelemetry('project_export_failed', message, exportTelemetryContext('pdf'))
+      options.setError(message)
+    }
+  }
+
+  return {
+    supportsNativeFileDialogs,
+    handleImportPdf,
+    handleImportPdfPicker,
+    handleImportPdfDrop,
+    handleLoadProject,
+    handleLoadProjectPicker,
+    handleSaveProject,
+    handleExportImage,
+    handleExportPdf,
+  }
+}

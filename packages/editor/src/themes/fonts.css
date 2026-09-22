@@ -1,0 +1,5 @@
+/* Self-hosted variable fonts, bundled with the package so the web and iPad
+   builds render identically with no network. Family names carry the
+   "Variable" suffix that fontsource assigns. */
+@import '@fontsource-variable/plus-jakarta-sans/index.css';
+@import '@fontsource-variable/fira-code/index.css';

@@ -1,0 +1,553 @@
+/* ──── HOVER SHELL ────
+   The workspace fills the screen; the chrome floats over it as translucent
+   pills. Blocks keep their global markup and classes; the rules under
+   .hover-chrome restyle them into the Hover direction using theme tokens only,
+   so the pills read as light glass on light themes and dark glass on dark. */
+.hover-shell {
+  --hover-glass: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  --hover-pill-radius: 14px;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.hover-workspace {
+  position: absolute;
+  inset: 0;
+}
+
+.hover-workspace .workspace-stage-shell {
+  height: 100%;
+}
+
+/* The chrome layer lets pointer events through to the stage everywhere but the pills. */
+.hover-chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hover-chrome [hidden] { display: none !important; }
+
+.hover-pill {
+  position: absolute;
+  z-index: 5;
+  pointer-events: auto;
+  background: var(--hover-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--hover-pill-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+/* While a popover is open the backdrop (z 33) covers the stage and the other pills;
+   the dock and the project pill stay above it so a second tap can switch popovers. */
+.hover-shell.has-popover :is(.hover-project, .hover-dock) { z-index: 34; }
+
+.hover-popover {
+  z-index: 35;
+  width: 392px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 90px);
+  max-height: calc(100dvh - 90px);
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+  left: 50%;
+  top: 70px;
+  transform: translateX(-50%);
+}
+
+.hover-popover.hover-popover-setup {
+  left: 16px;
+  transform: none;
+}
+
+.hover-popover .block + .block { margin-top: 12px; }
+
+.hover-popover .section-label {
+  margin: 0 0 8px;
+  padding: 2px 4px 0;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+}
+
+/* Tool tiles inside popovers. */
+.hover-popover .btn-grid-3 { gap: 6px; }
+
+.hover-popover .btn-grid-3 .btn {
+  min-height: 76px;
+  padding: 12px 6px 10px;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  white-space: normal;
+}
+
+.hover-popover .btn-grid-3 .btn i,
+.hover-popover .btn-grid-3 .btn .ti-custom-icon {
+  font-size: 30px;
+  color: var(--text-primary);
+}
+
+.hover-popover .btn-grid-3 .btn:hover:where(:not(:disabled)) {
+  background: var(--bg-hover);
+  border-color: var(--border-subtle);
+}
+
+.hover-popover .btn-grid-3 .btn.active:where(:not(:disabled)) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.hover-popover .btn-grid-3 .btn.active:where(:not(:disabled)) i,
+.hover-popover .btn-grid-3 .btn.active:where(:not(:disabled)) .ti-custom-icon {
+  color: var(--text-on-accent);
+}
+
+.hover-popover .btn-grid-3 .btn:disabled i,
+.hover-popover .btn-grid-3 .btn:disabled .ti-custom-icon {
+  color: var(--text-disabled);
+}
+
+/* Text-only choices (theme, layout) do not need the icon tile height. */
+.hover-popover :is([data-block="theme"], [data-block="shell"]) .btn-grid-3 .btn {
+  min-height: 40px;
+  padding: 8px 6px;
+}
+
+/* ──── PROJECT PILL ──── */
+.hover-project {
+  left: 16px;
+  top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  max-width: min(380px, calc(100vw - 32px));
+  padding: 5px 6px;
+}
+
+.hover-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.hover-project-text {
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.hover-project-title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hover-project .status-bar {
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hover-project .status-msg {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.hover-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.hover-icon-button i { font-size: 18px; }
+.hover-icon-button:hover { background: var(--bg-hover); color: var(--text-primary); }
+.hover-icon-button.open { background: var(--bg-active); color: var(--text-primary); }
+.hover-icon-button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+/* ──── DOCK ──── */
+.hover-dock {
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 46px;
+  max-width: calc(100vw - 32px);
+  padding: 5px;
+}
+
+.hover-dock [data-block="mode"] {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  gap: 2px;
+}
+
+/* The caption's text collapses to nothing; its help button stays reachable after the buttons. */
+.hover-dock [data-block="mode"] .section-label {
+  margin: 0;
+  font-size: 0;
+  letter-spacing: 0;
+}
+
+.hover-dock [data-block="mode"] .section-help-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.hover-dock [data-block="mode"] .btn-row { gap: 2px; }
+
+.hover-dock [data-block="mode"] .btn {
+  height: 36px;
+  min-width: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+}
+
+.hover-dock [data-block="mode"] .btn .btn-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.hover-dock [data-block="mode"] .btn i,
+.hover-dock [data-block="mode"] .btn .ti-custom-icon { font-size: 18px; }
+
+.hover-dock [data-block="mode"] .btn:hover:where(:not(:disabled)) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.hover-dock [data-block="mode"] .btn.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.hover-divider {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--border-subtle);
+}
+
+.hover-dock-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 9px 0 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.hover-dock-group i { font-size: 18px; }
+.hover-dock-chevron { font-size: 13px; color: var(--text-muted); margin-left: 1px; }
+
+.hover-dock-group:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.hover-dock-group.open {
+  background: var(--bg-active);
+  color: var(--text-primary);
+}
+
+.hover-dock-group.current {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.hover-dock-group.current .hover-dock-chevron {
+  color: inherit;
+  opacity: 0.6;
+}
+
+.hover-dock-group:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+/* ──── HISTORY PILL ──── */
+.hover-actions {
+  right: 16px;
+  top: 14px;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 5px;
+}
+
+.hover-actions .history-bar {
+  margin: 0;
+  gap: 2px;
+}
+
+/* The readouts strip repeats the counts, so the pill keeps only the buttons. */
+.hover-actions .history-counter { display: none; }
+
+.hover-actions .btn-icon {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ──── MATERIAL RAIL ──── */
+.hover-materials {
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 52px;
+  padding: 8px 6px;
+}
+
+.hover-materials .block { width: 100%; }
+
+.hover-materials .section-label {
+  justify-content: center;
+  margin: 0 0 4px;
+  font-size: 0;
+  letter-spacing: 0;
+}
+
+.hover-materials .material-list {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.hover-materials .material-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.hover-materials .material-item::after { display: none; }
+.hover-materials .material-item .mat-name { display: none; }
+
+.hover-materials .material-item .mat-swatch {
+  position: absolute;
+  inset: 9px;
+  width: auto;
+  height: auto;
+  border-radius: 50%;
+  box-shadow: none;
+}
+
+/* Material dots are fixed drawing colors, so the label over them is fixed white with a shadow. */
+.hover-materials .material-item .mat-abbr {
+  position: relative;
+  z-index: 1;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.hover-materials .material-item:hover .mat-abbr,
+.hover-materials .material-item.active .mat-abbr { opacity: 1; }
+
+.hover-materials .material-item:hover { background: var(--bg-hover); }
+
+.hover-materials .material-item.active {
+  background: var(--bg-active);
+  box-shadow: inset 0 0 0 1.5px var(--text-primary);
+}
+
+.hover-divider-h {
+  width: 26px;
+  height: 1px;
+  margin: 2px 0;
+  background: var(--border-subtle);
+}
+
+.hover-materials .class-selector {
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+}
+
+.hover-materials .class-selector .btn {
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.hover-materials .class-selector .btn .btn-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.hover-materials .class-selector .btn .btn-text-short { display: inline; }
+
+.hover-materials .class-selector .btn.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* ──── CONTEXT STRIP ──── */
+.hover-context {
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 5px 8px;
+}
+
+.hover-context .properties-bar {
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hover-context .toolbar-active-tool {
+  min-width: 0;
+  height: 32px;
+  padding: 0 12px 0 8px;
+  gap: 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.hover-context .toolbar-active-tool i,
+.hover-context .toolbar-active-tool .ti-custom-icon { font-size: 18px; }
+
+.hover-context .readouts {
+  flex-wrap: wrap;
+  row-gap: 2px;
+  padding: 0 6px 2px;
+  white-space: normal;
+  font-size: 10.5px;
+}
+
+.hover-context .readout-spacer { display: none; }
+
+/* ──── SNAPPING PILL ──── */
+.hover-snapping {
+  left: 16px;
+  bottom: 16px;
+  width: 236px;
+  padding: 8px 10px;
+}
+
+.hover-snapping .toggle-row { padding: 4px 0; }
+
+.hover-snapping .btn-row { margin-top: 4px; }
+
+/* ──── QUICK RAIL ──── */
+.hover-shell .quick-access-rail {
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  border-color: var(--border-subtle);
+  border-radius: var(--hover-pill-radius);
+  background: var(--hover-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ──── NARROW VIEWPORTS ──── */
+@media (max-width: 1240px) {
+  .hover-dock-label { display: none; }
+  .hover-dock-group { padding: 0 6px 0 8px; }
+}
+
+@media (max-width: 1000px) {
+  .hover-dock { top: 70px; }
+  .hover-popover:not(.hover-popover-setup) { top: 126px; }
+  .hover-materials { top: 190px; transform: none; }
+  .hover-shell .quick-access-rail { top: 190px; transform: none; }
+}

@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { gotoApp } from './helpers'
+import { gotoApp, openBlock } from './helpers'
 
 async function stage(page: Page): Promise<Locator> {
   return gotoApp(page)
@@ -48,13 +48,13 @@ test.describe('LP Sketch smoke flows', () => {
   test('manual scale enables linear auto-spacing tool', async ({ page }) => {
     await stage(page)
 
+    await openBlock(page, 'Drawing scale')
     await page.getByLabel('Scale inches').fill('1')
     await page.getByLabel('Scale feet').fill('20')
     await page.getByRole('button', { name: 'Apply Scale', exact: true }).click()
     await expect(page.getByText('Manual scale applied.')).toBeVisible()
 
-    const linearAtButton = page
-      .getByRole('region', { name: 'Components' })
+    const linearAtButton = (await openBlock(page, 'Air Terminals'))
       .getByRole('button', { name: /Linear AT$/ })
     await expect(linearAtButton).toBeEnabled()
     await linearAtButton.click()
@@ -64,7 +64,7 @@ test.describe('LP Sketch smoke flows', () => {
   test('text and arrow placement', async ({ page }) => {
     const drawingStage = await stage(page)
 
-    await page.getByRole('button', { name: /^\S+\sText$/ }).click()
+    await (await openBlock(page, 'Annotation')).getByRole('button', { name: /^\S+\sText$/ }).click()
     await page.getByRole('textbox', { name: 'Text' }).fill('E2E NOTE')
     await clickStage(drawingStage, 350, 220)
 
@@ -84,6 +84,7 @@ test.describe('LP Sketch smoke flows', () => {
   test('PNG export triggers browser download', async ({ page }) => {
     await gotoApp(page)
 
+    await openBlock(page, 'Project name')
     await page.getByPlaceholder('Project name...').fill('E2E Smoke Plan')
 
     await page.getByRole('button', { name: /PNG$/ }).click()

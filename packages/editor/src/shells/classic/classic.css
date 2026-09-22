@@ -1,0 +1,32 @@
+/* ──── CLASSIC SHELL ──── */
+/* Sidebar beside the workspace column. Sidebar, panel, bar, and rail styles stay in App.css. */
+.app-shell {
+  display: grid;
+  /* Keep the sidebar beside the canvas at every viewport width. */
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-rail-width) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* Blocks inside a panel: each block after the first gets a rule above its caption, as the
+   panel sections had before the blocks were split out. Blocks without a caption keep the gap only. */
+.panel-body > .block + .block {
+  margin-top: 10px;
+}
+
+.panel-body > .block + .block > .section-label:first-child {
+  margin-top: 0;
+  padding-top: 10px;
+  border-top: var(--border-width) solid var(--border);
+}

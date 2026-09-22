@@ -1,0 +1,547 @@
+/* ──── TEMPERED SHELL ────
+   Layout and the shell's own chrome. Blocks keep their global markup and
+   classes; the rules under .tempered-side and .tempered-workspace restyle
+   them into the Tempered direction using theme tokens only. */
+.tempered-shell {
+  --tempered-sidebar-width: 296px;
+  display: grid;
+  /* The sidebar stays beside the canvas at every viewport width. */
+  grid-template-columns: var(--tempered-sidebar-width) minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.tempered-shell.is-collapsed {
+  grid-template-columns: var(--sidebar-rail-width) minmax(0, 1fr);
+}
+
+/* ──── SIDEBAR ──── */
+.tempered-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-sidebar);
+  border-right: var(--border-width) solid var(--border);
+  z-index: 2;
+}
+
+.tempered-side [hidden] { display: none !important; }
+
+.tempered-side.is-collapsed {
+  position: relative;
+  overflow: visible;
+}
+
+.tempered-side.has-flyout { z-index: 34; }
+
+.tempered-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.tempered-side.is-collapsed .tempered-head {
+  justify-content: center;
+  padding: 8px;
+}
+
+.tempered-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.tempered-head-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.tempered-head-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.tempered-head-project {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tempered-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tempered-icon-button i { font-size: 20px; }
+.tempered-icon-button:hover { background: var(--bg-hover); color: var(--text-primary); }
+.tempered-icon-button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.tempered-side:not(.is-collapsed) .tempered-collapse { margin-left: auto; }
+
+/* ──── COLLAPSED RAIL ──── */
+.tempered-rail {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tempered-rail-button {
+  width: 44px;
+  height: 44px;
+}
+
+.tempered-rail-button i { font-size: 24px; }
+
+.tempered-rail-button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* ──── CONTENT: STROKE WIDGET, TABS, SCROLL ──── */
+.tempered-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  outline: none;
+}
+
+.tempered-stroke {
+  flex-shrink: 0;
+  margin: 10px 12px 0;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.tempered-stroke .block + .block,
+.tempered-stroke .block + .tempered-stroke-segs {
+  margin-top: 8px;
+}
+
+.tempered-stroke .section-label {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.tempered-stroke .section-help-btn { width: 14px; height: 14px; }
+.tempered-stroke .section-help-btn i { font-size: 13px; }
+
+/* Material chips: swatch and abbreviation, the name stays in the accessible label. */
+.tempered-stroke .material-list {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
+
+.tempered-stroke .material-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 1;
+  height: 26px;
+  margin: 0;
+  padding: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.tempered-stroke .material-item::after { display: none; }
+.tempered-stroke .material-item .mat-name { display: none; }
+.tempered-stroke .material-item .mat-abbr { margin: 0; color: inherit; font-size: inherit; }
+.tempered-stroke .material-item .mat-swatch {
+  width: 7px;
+  height: 7px;
+  margin: 0;
+  border-radius: 2px;
+}
+
+.tempered-stroke .material-item:hover {
+  border-color: var(--border-btn);
+  color: var(--text-primary);
+}
+
+.tempered-stroke .material-item.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-lighter);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.tempered-stroke-segs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tempered-stroke-segs > .block {
+  min-width: 0;
+}
+
+.tempered-stroke-segs .class-selector {
+  display: flex;
+  gap: 0;
+  padding: 2px;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+}
+
+.tempered-stroke-segs .class-selector .btn {
+  flex: 1;
+  height: 22px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tempered-stroke-segs .class-selector .btn:hover:where(:not(:disabled)) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.tempered-stroke-segs .class-selector .btn.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.tempered-tabs {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 10px 12px 0;
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.tempered-tab {
+  position: relative;
+  flex: 1;
+  height: 32px;
+  border: 0;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tempered-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.tempered-tab:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.tempered-tab.on { color: var(--accent); }
+
+.tempered-tab.on::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.tempered-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 12px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.tempered-scroll::-webkit-scrollbar { width: 5px; }
+.tempered-scroll::-webkit-scrollbar-track { background: transparent; }
+.tempered-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.tempered-tabpanel > .block + .block { margin-top: 12px; }
+
+.tempered-side .section-label {
+  margin: 0 2px 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  color: var(--text-tertiary);
+}
+
+/* Mode: a segmented control. */
+.tempered-side [data-block="mode"] .btn-row {
+  gap: 0;
+  padding: 2px;
+  border: var(--border-width) solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-card);
+}
+
+.tempered-side [data-block="mode"] .btn {
+  height: 30px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.tempered-side [data-block="mode"] .btn i,
+.tempered-side [data-block="mode"] .btn .ti-custom-icon { font-size: 16px; }
+
+.tempered-side [data-block="mode"] .btn:hover:where(:not(:disabled)) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.tempered-side [data-block="mode"] .btn.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* Tool tiles. */
+.tempered-side .btn-grid-3 .btn {
+  min-height: 60px;
+  padding: 4px;
+  gap: 5px;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-xs);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: normal;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+.tempered-side .btn-grid-3 .btn i,
+.tempered-side .btn-grid-3 .btn .ti-custom-icon {
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.tempered-side .btn-grid-3 .btn:hover:where(:not(:disabled)) {
+  border-color: var(--border-btn);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.tempered-side .btn-grid-3 .btn.active:where(:not(:disabled)) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.tempered-side .btn-grid-3 .btn.active:where(:not(:disabled)) i,
+.tempered-side .btn-grid-3 .btn.active:where(:not(:disabled)) .ti-custom-icon {
+  color: var(--text-on-accent);
+}
+
+.tempered-side .btn-grid-3 .btn:disabled i,
+.tempered-side .btn-grid-3 .btn:disabled .ti-custom-icon {
+  color: var(--text-disabled);
+}
+
+/* Text-only choices (theme, layout) do not need the icon tile height. */
+.tempered-side :is([data-block="theme"], [data-block="shell"]) .btn-grid-3 .btn {
+  min-height: 38px;
+}
+
+/* Snapping and history sit at the end of the Draw tab. */
+.tempered-side [data-block="snapping"],
+.tempered-side [data-block="history"] {
+  padding-top: 10px;
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.tempered-side [data-block="history"] {
+  margin-top: 10px;
+}
+
+/* ──── FLYOUT (collapsed rail) ──── */
+.tempered-flyout {
+  position: absolute;
+  top: 8px;
+  left: calc(100% + 8px);
+  width: 320px;
+  max-width: calc(100vw - var(--sidebar-rail-width) - 16px);
+  max-height: calc(100vh - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--bg-card);
+  border: var(--border-width) solid var(--border-btn);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.tempered-flyout .tempered-scroll {
+  flex: none;
+  overflow: visible;
+}
+
+.tempered-flyout .tempered-stroke {
+  background: var(--bg-subtle);
+}
+
+.tempered-flyout-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 16px;
+  background: var(--bg-panel-header);
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.tempered-flyout-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ──── FOOTER ──── */
+.tempered-foot {
+  flex-shrink: 0;
+  margin-top: auto;
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.tempered-foot .status-bar {
+  padding: 8px 14px;
+  border-top: 0;
+  background: transparent;
+}
+
+.tempered-foot .status-msg {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.tempered-side.is-collapsed .tempered-foot {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  width: max-content;
+  max-width: min(420px, calc(100vw - var(--sidebar-rail-width) - 28px));
+  margin: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-xs);
+  pointer-events: none;
+}
+
+.tempered-side.is-collapsed .tempered-foot .status-bar {
+  padding: 8px 12px;
+}
+
+.tempered-side.has-flyout .tempered-foot {
+  max-width: clamp(180px, calc(100vw - var(--sidebar-rail-width) - 360px), 420px);
+}
+
+/* ──── CONTEXT BAR ──── */
+.tempered-workspace .properties-bar {
+  min-height: 46px;
+  padding: 5px 14px;
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.tempered-workspace .toolbar-active-tool {
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  gap: 6px;
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tempered-workspace .toolbar-active-tool i,
+.tempered-workspace .toolbar-active-tool .ti-custom-icon { font-size: 15px; }
+
+/* ──── STATUS STRIP ──── */
+.tempered-status-strip {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 14px;
+  background: var(--bg-card);
+  border-top: var(--border-width) solid var(--border);
+  overflow: hidden;
+}
+
+.tempered-status-strip .readouts { width: 100%; }

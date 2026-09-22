@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LP Sketch — UI refresh directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#141619;--card:#1c1f24;--line:#2b3037;--line2:#3d444e;--ink:#eef0f3;--ink2:#a7aeb9;--ink3:#6f7784;--amber:#f2b33d}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Manrope,system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:40px 48px 80px;-webkit-font-smoothing:antialiased}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+h1 span{color:var(--amber)}
+p.lead{color:var(--ink2);max-width:780px;margin-top:10px;line-height:1.55;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:22px;margin-top:32px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-3px);border-color:var(--line2)}
+.thumb{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;background:#0d0f12;border-bottom:1px solid var(--line)}
+.thumb iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0;transform:scale(var(--s,.28));pointer-events:none}
+.body{padding:16px 18px 18px}
+.n{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);letter-spacing:.14em}
+h2{font-size:18px;font-weight:800;margin-top:4px}
+.d{color:var(--ink2);font-size:13px;line-height:1.5;margin-top:6px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.meta span{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink3);border:1px solid var(--line);border-radius:4px;padding:3px 7px}
+.note{margin-top:36px;padding:16px 18px;border:1px dashed var(--line2);border-radius:10px;color:var(--ink2);font-size:13px;line-height:1.55;max-width:900px}
+.note b{color:var(--ink)}
+</style>
+</head>
+<body>
+<h1>LP Sketch <span>/</span> six UI directions</h1>
+<p class="lead">Static single-page prototypes for a UI refresh. Nothing is wired up beyond hover states and load motion. Each one shows the same project, the same roof plan and the same tool set, so the comparison is about layout, type, color and density. Open a card to see it full size.</p>
+
+<div class="grid">
+  <a class="card" href="01-nightshift.html"><div class="thumb"><iframe src="01-nightshift.html" loading="lazy" tabindex="-1"></iframe></div><div class="body"><div class="n">DIRECTION 01</div><h2>Nightshift</h2><div class="d">Dark studio chrome so the white plan is the brightest thing on screen. Left tool palette, right inspector that follows the tool or selection, amber as the single accent.</div><div class="meta"><span>palette + inspector</span><span>dark</span><span>Manrope · JetBrains Mono</span></div></div></a>
+  <a class="card" href="02-vellum.html"><div class="thumb"><iframe src="02-vellum.html" loading="lazy" tabindex="-1"></iframe></div><div class="body"><div class="n">DIRECTION 02</div><h2>Vellum</h2><div class="d">The app as a drawing sheet. Title-block strip on top, a single ribbon of tool clusters, CAD-style status strip below, ink on warm paper with a faint grain.</div><div class="meta"><span>ribbon + status strip</span><span>light · paper</span><span>Archivo · DM Mono</span></div></div></a>
+  <a class="card" href="03-hover.html"><div class="thumb"><iframe src="03-hover.html" loading="lazy" tabindex="-1"></iframe></div><div class="body"><div class="n">DIRECTION 03</div><h2>Hover</h2><div class="d">Full-bleed canvas with floating glass pills. Tool dock on top with pop-out groups, material rail on the left, context strip at the bottom. Built for the iPad first.</div><div class="meta"><span>floating dock</span><span>glass on light</span><span>Instrument Sans · Geist Mono</span></div></div></a>
+  <a class="card" href="04-tempered.html"><div class="thumb"><iframe src="04-tempered.html" loading="lazy" tabindex="-1"></iframe></div><div class="body"><div class="n">DIRECTION 04</div><h2>Tempered</h2><div class="d">The current sidebar, kept and tuned. A sticky stroke widget replaces the Material panel, tabs replace the long scroll, and the properties bar becomes a calmer context bar.</div><div class="meta"><span>sidebar refinement</span><span>light · cool</span><span>Hanken Grotesk · IBM Plex Mono</span></div></div></a>
+  <a class="card" href="05-hivis.html"><div class="thumb"><iframe src="05-hivis.html" loading="lazy" tabindex="-1"></iframe></div><div class="body"><div class="n">DIRECTION 05</div><h2>Hi-Vis</h2><div class="d">Field-first. Black rules, white panels and safety yellow for whatever is active. Bottom tool tray with big targets, material chips on the left, layers on the right.</div><div class="meta"><span>bottom tray</span><span>high contrast</span><span>Atkinson Hyperlegible · Red Hat Mono</span></div></div></a>
+  <a class="card" href="06-ledger.html"><div class="thumb"><iframe src="06-ledger.html" loading="lazy" tabindex="-1"></iframe></div><div class="body"><div class="n">DIRECTION 06</div><h2>Ledger</h2><div class="d">Editorial and quiet. A serif project header with a title-block meta table, a labelled tool rail, and a right-hand specification panel with numbered sections and a component catalog.</div><div class="meta"><span>rail + spec panel</span><span>light · cream</span><span>Fraunces · Familjen Grotesk</span></div></div></a>
+</div>
+
+<div class="note"><b>How to read these.</b> Two things vary at once: the shell (where tools live) and the skin (type, color, texture). Any shell can wear any skin. If a layout feels right but the mood is off, or the other way round, say so and the next round can cross them.</div>
+
+<script>
+(function(){
+  function fit(){
+    document.querySelectorAll('.thumb').forEach(function(t){
+      t.style.setProperty('--s', (t.clientWidth/1440).toFixed(4));
+    });
+  }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>

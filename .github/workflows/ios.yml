@@ -1,0 +1,82 @@
+name: iOS / TestFlight
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      upload_to_testflight:
+        description: Sign and upload to TestFlight after the unsigned build passes
+        type: boolean
+        default: false
+      app_version:
+        description: App version (three numeric components)
+        type: string
+        default: '0.1.0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Build iPad app (unsigned)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Use Xcode 26
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
+      - run: npm ci
+      - name: Test signing configuration validation
+        run: python3 -m unittest discover -s scripts/ios -p 'test_*.py'
+      - name: Verify Windows certificate export is compatible with macOS
+        run: bash scripts/ios/test-p12-import.sh
+      - run: npm run mobile:sync
+      - name: Compile unsigned iPad archive
+        run: bash scripts/ios/build-unsigned.sh
+
+  testflight:
+    name: Upload to TestFlight
+    if: github.event_name == 'workflow_dispatch' && inputs.upload_to_testflight
+    needs: validate
+    runs-on: macos-15
+    timeout-minutes: 40
+    environment: testflight
+    env:
+      IOS_BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID }}
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      APP_STORE_CONNECT_KEY_ID: ${{ vars.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_VERSION: ${{ inputs.app_version }}
+      BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Use Xcode 26
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
+      - name: Validate Apple app settings
+        run: python3 scripts/ios/ios_config.py
+      - run: npm ci
+      - name: Bundle and sync the registered app
+        env:
+          VITE_APP_VERSION: ${{ inputs.app_version }}
+          VITE_APP_ENV: testflight
+        run: npm run mobile:sync
+      - name: Sign and upload
+        env:
+          APPLE_DISTRIBUTION_P12_BASE64: ${{ secrets.APPLE_DISTRIBUTION_P12_BASE64 }}
+          APPLE_DISTRIBUTION_P12_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_P12_PASSWORD }}
+          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: bash scripts/ios/upload-testflight.sh

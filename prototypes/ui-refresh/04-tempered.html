@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LP Sketch — 04 Tempered</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef0f3; --side:#f9fafb; --card:#ffffff; --line:#e1e5ea; --line2:#c9d0d8; --line3:#a9b3bf;
+  --ink:#151a21; --ink2:#3d4652; --ink3:#66707d; --ink4:#8f98a4;
+  --navy:#25406b; --navy2:#1b3157; --navy-l:#e5ebf5; --navy-xl:#f1f4fa;
+  --amber:#e6a23c;
+  --sel:#25406b; --sel-fill:#fff; --sym-fill:#fff;
+  --r:7px; --r2:5px;
+  --font:'Hanken Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);font-size:13px;color:var(--ink);background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;min-width:1180px}
+.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.app{display:grid;grid-template-columns:296px 1fr;height:100vh;height:100dvh}
+
+/* ── sidebar ── */
+.side{background:var(--side);border-right:1px solid var(--line2);display:flex;flex-direction:column;min-height:0}
+.shead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.mark{width:30px;height:30px;border-radius:8px;background:var(--navy);display:grid;place-items:center;color:var(--amber);font-size:17px;box-shadow:0 1px 2px rgba(20,26,33,.2)}
+.shead b{font-size:14px;font-weight:800;letter-spacing:-.01em;display:block;line-height:1.1}
+.shead small{display:block;font-size:10.5px;color:var(--ink3);font-weight:500;margin-top:2px}
+.shead .col{margin-left:auto;width:28px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--ink3);font-size:16px}
+.shead .col:hover{background:var(--bg);color:var(--ink)}
+.stroke{margin:10px 12px 0;padding:10px 12px;background:var(--card);border:1px solid var(--line2);border-radius:var(--r);box-shadow:0 1px 2px rgba(20,26,33,.05)}
+.stroke .top{display:flex;align-items:center;gap:10px}
+.stroke svg.prev{width:92px;height:30px;flex:none}
+.stroke .t{font-weight:700;font-size:12.5px}
+.stroke .s{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-top:1px}
+.stroke .edit{margin-left:auto;font-size:11px;font-weight:700;color:var(--navy)}
+.stroke .chips{display:flex;gap:4px;margin-top:9px}
+.chip{flex:1;height:26px;border-radius:5px;border:1px solid var(--line2);display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink3);position:relative;background:#fff}
+.chip i{position:absolute;left:5px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:2px;background:var(--c)}
+.chip:hover{border-color:var(--line3);color:var(--ink)}
+.chip.on{border-color:var(--navy);color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy);background:var(--navy-xl)}
+.segl{display:flex;gap:4px;margin-top:6px}
+.seg{flex:1;display:flex;padding:2px;border:1px solid var(--line2);border-radius:6px;background:#fff}
+.seg button{flex:1;height:22px;border-radius:4px;font-size:11px;font-weight:600;color:var(--ink3)}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--navy);color:#fff}
+.tabs{display:flex;padding:10px 12px 0;gap:2px;border-bottom:1px solid var(--line)}
+.tab{flex:1;height:32px;display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--ink3);position:relative;border-radius:6px 6px 0 0}
+.tab:hover{color:var(--ink2);background:var(--bg)}
+.tab.on{color:var(--navy)}
+.tab.on::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--navy)}
+.sscroll{overflow:auto;padding:12px 12px 16px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.cap{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin:12px 2px 6px}
+.cap:first-child{margin-top:0}
+.cap .q{width:15px;height:15px;color:var(--ink4);font-size:14px}
+.cap .q:hover{color:var(--navy)}
+.modes{display:flex;padding:2px;border:1px solid var(--line2);border-radius:7px;background:#fff}
+.modes button{flex:1;height:30px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:12px;color:var(--ink2)}
+.modes button .ic{font-size:16px}
+.modes button:hover{background:var(--bg)}
+.modes button.on{background:var(--navy);color:#fff}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;height:60px;padding:4px;border-radius:var(--r);border:1px solid var(--line2);background:var(--card);color:var(--ink2);font-size:10.5px;font-weight:600;line-height:1.1;text-align:center;box-shadow:0 1px 1px rgba(20,26,33,.04);transition:all .15s}
+.tile .ic{font-size:22px;color:var(--ink)}
+.tile:hover{border-color:var(--line3);box-shadow:0 2px 6px rgba(20,26,33,.08);transform:translateY(-1px)}
+.tile:hover .ic{color:var(--navy)}
+.tile.on{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 2px 6px rgba(37,64,107,.3)}
+.tile.on .ic{color:#fff}
+.sfoot{margin-top:auto;border-top:1px solid var(--line);padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink3);font-weight:500}
+.sfoot i{width:7px;height:7px;border-radius:50%;background:#16a34a}
+.sfoot .r{margin-left:auto;font-family:var(--mono);font-size:10.5px}
+
+/* ── workspace ── */
+.ws{display:grid;grid-template-rows:46px 1fr 26px;min-width:0}
+.ctxbar{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--card);border-bottom:1px solid var(--line2)}
+.tchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:6px;background:var(--navy);color:#fff;font-weight:700;font-size:11.5px}
+.tchip .ic{font-size:15px}
+.f{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:12px;color:var(--ink2)}
+.f .v{font-family:var(--mono);font-weight:500;color:var(--navy)}
+.div{width:1px;height:20px;background:var(--line2)}
+.sw{position:relative;width:32px;height:18px;border-radius:9px;background:var(--line3);display:inline-block}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.sw.on{background:var(--navy)}
+.sw.on::after{left:16px}
+.hint{font-style:italic;color:var(--ink4);font-size:11.5px}
+.sp{flex:1}
+.ro{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:6px;background:var(--bg);border:1px solid var(--line);font-size:11px;font-weight:600;color:var(--ink3)}
+.ro b{font-family:var(--mono);font-weight:500;color:var(--ink)}
+.ib{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--ink3);font-size:16px}
+.ib:hover{background:var(--bg);color:var(--navy)}
+.stage{position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle at 1px 1px,rgba(20,26,33,.1) 1px,transparent 1.3px);background-size:22px 22px}
+.sheet{position:absolute;left:50%;top:50%;width:min(880px,calc(100% - 100px));transform:translate(-50%,-50%);box-shadow:0 1px 2px rgba(0,0,0,.06),0 24px 60px -24px rgba(20,26,33,.35);border:1px solid var(--line2);background:#fff}
+.sheet svg{display:block;width:100%;height:auto}
+.quick{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--card);border:1px solid var(--line2);border-radius:9px;box-shadow:0 8px 24px -12px rgba(20,26,33,.35);z-index:3}
+.qb{width:34px;height:34px;border-radius:6px;display:grid;place-items:center;color:var(--ink2);font-size:17px}
+.qb:hover{background:var(--bg);color:var(--navy)}
+.qb.on{background:var(--navy);color:#fff}
+.qb.dis{opacity:.35}
+.qdiv{height:1px;background:var(--line);margin:2px 5px}
+.zoom{position:absolute;right:14px;bottom:12px;display:flex;align-items:center;padding:3px;background:var(--card);border:1px solid var(--line2);border-radius:8px;z-index:3}
+.zoom .qb{width:28px;height:28px;font-size:15px}
+.zoom .v{font-family:var(--mono);font-size:11px;padding:0 8px;min-width:56px;text-align:center;color:var(--ink2)}
+.status{display:flex;align-items:center;gap:16px;padding:0 14px;background:var(--card);border-top:1px solid var(--line2);font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.status .on{color:var(--navy);font-weight:600}
+.status .sp{flex:1}
+.tag{position:absolute;left:14px;bottom:12px;z-index:3;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--ink4);text-transform:uppercase}
+
+@keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.side,.ctxbar,.status,.quick,.zoom{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+.ctxbar{animation-delay:.06s}.quick{animation-delay:.2s}.zoom{animation-delay:.24s}
+@keyframes sheetin{from{opacity:0;transform:translate(-50%,-49%)}to{opacity:1;transform:translate(-50%,-50%)}}
+.sheet{animation:sheetin .7s cubic-bezier(.2,.7,.2,1) .1s both}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<defs>
+<symbol id="s-select" viewBox="0 0 24 24"><path d="M5 3l14 8.5-6.3 1.4-2.2 6.6z"/></symbol>
+<symbol id="s-multi" viewBox="0 0 24 24"><path d="M4 4h5M15 4h5M4 4v5M20 4v5M4 15v5M20 15v5M4 20h5M15 20h5"/><path d="M10 10l7 4.2-3.1.7-1.1 3.3z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-pan" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-2.5 2.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5"/></symbol>
+<symbol id="s-line" viewBox="0 0 24 24"><path d="M5 19L19 5"/><circle cx="5" cy="19" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="1.7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-arc" viewBox="0 0 24 24"><path d="M4 18a8.5 8.5 0 0 1 16 0"/><circle cx="4" cy="18" r="1.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="1.7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-curve" viewBox="0 0 24 24"><path d="M3 18C7 4 12 22 21 6"/><circle cx="3" cy="18" r="1.7" fill="currentColor" stroke="none"/><circle cx="21" cy="6" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12.5" r="1.7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/></symbol>
+<symbol id="s-bonded-at" viewBox="0 0 24 24"><path d="M12 3.5l7.5 4.3v8.4L12 20.5l-7.5-4.3V7.8z"/></symbol>
+<symbol id="s-linear-at" viewBox="0 0 24 24"><path d="M3 12h18"/><circle cx="6" cy="12" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="12" cy="12" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="18" cy="12" r="2.4" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-arc-at" viewBox="0 0 24 24"><path d="M4 17a8.5 8.5 0 0 1 16 0"/><circle cx="5.2" cy="13.5" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="12" cy="8.6" r="2.4" fill="var(--sym-fill,#fff)"/><circle cx="18.8" cy="13.5" r="2.4" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-bond" viewBox="0 0 24 24"><path d="M12 4.5l7.5 7.5-7.5 7.5L4.5 12z"/></symbol>
+<symbol id="s-mech" viewBox="0 0 24 24"><path d="M3 12h18"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-cadweld" viewBox="0 0 24 24"><path d="M3 12h4M17 12h4"/><rect x="7" y="7" width="10" height="10"/></symbol>
+<symbol id="s-mech-cross" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/><circle cx="12" cy="12" r="3.4" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-cad-cross" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/><rect x="8" y="8" width="8" height="8" fill="var(--sym-fill,#fff)"/></symbol>
+<symbol id="s-steel-bond" viewBox="0 0 24 24"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"/><path d="M12 8.5v7M9 10.2l6 3.6M9 13.8l6-3.6"/></symbol>
+<symbol id="s-conduit-gnd" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M8.5 8.5l3.5 3.5 3.5-3.5M8.5 13l3.5 3.5 3.5-3.5"/></symbol>
+<symbol id="s-conduit-roof" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M8.5 14l3.5-3.5 3.5 3.5"/></symbol>
+<symbol id="s-surface-gnd" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 8.5l3.5 3.5 3.5-3.5M8.5 13l3.5 3.5 3.5-3.5"/></symbol>
+<symbol id="s-surface-roof" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14l3.5-3.5 3.5 3.5"/></symbol>
+<symbol id="s-thru-roof" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M12 8v8M8.6 10l6.8 4M8.6 14l6.8-4"/></symbol>
+<symbol id="s-thru-wall" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M10 9l-3 3 3 3M14 9l3 3-3 3"/></symbol>
+<symbol id="s-ground-rod" viewBox="0 0 24 24"><path d="M12 3v9M5 12h14M7.5 16h9M10 20h4"/></symbol>
+<symbol id="s-break" viewBox="0 0 24 24"><path d="M3 12h4l2.5-6 5 12 2.5-6h4"/></symbol>
+<symbol id="s-text" viewBox="0 0 24 24"><path d="M5 7V4h14v3M12 4v16M9 20h6"/></symbol>
+<symbol id="s-dim" viewBox="0 0 24 24"><path d="M3 5v14M21 5v14M3 12h18M6.5 9L3 12l3.5 3M17.5 9l3.5 3-3.5 3"/></symbol>
+<symbol id="s-arrow" viewBox="0 0 24 24"><path d="M5 19L19 5M10 5h9v9"/></symbol>
+<symbol id="s-legend" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M7 9h2M12 9h6M7 13h2M12 13h6M7 17h2M12 17h6"/></symbol>
+<symbol id="s-notes" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h7"/></symbol>
+<symbol id="s-measure" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8"/><path d="M7 8v3M11 8v4M15 8v3"/></symbol>
+<symbol id="s-mark" viewBox="0 0 24 24"><path d="M12 4v16M5 8l14 8M5 16l14-8"/></symbol>
+<symbol id="s-calibrate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+<symbol id="s-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+<symbol id="s-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></symbol>
+<symbol id="s-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="s-layers" viewBox="0 0 24 24"><path d="M12 4l8 4-8 4-8-4zM4 12l8 4 8-4M4 16l8 4 8-4"/></symbol>
+<symbol id="s-import" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M4 17v3h16v-3"/></symbol>
+<symbol id="s-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
+<symbol id="s-export" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M4 17v3h16v-3"/></symbol>
+<symbol id="s-pdf" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM15 3v4h4"/><path d="M8.5 17v-6h2a1.5 1.5 0 0 1 0 3h-2M13 17v-6h1.5a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2z"/></symbol>
+<symbol id="s-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 16l-5-5-8 8M3 18l4-4 3 3"/></symbol>
+<symbol id="s-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></symbol>
+<symbol id="s-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+<symbol id="s-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+<symbol id="s-chevron-r" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="s-chevron-l" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+<symbol id="s-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></symbol>
+<symbol id="s-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="s-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.3A11 11 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.6 8.6 2 12 2 12s3.5 7 10 7c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+<symbol id="s-zoom-in" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5M10.5 8v5"/></symbol>
+<symbol id="s-zoom-out" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5"/></symbol>
+<symbol id="s-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
+<symbol id="s-snap" viewBox="0 0 24 24"><path d="M5 4v7a7 7 0 0 0 14 0V4M5 4h4M15 4h4M5 8h4M15 8h4"/></symbol>
+<symbol id="s-angle" viewBox="0 0 24 24"><path d="M4 20L20 4M4 20h16M13 20a9 9 0 0 0-2.6-6.4"/></symbol>
+<symbol id="s-auto" viewBox="0 0 24 24"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></symbol>
+<symbol id="s-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+<symbol id="s-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="s-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="s-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="s-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+<symbol id="s-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="s-page" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM15 3v4h4"/></symbol>
+<symbol id="s-bug" viewBox="0 0 24 24"><path d="M9 9V7a3 3 0 0 1 6 0v2M5 13h14M12 11v9M7 20a5 5 0 0 0 10 0v-7H7zM4 9l3 2M20 9l-3 2M4 18l3-2M20 18l-3-2"/></symbol>
+<symbol id="s-pencil" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/></symbol>
+<symbol id="s-front" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></symbol>
+<symbol id="s-back" viewBox="0 0 24 24"><rect x="4" y="4" width="12" height="12"/><path d="M20 8v12H8"/></symbol>
+<symbol id="s-transparency" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M4 12h8V4M12 12v8h8"/></symbol>
+<symbol id="s-scale" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2"/></symbol>
+<symbol id="s-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 12h16M12 4v16"/></symbol>
+<symbol id="s-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+  <aside class="side">
+    <div class="shead">
+      <span class="mark"><svg class="ic"><use href="#s-bolt"/></svg></span>
+      <div><b>LP Sketch</b><small>Riverside Logistics Hub · A-201</small></div>
+      <button class="col" title="Collapse sidebar"><svg class="ic"><use href="#s-sidebar"/></svg></button>
+    </div>
+
+    <div class="stroke">
+      <div class="top">
+        <svg class="prev" viewBox="0 0 92 30"><line x1="3" y1="15" x2="89" y2="15" stroke="#16a34a" stroke-width="2.4"/><circle cx="16" cy="15" r="2.8" fill="#16a34a"/><circle cx="46" cy="15" r="7.5" fill="#fff" stroke="#16a34a" stroke-width="1.7"/><text x="46" y="18.3" text-anchor="middle" font-size="8.5" font-weight="700" fill="#151a21" font-family="Hanken Grotesk,sans-serif">Y</text><path d="M76 9.5l5.5 5.5-5.5 5.5-5.5-5.5z" fill="#fff" stroke="#16a34a" stroke-width="1.5"/></svg>
+        <div><div class="t">Copper · Class I</div><div class="s">rooftop · medium</div></div>
+        <button class="edit">Edit</button>
+      </div>
+      <div class="chips">
+        <button class="chip on" style="--c:#16a34a"><i></i>Cu</button><button class="chip" style="--c:#2563eb"><i></i>Al</button><button class="chip" style="--c:#DC143C"><i></i>Gnd</button><button class="chip" style="--c:#7c3aed"><i></i>Bi</button><button class="chip" style="--c:#0891b2"><i></i>Sn</button>
+      </div>
+      <div class="segl"><div class="seg"><button class="on">Class I</button><button>Class II</button></div><div class="seg"><button>S</button><button class="on">M</button><button>L</button></div></div>
+    </div>
+
+    <div class="tabs"><button class="tab on">Draw</button><button class="tab">Annotate</button><button class="tab">Setup</button></div>
+
+    <div class="sscroll">
+      <div class="cap">Mode <span class="q"><svg class="ic"><use href="#s-help"/></svg></span></div>
+      <div class="modes"><button class="on"><svg class="ic"><use href="#s-select"/></svg>Select</button><button><svg class="ic"><use href="#s-multi"/></svg>Multi</button><button><svg class="ic"><use href="#s-pan"/></svg>Pan</button></div>
+
+      <div class="cap">Conductors <span class="q"><svg class="ic"><use href="#s-help"/></svg></span></div>
+      <div class="tiles">
+        <button class="tile on"><svg class="ic"><use href="#s-line"/></svg>Linear</button>
+        <button class="tile"><svg class="ic"><use href="#s-arc"/></svg>Arc</button>
+        <button class="tile"><svg class="ic"><use href="#s-curve"/></svg>Curve</button>
+      </div>
+      <div class="cap">Air terminals <span class="q"><svg class="ic"><use href="#s-help"/></svg></span></div>
+      <div class="tiles">
+        <button class="tile"><svg class="ic"><use href="#s-at"/></svg>Terminal</button>
+        <button class="tile"><svg class="ic"><use href="#s-bonded-at"/></svg>Bonded</button>
+        <button class="tile"><svg class="ic"><use href="#s-linear-at"/></svg>Linear AT</button>
+        <button class="tile"><svg class="ic"><use href="#s-arc-at"/></svg>Arc AT</button>
+      </div>
+      <div class="cap">Connections <span class="q"><svg class="ic"><use href="#s-help"/></svg></span></div>
+      <div class="tiles">
+        <button class="tile"><svg class="ic"><use href="#s-bond"/></svg>Bond</button>
+        <button class="tile"><svg class="ic"><use href="#s-mech"/></svg>Mechanical</button>
+        <button class="tile"><svg class="ic"><use href="#s-cadweld"/></svg>Cadweld</button>
+        <button class="tile"><svg class="ic"><use href="#s-steel-bond"/></svg>Steel bond</button>
+        <button class="tile"><svg class="ic"><use href="#s-mech-cross"/></svg>Mech. crossrun</button>
+        <button class="tile"><svg class="ic"><use href="#s-cad-cross"/></svg>Cadweld crossrun</button>
+      </div>
+      <div class="cap">Downleads <span class="q"><svg class="ic"><use href="#s-help"/></svg></span></div>
+      <div class="tiles">
+        <button class="tile"><svg class="ic"><use href="#s-conduit-gnd"/></svg>Conduit to ground</button>
+        <button class="tile"><svg class="ic"><use href="#s-conduit-roof"/></svg>Conduit to roof</button>
+        <button class="tile"><svg class="ic"><use href="#s-surface-gnd"/></svg>Surface to ground</button>
+        <button class="tile"><svg class="ic"><use href="#s-surface-roof"/></svg>Surface to roof</button>
+      </div>
+      <div class="cap">Penetrations &amp; ground <span class="q"><svg class="ic"><use href="#s-help"/></svg></span></div>
+      <div class="tiles">
+        <button class="tile"><svg class="ic"><use href="#s-thru-roof"/></svg>Thru-roof</button>
+        <button class="tile"><svg class="ic"><use href="#s-thru-wall"/></svg>Thru-wall</button>
+        <button class="tile"><svg class="ic"><use href="#s-ground-rod"/></svg>Ground rod</button>
+      </div>
+    </div>
+    <div class="sfoot"><i></i>Ready<span class="r">Autosaved 14:02</span></div>
+  </aside>
+
+  <div class="ws">
+    <div class="ctxbar">
+      <span class="tchip"><svg class="ic"><use href="#s-line"/></svg>Linear</span>
+      <span class="f">Continuous <span class="sw on"></span></span>
+      <span class="div"></span>
+      <span class="f">Segment <span class="v">24'-3"</span></span>
+      <span class="f">Total <span class="v">118'-9"</span></span>
+      <span class="div"></span>
+      <span class="hint">Click the next endpoint · Esc to finish</span>
+      <span class="sp"></span>
+      <span class="ro">Page <b>2 / 4</b></span>
+      <span class="ro">Scale <b>1/8" = 1'-0"</b></span>
+      <span class="ro">Zoom <b>100%</b></span>
+      <button class="ib"><svg class="ic"><use href="#s-help"/></svg></button>
+    </div>
+    <div class="stage">
+      <div class="quick">
+        <button class="qb on"><svg class="ic"><use href="#s-select"/></svg></button>
+        <button class="qb"><svg class="ic"><use href="#s-multi"/></svg></button>
+        <button class="qb"><svg class="ic"><use href="#s-pan"/></svg></button>
+        <div class="qdiv"></div>
+        <button class="qb"><svg class="ic"><use href="#s-undo"/></svg></button>
+        <button class="qb dis"><svg class="ic"><use href="#s-redo"/></svg></button>
+        <button class="qb"><svg class="ic"><use href="#s-trash"/></svg></button>
+        <div class="qdiv"></div>
+        <button class="qb"><svg class="ic"><use href="#s-layers"/></svg></button>
+        <button class="qb"><svg class="ic"><use href="#s-settings"/></svg></button>
+      </div>
+      <div class="sheet"><svg class="plan" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono','DM Mono','Courier New',monospace">
+<rect x="0" y="0" width="1000" height="700" fill="#ffffff"/>
+<rect x="18" y="18" width="964" height="664" fill="none" stroke="#111827" stroke-width="1.2"/>
+<rect x="24" y="24" width="952" height="652" fill="none" stroke="#111827" stroke-width="0.5"/>
+<g stroke="#b9bfc9" stroke-width="0.6" stroke-dasharray="9 5">
+<line x1="120" y1="64" x2="120" y2="630"/><line x1="265" y1="64" x2="265" y2="630"/><line x1="410" y1="64" x2="410" y2="630"/><line x1="555" y1="64" x2="555" y2="630"/><line x1="700" y1="64" x2="700" y2="630"/><line x1="880" y1="64" x2="880" y2="630"/>
+<line x1="76" y1="110" x2="940" y2="110"/><line x1="76" y1="330" x2="940" y2="330"/><line x1="76" y1="600" x2="940" y2="600"/>
+</g>
+<g fill="#ffffff" stroke="#4b5563" stroke-width="0.8">
+<circle cx="120" cy="54" r="8"/><circle cx="265" cy="54" r="8"/><circle cx="410" cy="54" r="8"/><circle cx="555" cy="54" r="8"/><circle cx="700" cy="54" r="8"/><circle cx="880" cy="54" r="8"/>
+<circle cx="66" cy="110" r="8"/><circle cx="66" cy="330" r="8"/><circle cx="66" cy="600" r="8"/>
+</g>
+<g fill="#374151" font-size="8.5" font-weight="600" text-anchor="middle">
+<text x="120" y="57">A</text><text x="265" y="57">B</text><text x="410" y="57">C</text><text x="555" y="57">D</text><text x="700" y="57">E</text><text x="880" y="57">F</text>
+<text x="66" y="113">1</text><text x="66" y="333">2</text><text x="66" y="603">3</text>
+</g>
+<path d="M120 110H700V330H880V600H120Z" fill="#ffffff" stroke="#111827" stroke-width="1.6"/>
+<path d="M132 122H688V342H868V588H132Z" fill="none" stroke="#374151" stroke-width="0.7"/>
+<g fill="none" stroke="#374151" stroke-width="0.8">
+<rect x="300" y="200" width="90" height="60"/><path d="M300 200l90 60M390 200l-90 60" stroke-width="0.45"/>
+<rect x="470" y="220" width="90" height="60"/><path d="M470 220l90 60M560 220l-90 60" stroke-width="0.45"/>
+<rect x="560" y="430" width="110" height="70"/><path d="M560 430l110 70M670 430l-110 70" stroke-width="0.45"/>
+<rect x="160" y="440" width="120" height="110"/><rect x="172" y="452" width="96" height="86" stroke-dasharray="4 3" stroke-width="0.5"/>
+<rect x="380" y="380" width="40" height="40"/><rect x="440" y="380" width="40" height="40"/><rect x="500" y="380" width="40" height="40"/>
+<circle cx="250" cy="300" r="5"/><path d="M246.5 296.5l7 7M253.5 296.5l-7 7" stroke-width="0.5"/>
+<circle cx="760" cy="520" r="5"/><path d="M756.5 516.5l7 7M763.5 516.5l-7 7" stroke-width="0.5"/>
+</g>
+<g fill="#4b5563" font-size="8" font-weight="500" letter-spacing="0.6" text-anchor="middle">
+<text x="345" y="233">RTU-1</text><text x="515" y="253">RTU-2</text><text x="615" y="468">RTU-3</text>
+<text x="220" y="497">STAIR</text><text x="220" y="507">PENTHOUSE</text>
+<text x="460" y="436">SKYLIGHTS (3)</text>
+<text x="500" y="88" font-size="11" font-weight="700" letter-spacing="2.5" fill="#111827">ROOF PLAN</text>
+<text x="500" y="100" font-size="7.5">SCALE: 1/8" = 1'-0"</text>
+</g>
+<g stroke="#6b7280" stroke-width="0.6" fill="#6b7280" font-size="8">
+<line x1="120" y1="640" x2="880" y2="640"/><line x1="120" y1="633" x2="120" y2="647"/><line x1="880" y1="633" x2="880" y2="647"/><path d="M116 644l8-8M876 644l8-8"/>
+<text x="500" y="636" text-anchor="middle" stroke="none">152'-0"</text>
+<line x1="46" y1="110" x2="46" y2="600"/><line x1="39" y1="110" x2="53" y2="110"/><line x1="39" y1="600" x2="53" y2="600"/><path d="M42 114l8-8M42 604l8-8"/>
+<text transform="rotate(-90 40 355)" x="40" y="355" text-anchor="middle" stroke="none">98'-0"</text>
+</g>
+<g stroke="#111827" stroke-width="0.7" fill="none">
+<rect x="700" y="606" width="276" height="70"/><line x1="700" y1="630" x2="976" y2="630"/><line x1="700" y1="654" x2="976" y2="654"/><line x1="860" y1="606" x2="860" y2="676"/>
+</g>
+<g fill="#111827" font-size="6.5" letter-spacing="0.7">
+<text x="708" y="620">PROJECT</text><text x="708" y="646" font-size="8.5" font-weight="700">RIVERSIDE LOGISTICS HUB</text><text x="708" y="668">ROOF PLAN — LIGHTNING PROTECTION</text>
+<text x="868" y="620">SHEET</text><text x="868" y="648" font-size="13" font-weight="700">A-201</text><text x="868" y="668">REV 3 · 2026-09-14</text>
+</g>
+<g transform="translate(716 372)" fill="#111827" font-size="6.2" letter-spacing="0.2">
+<text x="0" y="0" font-size="7.5" font-weight="700" letter-spacing="1.4">GENERAL NOTES</text>
+<line x1="0" y1="5" x2="252" y2="5" stroke="#111827" stroke-width="0.5"/>
+<text x="0" y="16">1. SYSTEM PER NFPA 780 AND UL 96A, CLASS I MATERIALS.</text>
+<text x="0" y="26">2. MAIN CONDUCTORS: 32-STRAND COPPER, 17 AWG MIN.</text>
+<text x="0" y="36">3. AIR TERMINALS WITHIN 2'-0" OF ROOF EDGES; 20'-0" O.C. MAX.</text>
+<text x="0" y="46">4. BOND ALL ROOFTOP EQUIPMENT WITHIN 6'-0" OF CONDUCTOR.</text>
+<text x="0" y="56">5. GROUND RODS 5/8" X 10' CU-CLAD, 2'-0" MIN FROM FOUNDATION.</text>
+</g>
+<g class="lp">
+<path d="M126 116H694V336H874V594H126Z" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M345 116V194M515 116V214M615 336V424M220 594V556" fill="none" stroke="#16a34a" stroke-width="2.2"/>
+<path d="M126 594l-14 14M874 594l14 14M694 116l14-14" fill="none" stroke="#16a34a" stroke-width="2.2"/>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.5"><path d="M345 188l6 6-6 6-6-6zM515 208l6 6-6 6-6-6zM615 418l6 6-6 6-6-6zM220 550l6 6-6 6-6-6z"/></g>
+<g fill="#16a34a"><circle cx="345" cy="116" r="3"/><circle cx="515" cy="116" r="3"/><circle cx="615" cy="336" r="3"/><circle cx="220" cy="594" r="3"/></g>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.5">
+<rect x="106.5" y="602.5" width="11" height="11"/><rect x="882.5" y="602.5" width="11" height="11"/><rect x="702.5" y="96.5" width="11" height="11"/>
+</g>
+<g fill="none" stroke="#16a34a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M109.5 605.5l2.5 2.5 2.5-2.5M109.5 609l2.5 2.5 2.5-2.5M885.5 605.5l2.5 2.5 2.5-2.5M885.5 609l2.5 2.5 2.5-2.5M705.5 99.5l2.5 2.5 2.5-2.5M705.5 103l2.5 2.5 2.5-2.5"/>
+</g>
+<g fill="none" stroke="#DC143C" stroke-width="1.5" stroke-linecap="round">
+<path d="M112 614v10M104 624h16M107 628h10M110 632h4M888 614v10M880 624h16M883 628h10M886 632h4M708 96V86M700 86h16M703 82h10M706 78h4"/>
+</g>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.5">
+<circle cx="126" cy="116" r="6.5"/><circle cx="221" cy="116" r="6.5"/><circle cx="316" cy="116" r="6.5"/><circle cx="411" cy="116" r="6.5"/><circle cx="506" cy="116" r="6.5"/><circle cx="601" cy="116" r="6.5"/><circle cx="694" cy="116" r="6.5"/>
+<circle cx="694" cy="226" r="6.5"/><circle cx="694" cy="336" r="6.5"/><circle cx="784" cy="336" r="6.5"/><circle cx="874" cy="336" r="6.5"/><circle cx="874" cy="422" r="6.5"/><circle cx="874" cy="508" r="6.5"/><circle cx="874" cy="594" r="6.5"/>
+<circle cx="780" cy="594" r="6.5"/><circle cx="686" cy="594" r="6.5"/><circle cx="592" cy="594" r="6.5"/><circle cx="498" cy="594" r="6.5"/><circle cx="404" cy="594" r="6.5"/><circle cx="310" cy="594" r="6.5"/><circle cx="126" cy="594" r="6.5"/>
+<circle cx="126" cy="474" r="6.5"/><circle cx="126" cy="354" r="6.5"/><circle cx="126" cy="234" r="6.5"/>
+</g>
+<g fill="#111827" font-size="7.5" font-weight="700" text-anchor="middle" font-family="'Plus Jakarta Sans','Manrope',system-ui,sans-serif">
+<text x="126" y="118.8">A</text><text x="221" y="118.8">B</text><text x="316" y="118.8">C</text><text x="411" y="118.8">D</text><text x="506" y="118.8">E</text><text x="601" y="118.8">F</text><text x="694" y="118.8">G</text>
+<text x="694" y="228.8">H</text><text x="694" y="338.8">I</text><text x="784" y="338.8">J</text><text x="874" y="338.8">K</text><text x="874" y="424.8">L</text><text x="874" y="510.8">M</text><text x="874" y="596.8">N</text>
+<text x="780" y="596.8">O</text><text x="686" y="596.8">P</text><text x="592" y="596.8">Q</text><text x="498" y="596.8">R</text><text x="404" y="596.8">S</text><text x="310" y="596.8">T</text><text x="126" y="596.8">U</text>
+<text x="126" y="476.8">V</text><text x="126" y="356.8">W</text><text x="126" y="236.8">X</text>
+</g>
+<g transform="translate(40 468)">
+<rect x="0" y="0" width="156" height="112" fill="#ffffff" stroke="#111827" stroke-width="0.7"/>
+<text x="8" y="14" font-size="7.5" font-weight="700" letter-spacing="1.4" fill="#111827">LP LEGEND</text>
+<line x1="0" y1="20" x2="156" y2="20" stroke="#111827" stroke-width="0.5"/>
+<g fill="#ffffff" stroke="#16a34a" stroke-width="1.3"><circle cx="14" cy="33" r="5"/><path d="M14 46l5 5-5 5-5-5z"/><rect x="9.5" y="65.5" width="9" height="9"/></g>
+<path d="M8 89h12" stroke="#16a34a" stroke-width="2"/>
+<path d="M14 97v6M9 103h10M11 106h6M13 109h2" stroke="#DC143C" stroke-width="1.2" fill="none"/>
+<g fill="#111827" font-size="6.5" letter-spacing="0.4">
+<text x="26" y="35.5">AIR TERMINAL, CLASS I</text><text x="26" y="53.5">BOND TO EQUIPMENT</text><text x="26" y="72.5">CONDUIT DOWNLEAD TO GROUND</text><text x="26" y="91">COPPER MAIN CONDUCTOR</text><text x="26" y="106">GROUND ROD, 5/8" X 10'</text>
+</g>
+</g>
+<g stroke="#111827" stroke-width="0.8" fill="#111827" font-size="7.5">
+<line x1="126" y1="142" x2="694" y2="142"/><path d="M126 138v8M694 138v8"/>
+<rect x="370" y="135" width="80" height="13" fill="#ffffff" stroke="none"/><text x="410" y="144.5" text-anchor="middle" stroke="none" font-weight="600">20'-0" O.C. TYP.</text>
+</g>
+<g fill="none" stroke="var(--sel,#f2b33d)" stroke-width="1.2">
+<rect x="399" y="104" width="24" height="24" stroke-dasharray="3 2"/>
+<g fill="var(--sel-fill,#fff)"><rect x="396" y="101" width="6" height="6"/><rect x="420" y="101" width="6" height="6"/><rect x="396" y="125" width="6" height="6"/><rect x="420" y="125" width="6" height="6"/></g>
+</g>
+</g>
+</svg>
+</div>
+      <div class="zoom"><button class="qb"><svg class="ic"><use href="#s-zoom-out"/></svg></button><span class="v">100%</span><button class="qb"><svg class="ic"><use href="#s-zoom-in"/></svg></button><button class="qb"><svg class="ic"><use href="#s-fit"/></svg></button></div>
+      <div class="tag">Direction 04 · Tempered</div>
+    </div>
+    <div class="status">
+      <span>X 412.50 &nbsp; Y 118.00</span>
+      <span class="on">SNAP</span><span class="on">ANGLE 15°</span><span class="on">AUTO-CONN · MECH</span>
+      <span>Layer · Rooftop</span>
+      <span class="sp"></span>
+      <span>Selected · Air terminal D</span><span>14 undo</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

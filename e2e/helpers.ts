@@ -36,16 +36,52 @@ export async function disableNativeFileDialogs(page: Page) {
   })
 }
 
-export async function gotoApp(page: Page): Promise<Locator> {
+/** A registered shell id (see packages/editor/src/shells/registry.ts). */
+export type ShellId = string
+
+export interface GotoAppOptions {
+  /** Pins a shell for a shell-specific spec. Behavior specs run on the default shell. */
+  shell?: ShellId
+}
+
+export async function gotoApp(page: Page, options: GotoAppOptions = {}): Promise<Locator> {
   await disableNativeFileDialogs(page)
+  if (options.shell) {
+    await page.addInitScript((shell) => {
+      window.localStorage.setItem('lp-sketch.shell.v1', shell)
+    }, options.shell)
+  }
   await page.goto('/')
+  // Fail fast if another project's server holds the port (Playwright reuses whatever answers).
+  await expect(page).toHaveTitle('LP Sketch')
   const drawingStage = page.locator('.drawing-stage')
   await expect(drawingStage).toBeVisible()
   return drawingStage
 }
 
-export function panelRegion(page: Page, label: string): Locator {
-  return page.getByRole('region', { name: label })
+/**
+ * A block by its landmark name (see `packages/editor/src/blocks/registry.ts`).
+ * A shell may keep a block behind a tab or popover that is hidden until opened;
+ * the opener points at that container through `aria-controls`, so this clicks
+ * it first. A shell that shows every block just returns it.
+ */
+export async function openBlock(
+  page: Page,
+  name: string,
+  role: 'group' | 'radiogroup' = 'group',
+): Promise<Locator> {
+  const block = page.getByRole(role, { name, exact: true, includeHidden: true })
+  if (!(await block.isVisible())) {
+    const hidden = block.locator('xpath=ancestor::*[@hidden][1]')
+    if ((await hidden.count()) > 0) {
+      const id = await hidden.getAttribute('id')
+      if (id) {
+        await page.locator(`[aria-controls="${id}"]`).first().click()
+      }
+    }
+  }
+  await expect(block).toBeVisible()
+  return block
 }
 
 export async function clickStage(
@@ -90,15 +126,16 @@ export async function dragLocatorToStagePoint(
   await page.mouse.up()
 }
 
+/** The status block's live region; a shell places it, the block owns the role. */
 export async function expectStatus(page: Page, text: string | RegExp) {
-  const locator = page.locator('.sidebar .status-msg').filter({
+  const locator = page.getByRole('status').filter({
     hasText: text instanceof RegExp ? text : new RegExp(escapeRegExp(text)),
   })
   await expect(locator.last()).toBeVisible()
 }
 
 export async function expectError(page: Page, text: string | RegExp) {
-  const locator = page.locator('.sidebar .status-msg.error').filter({
+  const locator = page.getByRole('alert').filter({
     hasText: text instanceof RegExp ? text : new RegExp(escapeRegExp(text)),
   })
   await expect(locator.last()).toBeVisible()
@@ -125,7 +162,7 @@ export async function createSamplePdfPayload(name = 'e2e-sample.pdf'): Promise<F
 
 export async function importPdfFromProjectPanel(page: Page, fileName = 'e2e-import.pdf') {
   const chooserPromise = page.waitForEvent('filechooser')
-  await panelRegion(page, 'Project').getByRole('button', { name: /Import PDF$/ }).click()
+  await (await openBlock(page, 'File')).getByRole('button', { name: /Import PDF$/ }).click()
   const chooser = await chooserPromise
   await chooser.setFiles(await createSamplePdfPayload(fileName))
   await expectStatus(page, new RegExp(`Imported ${escapeRegExp(fileName)}`))
@@ -414,13 +451,14 @@ export async function createMultiPageProjectJsonPayload(options?: {
 
 export async function loadProjectFromProjectPanel(page: Page, payload: FilePayload) {
   const chooserPromise = page.waitForEvent('filechooser')
-  await panelRegion(page, 'Project').getByRole('button', { name: /Load$/ }).click()
+  await (await openBlock(page, 'File')).getByRole('button', { name: /Load$/ }).click()
   const chooser = await chooserPromise
   await chooser.setFiles(payload)
   await expectStatus(page, /Loaded .*\.lps/)
 }
 
 export async function applyManualScale(page: Page, inches: string, feet: string) {
+  await openBlock(page, 'Drawing scale')
   await page.getByLabel('Scale inches').fill(inches)
   await page.getByLabel('Scale feet').fill(feet)
   await page.getByRole('button', { name: 'Apply Scale', exact: true }).click()

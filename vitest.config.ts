@@ -5,7 +5,9 @@ export default defineConfig({
   plugins: [solid({ hot: false })],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    // Keep jsdom worker startup reliable on Windows, as in the Playwright suite.
+    maxWorkers: process.platform === 'win32' ? 1 : undefined,
+    include: ['packages/*/src/**/*.test.{ts,tsx}', 'apps/*/src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
