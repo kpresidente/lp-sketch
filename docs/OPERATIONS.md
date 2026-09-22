@@ -26,7 +26,7 @@ Required branch settings:
   - npm updates: weekly, max 10 open PRs, prefix `deps`. Grouped: `vitest` with `@vitest/*` (they pin each other as peers), and every minor and patch bump in one PR. Major bumps get a PR each, so one breaking upgrade never blocks the rest.
   - GitHub Actions updates: weekly, max 5 open PRs, prefix `ci`, one grouped PR.
   - Dependabot's workflow runs cannot read repository secrets, so the Azure workflow builds its PRs without deploying them (`skip_deploy_on_missing_secrets`) and skips the close job when Dependabot closes a PR itself.
-- `pdfjs-dist` is pinned to `5.5.207`: the broader caret range includes releases affected by [GHSA-hq66-cqwq-w95j](https://github.com/advisories/GHSA-hq66-cqwq-w95j). Validate a patched release before widening this range.
+- `pdfjs-dist` is pinned exactly (`6.3.289`), not given a caret range. [GHSA-hq66-cqwq-w95j](https://github.com/advisories/GHSA-hq66-cqwq-w95j) (CVE-2026-16633) affects `>= 5.6.83, < 6.2.108`, and the pin sits past the patched `6.2.108`. Keep the exact pin so every bump is a deliberate step: run the full validation and import a PDF in the browser before moving it. pdf.js 6 names Chrome 125 and Safari 18 as its minimum browsers, which is newer than the iPad build's iOS 15 deployment target.
 
 ## Release Process
 

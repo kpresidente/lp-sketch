@@ -78,8 +78,8 @@ describe('usePdfCanvasRenderer', () => {
       promise: Promise.resolve({
         numPages: 3,
         getPage: getPageMock,
-        destroy: vi.fn(async () => {}),
       }),
+      destroy: vi.fn(async () => {}),
     })
 
     const { canvas: frontCanvas, context: frontContext } = createCanvasStub()
@@ -125,12 +125,10 @@ describe('usePdfCanvasRenderer', () => {
     await flushAsyncWork()
 
     expect(createElementSpy).toHaveBeenCalledWith('canvas')
-    expect(renderMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        canvas: backCanvas,
-        canvasContext: backCanvas.getContext('2d'),
-      }),
-    )
+    expect(renderMock).toHaveBeenLastCalledWith({
+      canvas: backCanvas,
+      viewport: expect.objectContaining({ width: 640, height: 480 }),
+    })
     expect(frontContext.clearRect).not.toHaveBeenCalled()
     expect(frontContext.drawImage).not.toHaveBeenCalled()
 
@@ -161,8 +159,8 @@ describe('usePdfCanvasRenderer', () => {
       promise: Promise.resolve({
         numPages: 3,
         getPage: getPageMock,
-        destroy: vi.fn(async () => {}),
       }),
+      destroy: vi.fn(async () => {}),
     })
 
     const { canvas: frontCanvas } = createCanvasStub()
@@ -243,8 +241,8 @@ describe('usePdfCanvasRenderer', () => {
       promise: Promise.resolve({
         numPages: 3,
         getPage: getPageMock,
-        destroy: vi.fn(async () => {}),
       }),
+      destroy: vi.fn(async () => {}),
     })
 
     const { canvas: firstFrontCanvas } = createCanvasStub()
@@ -309,8 +307,8 @@ describe('usePdfCanvasRenderer', () => {
       promise: Promise.resolve({
         numPages: 3,
         getPage: getPageMock,
-        destroy: vi.fn(async () => {}),
       }),
+      destroy: vi.fn(async () => {}),
     })
 
     const { canvas } = createCanvasStub()
@@ -346,6 +344,92 @@ describe('usePdfCanvasRenderer', () => {
     await flushAsyncWork()
     expect(getPageMock.mock.calls.some(([page]) => page === 3)).toBe(true)
     expect(errors).toEqual([])
+
+    dispose()
+  })
+
+  it('destroys each loading task once its render settles, so the shared worker holds no stale document', async () => {
+    const renderMock = vi.fn(() => ({ cancel: vi.fn(), promise: Promise.resolve() }))
+    const getPageMock = vi.fn(async (_pageNumber: number) => ({
+      getViewport: () => ({ width: 640, height: 480 }),
+      render: renderMock,
+    }))
+    const destroyMock = vi.fn(async () => {})
+    getDocumentMock.mockReturnValue({
+      promise: Promise.resolve({ numPages: 3, getPage: getPageMock }),
+      destroy: destroyMock,
+    })
+
+    const { canvas } = createCanvasStub()
+    let setCurrentPage: ((next: number) => void) | null = null
+    const dispose = createRoot((rootDispose) => {
+      const [pdfSignature] = createSignal('signature')
+      const [currentPage, setPage] = createSignal(1)
+      setCurrentPage = setPage
+
+      const { bindPdfCanvasRef } = usePdfCanvasRenderer({
+        pdfState: () => ({
+          dataBase64: 'encoded-pdf',
+          widthPt: 1200,
+          heightPt: 900,
+        }),
+        pdfSignature,
+        currentPage,
+        setError: vi.fn(),
+      })
+
+      bindPdfCanvasRef(canvas)
+      return rootDispose
+    })
+
+    await flushAsyncWork()
+    expect(getDocumentMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ worker: expect.anything() }),
+    )
+    expect(renderMock).toHaveBeenCalledTimes(1)
+    expect(destroyMock).toHaveBeenCalledTimes(1)
+
+    setCurrentPage?.(2)
+    await flushAsyncWork()
+    expect(renderMock).toHaveBeenCalledTimes(2)
+    expect(destroyMock).toHaveBeenCalledTimes(2)
+
+    dispose()
+  })
+
+  it('destroys the loading task and reports the error when the document fails to load', async () => {
+    const destroyMock = vi.fn(async () => {})
+    getDocumentMock.mockImplementation(() => ({
+      promise: Promise.reject(new Error('Unable to parse PDF.')),
+      destroy: destroyMock,
+    }))
+
+    const { canvas } = createCanvasStub()
+    const errors: string[] = []
+    const dispose = createRoot((rootDispose) => {
+      const [pdfSignature] = createSignal('signature')
+      const [currentPage] = createSignal(1)
+
+      const { bindPdfCanvasRef } = usePdfCanvasRenderer({
+        pdfState: () => ({
+          dataBase64: 'encoded-pdf',
+          widthPt: 1200,
+          heightPt: 900,
+        }),
+        pdfSignature,
+        currentPage,
+        setError(message) {
+          errors.push(message)
+        },
+      })
+
+      bindPdfCanvasRef(canvas)
+      return rootDispose
+    })
+
+    await flushAsyncWork()
+    expect(destroyMock).toHaveBeenCalledTimes(1)
+    expect(errors).toEqual(['Unable to parse PDF.'])
 
     dispose()
   })

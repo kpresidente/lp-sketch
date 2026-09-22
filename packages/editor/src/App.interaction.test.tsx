@@ -9,6 +9,7 @@ vi.mock('pdfjs-dist', () => ({
   PDFWorker: class { destroy = vi.fn() },
   getDocument: vi.fn(() => ({
     promise: Promise.reject(new Error('pdfjs not used in interaction tests')),
+    destroy: vi.fn(async () => {}),
   })),
 }))
 

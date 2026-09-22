@@ -1,4 +1,4 @@
-import { getDocument } from 'pdfjs-dist'
+import { getDocument, type PDFDocumentLoadingTask } from 'pdfjs-dist'
 import type { Accessor, Setter } from 'solid-js'
 import {
   MAX_PDF_IMPORT_BYTES,
@@ -278,12 +278,13 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
       return
     }
 
-    let loadedPdf: Awaited<ReturnType<typeof getDocument>['promise']> | null = null
+    let loadingTask: PDFDocumentLoadingTask | null = null
 
     try {
       const original = new Uint8Array(await file.arrayBuffer())
       const hash = await sha256Hex(original.slice().buffer)
-      loadedPdf = await getDocument({ data: original.slice() }).promise
+      loadingTask = getDocument({ data: original.slice() })
+      const loadedPdf = await loadingTask.promise
 
       if (loadedPdf.numPages > MAX_PDF_IMPORT_PAGES) {
         options.setError(
@@ -401,9 +402,11 @@ export function useProjectFileActions(options: UseProjectFileActionsOptions) {
       })
       options.setError(message)
     } finally {
-      if (loadedPdf) {
+      // pdf.js 6 moved document teardown to the loading task; destroying it
+      // also terminates the worker this import created.
+      if (loadingTask) {
         try {
-          await loadedPdf.destroy()
+          await loadingTask.destroy()
         } catch {
           // Ignore cleanup failures.
         }

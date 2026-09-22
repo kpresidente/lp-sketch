@@ -1,4 +1,4 @@
-import { getDocument, PDFWorker } from 'pdfjs-dist'
+import { getDocument, PDFWorker, type PDFDocumentLoadingTask, type RenderTask } from 'pdfjs-dist'
 import { createEffect, on, onCleanup, type Accessor } from 'solid-js'
 import { base64ToBytes } from '../lib/files'
 
@@ -19,11 +19,24 @@ interface UsePdfCanvasRendererOptions {
 
 const MAX_PDF_RENDER_SCALE = 2
 
+/**
+ * Releases a loaded document. pdf.js 6 dropped `PDFDocumentProxy.destroy()`;
+ * the loading task owns the document lifetime now. A task whose worker was
+ * supplied by the caller releases the parsed document but keeps that worker.
+ */
+async function destroyLoadingTask(task: PDFDocumentLoadingTask) {
+  try {
+    await task.destroy()
+  } catch {
+    // The worker may already be gone (hook cleanup); nothing is left to release.
+  }
+}
+
 export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
   let pdfCanvasRef: HTMLCanvasElement | undefined
   let pdfBackBufferRef: HTMLCanvasElement | null = null
   let pdfRenderRequestVersion = 0
-  let activePdfRenderTask: { cancel: () => void; promise: Promise<unknown> } | null = null
+  let activePdfRenderTask: RenderTask | null = null
   let committedContentKey: string | null = null
   let committedRenderKey: string | null = null
   const sharedPdfWorker = new PDFWorker()
@@ -141,9 +154,9 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
 
     const bytes = base64ToBytes(dataBase64)
     const pdfDocumentTask = getDocument({ data: bytes, worker: sharedPdfWorker })
-    const pdf = await pdfDocumentTask.promise
 
     try {
+      const pdf = await pdfDocumentTask.promise
       if (requestVersion !== pdfRenderRequestVersion) {
         return
       }
@@ -163,11 +176,7 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
       backBuffer.height = Math.max(1, Math.round(viewport.height))
       backContext.clearRect(0, 0, backBuffer.width, backBuffer.height)
 
-      const renderTask = page.render({
-        canvas: backBuffer,
-        canvasContext: backContext,
-        viewport,
-      }) as { cancel: () => void; promise: Promise<unknown> }
+      const renderTask = page.render({ canvas: backBuffer, viewport })
       activePdfRenderTask = renderTask
 
       try {
@@ -191,7 +200,7 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
         }
       }
     } finally {
-      await pdf.destroy()
+      await destroyLoadingTask(pdfDocumentTask)
     }
   }
 
