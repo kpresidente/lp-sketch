@@ -175,7 +175,7 @@ gh workflow run 360845343 --repo kpresidente/lp-sketch `
   -f upload_to_testflight=true -f app_version=0.1.0
 ```
 
-Review and merge the prepared pull request through the normal review process. Merging `main` also follows this repository's existing browser deployment process.
+Merge the prepared pull request once its checks pass. Merging into `main` also follows this repository's existing browser deployment process.
 
 Once the workflow is on the default branch, open **Actions → iOS / TestFlight → Run workflow**:
 

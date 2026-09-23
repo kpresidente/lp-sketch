@@ -270,13 +270,13 @@ Gate for any new shell: block coverage test with documented waivers, one shell e
 
 | Step | Status | Branch or PR | Notes |
 | --- | --- | --- | --- |
-| 1. Consolidate the controller | in review | `codex/monorepo-foundation` | Implemented 2026-09-20; see the implementation notes, step 1 |
-| 2. Extract the Workspace | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; see the implementation notes, step 2 |
-| 3. Shell boundary with Classic | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 18 of 18 screenshots identical; see the implementation notes, step 3 |
-| 4. Tokens and themes | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; light and dark pass the audit; see the implementation notes, step 4 |
-| 5. Tempered shell as default | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; 28 blocks, Tempered mounts all, Classic waives two; see the implementation notes, step 5 |
-| 6. Hardening | in review | `codex/monorepo-foundation` | Implemented 2026-09-21; three themes pass the audit; see the implementation notes, step 6 |
-| Hover shell (after the plan) | in review | `codex/monorepo-foundation` | Implemented 2026-09-22 through the step 6 recipe; see the implementation notes, Hover shell |
+| 1. Consolidate the controller | done | #27, merged 2026-09-22 | Implemented 2026-09-20; see the implementation notes, step 1 |
+| 2. Extract the Workspace | done | #27, merged 2026-09-22 | Implemented 2026-09-21; see the implementation notes, step 2 |
+| 3. Shell boundary with Classic | done | #27, merged 2026-09-22 | Implemented 2026-09-21; 18 of 18 screenshots identical; see the implementation notes, step 3 |
+| 4. Tokens and themes | done | #27, merged 2026-09-22 | Implemented 2026-09-21; light and dark pass the audit; see the implementation notes, step 4 |
+| 5. Tempered shell as default | done | #27, merged 2026-09-22 | Implemented 2026-09-21; 28 blocks, Tempered mounts all, Classic waives two; see the implementation notes, step 5 |
+| 6. Hardening | done | #27, merged 2026-09-22 | Implemented 2026-09-21; three themes pass the audit; see the implementation notes, step 6 |
+| Hover shell (after the plan) | done | #27, merged 2026-09-22 | Implemented 2026-09-22 through the step 6 recipe; see the implementation notes, Hover shell |
 
 Statuses: not started, in progress, in review, done.
 
