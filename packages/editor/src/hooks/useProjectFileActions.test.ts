@@ -44,6 +44,12 @@ function createMockPdf(numPages: number) {
         height: 800 + page,
       }),
     })),
+  }
+}
+
+function createMockLoadingTask(pdf: ReturnType<typeof createMockPdf>) {
+  return {
+    promise: Promise.resolve(pdf),
     destroy: vi.fn(async () => {}),
   }
 }
@@ -104,9 +110,8 @@ describe('useProjectFileActions import PDF', () => {
   it('shows explicit max-page error when a PDF exceeds configured page limit', async () => {
     const totalPages = MAX_PDF_IMPORT_PAGES + 1
     const mockPdf = createMockPdf(totalPages)
-    getDocumentMock.mockReturnValue({
-      promise: Promise.resolve(mockPdf),
-    })
+    const loadingTask = createMockLoadingTask(mockPdf)
+    getDocumentMock.mockReturnValue(loadingTask)
 
     const harness = createHarness()
     await harness.actions.handleImportPdf(createImportEvent(createTestPdfFile()))
@@ -115,18 +120,32 @@ describe('useProjectFileActions import PDF', () => {
       `This PDF has ${totalPages} pages. The maximum supported is ${MAX_PDF_IMPORT_PAGES}.`,
     )
     expect(mockPdf.getPage).not.toHaveBeenCalled()
-    expect(mockPdf.destroy).toHaveBeenCalledOnce()
+    expect(loadingTask.destroy).toHaveBeenCalledOnce()
     expect(harness.project().pdf.pageCount).toBe(1)
     expect(harness.selected()).toBeNull()
     expect(harness.multiSelection()).toHaveLength(0)
   })
 
+  it('destroys the loading task when the PDF fails to load', async () => {
+    const destroyMock = vi.fn(async () => {})
+    getDocumentMock.mockImplementation(() => ({
+      promise: Promise.reject(new Error('Unable to parse PDF.')),
+      destroy: destroyMock,
+    }))
+
+    const harness = createHarness()
+    await harness.actions.handleImportPdf(createImportEvent(createTestPdfFile()))
+
+    expect(harness.error()).toBe('Unable to parse PDF.')
+    expect(destroyMock).toHaveBeenCalledOnce()
+    expect(harness.project().pdf.name).toBe('')
+  })
+
   it('imports a multi-page PDF and initializes page-scoped state for each page', async () => {
     const totalPages = Math.min(3, MAX_PDF_IMPORT_PAGES)
     const mockPdf = createMockPdf(totalPages)
-    getDocumentMock.mockReturnValue({
-      promise: Promise.resolve(mockPdf),
-    })
+    const loadingTask = createMockLoadingTask(mockPdf)
+    getDocumentMock.mockReturnValue(loadingTask)
 
     const harness = createHarness()
     await harness.actions.handleImportPdf(createImportEvent(createTestPdfFile()))
@@ -156,7 +175,7 @@ describe('useProjectFileActions import PDF', () => {
       harness.project().settings.pdfTransparency,
     )
     expect(mockPdf.getPage).toHaveBeenCalledTimes(totalPages)
-    expect(mockPdf.destroy).toHaveBeenCalledOnce()
+    expect(loadingTask.destroy).toHaveBeenCalledOnce()
     expect(harness.selected()).toBeNull()
     expect(harness.multiSelection()).toHaveLength(0)
   })
@@ -190,9 +209,8 @@ describe('useProjectFileActions import PDF', () => {
   it('clears existing drawing content and stale autosave storage when importing a new PDF', async () => {
     const totalPages = Math.min(3, MAX_PDF_IMPORT_PAGES)
     const mockPdf = createMockPdf(totalPages)
-    getDocumentMock.mockReturnValue({
-      promise: Promise.resolve(mockPdf),
-    })
+    const loadingTask = createMockLoadingTask(mockPdf)
+    getDocumentMock.mockReturnValue(loadingTask)
 
     const currentProject = createDefaultProject('Existing Drawing')
     currentProject.elements.lines.push({
@@ -291,6 +309,6 @@ describe('useProjectFileActions import PDF', () => {
       placements: [],
     })
     expect(window.localStorage.getItem(AUTOSAVE_STORAGE_KEY)).toBeNull()
-    expect(mockPdf.destroy).toHaveBeenCalledOnce()
+    expect(loadingTask.destroy).toHaveBeenCalledOnce()
   })
 })

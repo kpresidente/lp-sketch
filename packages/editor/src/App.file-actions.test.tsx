@@ -163,6 +163,7 @@ beforeEach(() => {
         }),
       }),
     }),
+    destroy: vi.fn(async () => {}),
   })
   migrateProjectForLoadMock.mockImplementation((parsed: unknown) => ({
     project: parsed,
@@ -453,6 +454,7 @@ describe('App file actions integration', () => {
 
     getDocumentMock.mockReturnValueOnce({
       promise: Promise.reject('broken-pdf'),
+      destroy: vi.fn(async () => {}),
     })
 
     const badPdf = new File([pdfBytes], 'broken.pdf', { type: 'application/pdf' })
