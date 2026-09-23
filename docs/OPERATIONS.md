@@ -19,7 +19,7 @@ Required branch settings:
 
 ## Dependency Automation
 
-- Development and CI use Node 24. Capacitor CLI requires Node 22 or newer.
+- Development and CI use Node 24, at least 24.15 (jsdom 30 declares that floor). Capacitor CLI requires Node 22 or newer.
 - The root `xcode → uuid` override pins `uuid` to `11.1.1` for GHSA-w5hq-g745-h8pq. Capacitor's CLI uses xcode's UUID v4 generation, which remains compatible. Remove the scoped override when upstream adopts a patched version.
 
 - Dependabot: `.github/dependabot.yml`
@@ -27,6 +27,7 @@ Required branch settings:
   - GitHub Actions updates: weekly, max 5 open PRs, prefix `ci`, one grouped PR.
   - Dependabot's workflow runs cannot read repository secrets, so the Azure workflow builds its PRs without deploying them (`skip_deploy_on_missing_secrets`) and skips the close job when Dependabot closes a PR itself.
 - `pdfjs-dist` is pinned exactly (`6.3.289`), not given a caret range. [GHSA-hq66-cqwq-w95j](https://github.com/advisories/GHSA-hq66-cqwq-w95j) (CVE-2026-16633) affects `>= 5.6.83, < 6.2.108`, and the pin sits past the patched `6.2.108`. Keep the exact pin so every bump is a deliberate step: run the full validation and import a PDF in the browser before moving it. pdf.js 6 names Chrome 125 and Safari 18 as its minimum browsers, which is newer than the iPad build's iOS 15 deployment target.
+- `jsdom` must stay at 30.1.1 or newer. 30.1.0 fires a spurious window `blur` when an element is focused after the previously focused element was removed, which is exactly what testing-library's cleanup followed by the next test's stage focus does. The App's window `blur` listener then resets the pen input guard, and two pen-and-touch suppression tests in `App.interaction.test.tsx` fail.
 
 ## Release Process
 
