@@ -16,6 +16,7 @@ Required branch settings:
 3. Branch must be up to date before merge (`strict`)
 4. Force pushes disabled
 5. Deletions disabled
+6. Required approvals: 0. The maintainer works alone and cannot approve their own pull requests, so GitHub's default of one approval (pre-selected when "Require a pull request" is enabled) would force an admin override on every merge. A pull request merges once `Build + Test` passes.
 
 ## Dependency Automation
 
