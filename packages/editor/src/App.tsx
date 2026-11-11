@@ -30,7 +30,7 @@ import { useLegendLabelDialog } from './hooks/useLegendLabelDialog'
 import { usePdfCanvasRenderer } from './hooks/usePdfCanvasRenderer'
 import { useProjectFileActions } from './hooks/useProjectFileActions'
 import type { FileExporter } from './lib/fileExport'
-import { useProjectAutosave } from './hooks/useProjectAutosave'
+import { autosaveIssueLabel, autosaveIssueMessage, useProjectAutosave } from './hooks/useProjectAutosave'
 import { useDialogResizeSync } from './hooks/useDialogResizeSync'
 import { useGlobalAppShortcuts } from './hooks/useGlobalAppShortcuts'
 import {
@@ -155,7 +155,7 @@ import {
   normalizeVerticalFootageInput,
   scaleFeetPerInch,
 } from './lib/appUiHelpers'
-import { applyRedo, applyUndo, pushHistorySnapshot } from '@lp-sketch/core/model/history'
+import { applyRedo, applyUndo, keepLiveCamera, pushHistorySnapshot } from '@lp-sketch/core/model/history'
 import {
   COLOR_HEX,
   DIRECTIONAL_SYMBOLS,
@@ -472,7 +472,12 @@ function App(props: AppProps) {
   }
 
   const hasPdf = createMemo(() => Boolean(project().pdf.dataBase64))
-  const overlaySourceProject = createMemo(() => dragPreviewProject() ?? project(), undefined, {
+  const overlaySourceProject = createMemo(() => {
+    const preview = dragPreviewProject()
+    // The preview starts from a pointer-down snapshot. Its geometry is the
+    // drag's; the camera stays the live one so a zoom during a drag holds.
+    return preview ? { ...preview, view: project().view } : project()
+  }, undefined, {
     equals: false,
   })
   const visibleProject = createMemo(() => {
@@ -635,7 +640,7 @@ function App(props: AppProps) {
     exportFile: props.exportFile,
   })
 
-  useProjectAutosave({
+  const { autosaveIssue } = useProjectAutosave({
     project,
     replaceProject,
     setStatus,
@@ -1266,6 +1271,10 @@ function App(props: AppProps) {
   }
 
   async function handleSubmitReport() {
+    if (reportSubmitting()) {
+      return
+    }
+
     const normalized = normalizeReportDraft(reportDraft())
     const errors = validateReportDraft(normalized)
     if (errors.length > 0) {
@@ -1276,12 +1285,18 @@ function App(props: AppProps) {
     setReportDialogError('')
     setReportDraft(normalized)
     setReportSubmitting(true)
-    const payload = buildReportPayload(normalized, project())
-    const result = await submitReport(payload)
-    setReportSubmitting(false)
+    let result: Awaited<ReturnType<typeof submitReport>> | null = null
+    try {
+      result = await submitReport(buildReportPayload(normalized, project()))
+    } catch {
+      // Falls through to the generic failure message below.
+    } finally {
+      // Submitting must always end, or the dialog can never be dismissed.
+      setReportSubmitting(false)
+    }
 
-    if (!result.ok) {
-      setReportDialogError(result.message ?? 'Unable to submit report.')
+    if (!result?.ok) {
+      setReportDialogError(result?.message ?? 'Unable to submit report.')
       return
     }
 
@@ -2040,7 +2055,7 @@ function App(props: AppProps) {
       return
     }
 
-    const synced = cloneProject(result.project)
+    const synced = keepLiveCamera(cloneProject(result.project), project())
     syncLegendItems(synced)
     setProject(synced)
     setHistory(result.history)
@@ -2060,7 +2075,7 @@ function App(props: AppProps) {
       return
     }
 
-    const synced = cloneProject(result.project)
+    const synced = keepLiveCamera(cloneProject(result.project), project())
     syncLegendItems(synced)
     setProject(synced)
     setHistory(result.history)
@@ -2755,14 +2770,15 @@ function App(props: AppProps) {
     }
 
     if (drag.kind === 'move' || drag.kind === 'edit-handle') {
-      const previewProject = dragPreviewProject() ?? project()
-      const before = JSON.stringify(drag.sourceProject)
-      const after = JSON.stringify(previewProject)
+      // No preview means the pointer never moved the selection: nothing to commit.
+      const previewProject = dragPreviewProject()
 
-      if (before !== after) {
+      if (previewProject && JSON.stringify(drag.sourceProject) !== JSON.stringify(previewProject)) {
         pushHistorySnapshotEntry(cloneProject(drag.sourceProject))
         setProject({
           ...previewProject,
+          // Commit the dragged geometry only; the camera may have moved since pointer down.
+          view: project().view,
           projectMeta: {
             ...previewProject.projectMeta,
             updatedAt: new Date().toISOString(),
@@ -2965,8 +2981,10 @@ function App(props: AppProps) {
     handleEnterToolFinish: handleEnterToolFinishShortcut,
     handleUndo,
     handleRedo,
-    deleteSelection,
-    deleteMultiSelection,
+    // The toolbar's delete path: it cancels an active drag before deleting,
+    // so the drop cannot write the pre-delete snapshot back.
+    deleteSelection: handleDeleteSelectedObjects,
+    deleteMultiSelection: handleDeleteSelectedObjects,
     clearTransientToolState: () => {
       if (
         tool() === 'calibrate' &&
@@ -4177,6 +4195,11 @@ function App(props: AppProps) {
     },
     get errorMessage() {
       return errorMessage()
+    },
+    get autosaveWarning() {
+      // The reminder steps aside while the alert that announces the issue is still showing.
+      const issue = autosaveIssue()
+      return errorMessage() === autosaveIssueMessage(issue) ? '' : autosaveIssueLabel(issue)
     },
     get stageCursor() {
       return stageCursor()

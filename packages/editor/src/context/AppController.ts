@@ -78,6 +78,8 @@ export interface AppController {
   canDeleteSelection: boolean
   statusMessage: string
   errorMessage: string
+  /** Short reminder that drafts are not being saved, for as long as that lasts; empty otherwise. */
+  autosaveWarning: string
   stageCursor: string
   calibrationPreview: string | null
   lineSegmentDistanceLabel: string | null

@@ -1,4 +1,4 @@
-import { createEffect, onCleanup, onMount, type Accessor } from 'solid-js'
+import { createEffect, createSignal, onCleanup, onMount, type Accessor } from 'solid-js'
 import {
   AUTOSAVE_STORAGE_KEY,
   AUTOSAVE_WRITE_DEBOUNCE_MS,
@@ -20,6 +20,32 @@ interface UseProjectAutosaveOptions {
   replaceProject: (nextProject: LpProject, resetHistory?: boolean) => void
   setStatus: (message: string) => void
   setError: (message: string) => void
+}
+
+/** Why drafts are not being written. Present until a write succeeds again. */
+export type AutosaveIssue = 'storage-unavailable' | 'too-large' | 'error'
+
+const AUTOSAVE_ISSUE_MESSAGES: Record<AutosaveIssue, string> = {
+  'storage-unavailable': 'Autosave unavailable: local draft storage is not accessible in this session.',
+  'too-large': 'Autosave skipped: project is too large for local draft storage.',
+  error: 'Autosave failed due to a local storage error.',
+}
+
+/** Short enough for the narrowest status area: shown for as long as the issue lasts. */
+const AUTOSAVE_ISSUE_LABELS: Record<AutosaveIssue, string> = {
+  'storage-unavailable': 'Autosave off: no draft storage',
+  'too-large': 'Autosave off: project too large',
+  error: 'Autosave off: storage error',
+}
+
+/** The one-time announcement made when an issue starts. */
+export function autosaveIssueMessage(issue: AutosaveIssue | null): string {
+  return issue ? AUTOSAVE_ISSUE_MESSAGES[issue] : ''
+}
+
+/** The standing reminder for an issue that is still present. */
+export function autosaveIssueLabel(issue: AutosaveIssue | null): string {
+  return issue ? AUTOSAVE_ISSUE_LABELS[issue] : ''
 }
 
 function savedAtLabel(savedAtIso: string): string {
@@ -45,10 +71,10 @@ function autosaveProjectContext(project: LpProject) {
 export function useProjectAutosave(options: UseProjectAutosaveOptions) {
   let persistTimer: number | null = null
   let canPersist = false
-  let warnedStorageUnavailable = false
-  let warnedTooLarge = false
-  let warnedPersistError = false
   let informedDegraded = false
+  // The write health is one state, not a set of warned-once flags: consumers
+  // can show it for as long as it lasts, and each change is announced once.
+  const [autosaveIssue, setAutosaveIssue] = createSignal<AutosaveIssue | null>(null)
 
   function clearPersistTimer() {
     if (persistTimer !== null) {
@@ -61,9 +87,7 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
     const result = persistAutosaveDraft(snapshot)
 
     if (result.status === 'saved') {
-      warnedStorageUnavailable = false
-      warnedTooLarge = false
-      warnedPersistError = false
+      setAutosaveIssue(null)
       if (result.degraded && notify && !informedDegraded) {
         informedDegraded = true
         options.setStatus('Autosave active. Embedded PDF data is omitted when draft storage is full.')
@@ -74,52 +98,19 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
       return
     }
 
-    if (result.status === 'skipped') {
-      if (result.reason === 'storage-unavailable' && !warnedStorageUnavailable) {
-        warnedStorageUnavailable = true
-        reportHandledOperationTelemetry(
-          'autosave_persist_failed',
-          'Autosave unavailable: local draft storage is not accessible in this session.',
-          {
-            reason: 'storage-unavailable',
-            ...autosaveProjectContext(snapshot),
-          },
-        )
-        if (notify) {
-          options.setError('Autosave unavailable: local draft storage is not accessible in this session.')
-        }
-      }
-
-      if (result.reason === 'too-large' && !warnedTooLarge) {
-        warnedTooLarge = true
-        reportHandledOperationTelemetry(
-          'autosave_persist_failed',
-          'Autosave skipped: project is too large for local draft storage.',
-          {
-            reason: 'too-large',
-            ...autosaveProjectContext(snapshot),
-          },
-        )
-        if (notify) {
-          options.setError('Autosave skipped: project is too large for local draft storage.')
-        }
-      }
+    const issue: AutosaveIssue = result.status === 'skipped' ? result.reason : 'error'
+    if (autosaveIssue() === issue) {
       return
     }
 
-    if (!warnedPersistError) {
-      warnedPersistError = true
-      reportHandledOperationTelemetry(
-        'autosave_persist_failed',
-        'Autosave failed due to a local storage error.',
-        {
-          reason: 'error',
-          ...autosaveProjectContext(snapshot),
-        },
-      )
-      if (notify) {
-        options.setError('Autosave failed due to a local storage error.')
-      }
+    setAutosaveIssue(issue)
+    const message = AUTOSAVE_ISSUE_MESSAGES[issue]
+    reportHandledOperationTelemetry('autosave_persist_failed', message, {
+      reason: issue,
+      ...autosaveProjectContext(snapshot),
+    })
+    if (notify) {
+      options.setError(message)
     }
   }
 
@@ -219,4 +210,6 @@ export function useProjectAutosave(options: UseProjectAutosaveOptions) {
   onCleanup(() => {
     clearPersistTimer()
   })
+
+  return { autosaveIssue }
 }

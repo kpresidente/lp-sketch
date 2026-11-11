@@ -180,6 +180,36 @@ describe('reporting', () => {
     expect(result.message).toBe('Unable to reach report service.')
   })
 
+  it('reports a failure when the service does not answer within the timeout', async () => {
+    // Never settles, even when aborted: the timeout alone must release the caller.
+    const fetchMock = vi.fn(() => new Promise<Response>(() => {}))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await submitReport(
+      {
+        type: 'bug',
+        title: 'Title',
+        details: 'Details long enough.',
+        reproSteps: null,
+        metadata: {
+          submittedAt: '2026-02-25T10:00:00.000Z',
+          appVersion: 'dev',
+          appEnvironment: 'test',
+          userAgent: null,
+          projectSummary: buildReportProjectSummary(createDefaultProject()),
+        },
+      },
+      '/api/report',
+      20,
+    )
+
+    expect(result.ok).toBe(false)
+    expect(result.status).toBe(0)
+    expect(result.message).toBe('Report service did not respond. Try again.')
+    const requestInit = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1]
+    expect(requestInit.signal?.aborted).toBe(true)
+  })
+
   it('creates default draft', () => {
     expect(createDefaultReportDraft()).toEqual({
       type: 'bug',
