@@ -143,8 +143,13 @@ export default function PropertiesToolOptions(options: PropertiesToolOptionsProp
   const markToolActive = () => props.tool === 'measure_mark'
   const markSelectedInSelectMode = () => props.tool === 'select' && props.selectedKind === 'mark'
   const textSelectedInSelectMode = () => props.tool === 'select' && props.selectedKind === 'text'
-  const legendSelected = () => !!props.selectedLegendPlacement
-  const generalNotesSelected = () => !!props.selectedGeneralNotesPlacement
+  // A stamp stays selected after it is placed and after the tool changes, so
+  // its edit controls apply only in Select or in the tool that placed it.
+  // Any other tool shows its own options.
+  const legendSelected = () =>
+    !!props.selectedLegendPlacement && (props.tool === 'select' || props.tool === 'legend')
+  const generalNotesSelected = () =>
+    !!props.selectedGeneralNotesPlacement && (props.tool === 'select' || props.tool === 'general_notes')
   const downleadPlacementOptionsVisible = () =>
     props.tool === 'symbol' && isDownleadSymbolType(props.activeSymbol)
   const downleadSelectionOptionsVisible = () =>

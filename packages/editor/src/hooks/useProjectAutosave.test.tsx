@@ -26,7 +26,7 @@ function AutosaveHarness() {
   const [status, setStatus] = createSignal('')
   const [error, setError] = createSignal('')
 
-  useProjectAutosave({
+  const { autosaveIssue } = useProjectAutosave({
     project,
     replaceProject(nextProject) {
       setProject(nextProject)
@@ -40,6 +40,17 @@ function AutosaveHarness() {
       <div data-testid="project-name">{project().projectMeta.name}</div>
       <div data-testid="status-message">{status()}</div>
       <div data-testid="error-message">{error()}</div>
+      <div data-testid="autosave-issue">{autosaveIssue() ?? 'none'}</div>
+      <button
+        type="button"
+        onClick={() => {
+          // As in App: a new status replaces the current error.
+          setError('')
+          setStatus('Something else happened.')
+        }}
+      >
+        Report Other Status
+      </button>
       <button
         type="button"
         onClick={() => {
@@ -176,6 +187,33 @@ describe('useProjectAutosave', () => {
     )
 
     setItemSpy.mockRestore()
+  })
+
+  it('keeps the autosave issue until a write succeeds, announcing it once', async () => {
+    vi.useFakeTimers()
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota')
+    })
+
+    render(() => <AutosaveHarness />)
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Update Project' }))
+    vi.advanceTimersByTime(AUTOSAVE_WRITE_DEBOUNCE_MS + 20)
+    expect(screen.getByTestId('autosave-issue').textContent).toBe('error')
+    expect(screen.getByTestId('error-message').textContent).toBe('Autosave failed due to a local storage error.')
+
+    // A later message replaces the announcement; the issue itself is still present.
+    await fireEvent.click(screen.getByRole('button', { name: 'Report Other Status' }))
+    await fireEvent.click(screen.getByRole('button', { name: 'Update Project' }))
+    vi.advanceTimersByTime(AUTOSAVE_WRITE_DEBOUNCE_MS + 20)
+    expect(screen.getByTestId('autosave-issue').textContent).toBe('error')
+    expect(screen.getByTestId('error-message').textContent).toBe('')
+    expect(reportHandledOperationTelemetryMock).toHaveBeenCalledTimes(1)
+
+    // Storage recovers: the next write clears the issue.
+    setItemSpy.mockRestore()
+    window.dispatchEvent(new Event('beforeunload'))
+    expect(screen.getByTestId('autosave-issue').textContent).toBe('none')
   })
 
   it('writes debounced autosave updates after project changes', async () => {

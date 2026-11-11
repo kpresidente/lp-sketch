@@ -211,8 +211,7 @@ export default function HelpDrawer() {
 
   function navigateTo(anchorId: string, pushHistory = true) {
     // Clear search when navigating
-    setSearchQuery('')
-    setSearchResults(null)
+    leaveSearchMode()
 
     if (pushHistory) {
       setHistory((prev) => {
@@ -285,6 +284,14 @@ export default function HelpDrawer() {
 
   let searchDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
+  /** The one way out of search mode: also drops a search still waiting on its debounce. */
+  function leaveSearchMode() {
+    clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = undefined
+    setSearchQuery('')
+    setSearchResults(null)
+  }
+
   function handleSearchInput(value: string) {
     const prev = searchQuery()
     setSearchQuery(value)
@@ -347,8 +354,6 @@ export default function HelpDrawer() {
 
   function handleSearchResultClick(anchorId: string) {
     const query = searchQuery().trim()
-    setSearchResults(null)
-    setSearchQuery('')
     navigateTo(anchorId)
     // Apply search highlights after navigation scroll completes
     if (query) {
@@ -712,8 +717,7 @@ export default function HelpDrawer() {
               type="button"
               title="Clear search"
               onClick={() => {
-                setSearchQuery('')
-                setSearchResults(null)
+                leaveSearchMode()
                 searchInputRef?.focus()
                 // Restore pre-search scroll position
                 if (scrollRef) {

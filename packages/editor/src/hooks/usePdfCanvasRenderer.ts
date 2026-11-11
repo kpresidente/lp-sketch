@@ -170,6 +170,12 @@ export function usePdfCanvasRenderer(options: UsePdfCanvasRendererOptions) {
         : 1
 
       const page = await pdf.getPage(safePage)
+      // A newer request cannot cancel this one before it registers a render
+      // task, so it must stand down here instead of taking the back buffer.
+      if (requestVersion !== pdfRenderRequestVersion) {
+        return
+      }
+
       const viewport = page.getViewport({ scale: renderScale })
 
       backBuffer.width = Math.max(1, Math.round(viewport.width))

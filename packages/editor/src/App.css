@@ -1024,6 +1024,10 @@ select.select-field:focus {
   gap: 7px;
 }
 
+.status-msg + .status-msg {
+  margin-top: 4px;
+}
+
 .status-msg.success {
   color: var(--success);
 }

@@ -57,6 +57,7 @@ export interface ReportSubmissionResult {
 export const REPORT_TITLE_MAX_LENGTH = 120
 export const REPORT_DETAILS_MAX_LENGTH = 4000
 export const REPORT_REPRO_MAX_LENGTH = 4000
+export const REPORT_SUBMIT_TIMEOUT_MS = 30_000
 
 function clampText(value: string, maxLength: number): string {
   return value.trim().slice(0, maxLength)
@@ -169,9 +170,11 @@ function parseSubmissionMessage(body: unknown): { reportId: string | null; messa
   return { reportId, message }
 }
 
+/** Always settles: a request with no answer after `timeoutMs` is reported as a failure. */
 export async function submitReport(
   payload: ReportPayload,
   endpoint = '/api/report',
+  timeoutMs = REPORT_SUBMIT_TIMEOUT_MS,
 ): Promise<ReportSubmissionResult> {
   if (typeof fetch !== 'function') {
     return {
@@ -182,11 +185,40 @@ export async function submitReport(
     }
   }
 
+  const controller = typeof AbortController === 'function' ? new AbortController() : null
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  // Raced, not only aborted: the caller is released even if the request ignores the abort.
+  const timedOut = new Promise<null>((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve(null)
+      controller?.abort()
+    }, timeoutMs)
+  })
+
+  try {
+    const result = await Promise.race([sendReport(payload, endpoint, controller?.signal), timedOut])
+    return result ?? {
+      ok: false,
+      status: 0,
+      reportId: null,
+      message: 'Report service did not respond. Try again.',
+    }
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+async function sendReport(
+  payload: ReportPayload,
+  endpoint: string,
+  signal: AbortSignal | undefined,
+): Promise<ReportSubmissionResult> {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
+      signal,
     })
 
     const contentType = response.headers.get('content-type') ?? ''

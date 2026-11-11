@@ -90,6 +90,7 @@ export function createFixtureController(overrides: Partial<AppController> = {}):
     canDeleteSelection: false,
     statusMessage: '',
     errorMessage: '',
+    autosaveWarning: '',
     stageCursor: 'pointer',
     calibrationPreview: null,
     lineSegmentDistanceLabel: null,
